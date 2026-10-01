@@ -67,11 +67,14 @@ th { color: var(--muted); font-weight: 600; }
 .bar i { display: block; height: 100%; background: var(--ok); }
 #results-table, #item-stats { overflow-x: auto; }
 
-@page { size: A4; margin: 0; }
+#print-area { display: none; }
+.crops { display: flex; flex-direction: column; gap: 6px; }
+.crops img { width: 100%; max-width: 560px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+img.mini { height: 30px; width: auto; max-width: 180px; vertical-align: middle; border-radius: 4px; background: #fff; }
 @media print {
   body { background: #fff; }
-  .top, .hint, #print-sheet, h2, .tab:not(#tab-sheet) { display: none !important; }
-  main { padding: 0; max-width: none; }
-  .sheet-preview { max-width: none; box-shadow: none; margin: 0; }
-  .sheet-preview svg { width: 210mm; height: 297mm; }
+  body > *:not(#print-area) { display: none !important; }
+  #print-area { display: grid; grid-template-columns: auto 1px auto; align-items: start; }
+  #print-area svg { width: 148mm; height: 210mm; display: block; }
+  #print-area .cut { width: 0; height: 210mm; border-left: 0.2mm dashed #999; }
 }

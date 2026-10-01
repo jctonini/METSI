@@ -1,9 +1,9 @@
 // Interfaz de la app: configuración del examen, hoja imprimible, corrección por foto y resultados.
 (function () {
-  const { buildLayout, LETTERS } = MetsiLayout;
+  const { buildLayout, maxQuestionsFor, LETTERS } = MetsiLayout;
   const { scoreSheet } = MetsiScoring;
   const { sheetSVG } = MetsiSheet;
-  const { scanImage, interpret, applyH } = MetsiScanner;
+  const { scanImage, interpret, applyH, cropRegion } = MetsiScanner;
   const { toDelimited, formatNumber } = MetsiCsv;
   const { mergeStates } = MetsiMerge;
 
@@ -83,6 +83,7 @@
     const c = state.cfg;
     $('cfg-title').value = c.title;
     $('cfg-q').value = c.numQuestions;
+    $('cfg-q').max = maxQuestionsFor(c.numOptions, c.modalidades.length);
     $('cfg-opts').value = String(c.numOptions);
     $('cfg-digits').value = c.regDigits;
     $('cfg-mod').value = c.modalidades.join('\n');
@@ -123,7 +124,10 @@
 
   $('cfg-title').addEventListener('input', (e) => { state.cfg.title = e.target.value; save(); });
   $('cfg-q').addEventListener('change', (e) => {
-    structuralChange(() => { state.cfg.numQuestions = Math.max(1, Math.min(66, parseInt(e.target.value, 10) || 10)); });
+    const cap = maxQuestionsFor(state.cfg.numOptions, state.cfg.modalidades.length);
+    const want = parseInt(e.target.value, 10) || 10;
+    if (want > cap) alert(`Con ${state.cfg.numOptions} opciones y ${state.cfg.modalidades.length} modalidades, la hoja A5 admite hasta ${cap} preguntas.`);
+    structuralChange(() => { state.cfg.numQuestions = Math.max(1, Math.min(cap, want)); });
     fillConfig();
   });
   $('cfg-opts').addEventListener('change', (e) => {
@@ -195,7 +199,13 @@
   function renderSheet() {
     $('sheet-preview').innerHTML = sheetSVG(layout());
   }
-  $('print-sheet').addEventListener('click', () => { renderSheet(); window.print(); });
+  $('print-sheet').addEventListener('click', () => {
+    const svg = sheetSVG(layout());
+    const two = $('print-mode').value === '2';
+    $('print-area').innerHTML = two ? `${svg}<div class="cut"></div>${svg}` : svg;
+    $('page-style').textContent = `@page { size: ${two ? 'A4 landscape' : 'A5 portrait'}; margin: 0; }`;
+    window.print();
+  });
 
   // ---------- 3. corregir ----------
   $('file').addEventListener('change', async (e) => {
@@ -250,14 +260,23 @@
       const r = interpret(scan, state.cfg.threshold);
       const p7 = (v) => Number(v.toPrecision(7));
       const p3 = (v) => Math.round(v * 1000) / 1000;
+      // Recortes de lo escrito a mano (nombre y registro) para transcribirlos mirando la imagen.
+      const crop = (rect) => {
+        const cr = cropRegion(img, scan.H, rect, 10);
+        const cc = document.createElement('canvas');
+        cc.width = cr.width; cc.height = cr.height;
+        cc.getContext('2d').putImageData(new ImageData(cr.data, cr.width, cr.height), 0, 0);
+        return cc.toDataURL('image/jpeg', 0.8);
+      };
       state.sheets.push({
-        id, fileName: file.name, failed: false, nombre: '', registro: r.registro, modalidad: r.modalidad,
+        id, fileName: file.name, failed: false, nombre: '', registro: '', modalidad: r.modalidad,
         answers: r.answers, createdAt: now, updatedAt: now, photoId: null,
+        crops: { name: crop(L.fields.name), reg: crop(L.fields.reg) },
         // Datos para revisar más tarde (también desde otro dispositivo): homografía ya
         // escalada a la miniatura y puntajes de cada burbuja.
         scan: {
           H: scan.H.map((v, i) => p7(i < 6 ? v * tk : v)),
-          scores: { reg: scan.scores.reg.map((a) => a.map(p3)), mod: scan.scores.mod.map(p3), ans: scan.scores.ans.map((a) => a.map(p3)) },
+          scores: { mod: scan.scores.mod.map(p3), ans: scan.scores.ans.map((a) => a.map(p3)) },
         },
       });
     } catch (err) {
@@ -282,8 +301,7 @@
     for (const b of L.bubbles) {
       let marked = false;
       if (b.kind === 'ans') marked = sheet.answers[b.q] && sheet.answers[b.q].includes(b.opt);
-      else if (b.kind === 'mod') marked = sheet.modalidad === b.index;
-      else marked = sheet.registro[b.col] === String(b.digit);
+      else marked = sheet.modalidad === b.index;
       if (!marked) continue;
       const p = pts(b);
       ctx.beginPath(); ctx.arc(p.x, p.y, rad * 1.15, 0, 2 * Math.PI);
@@ -305,8 +323,7 @@
       const del = document.createElement('button');
       del.className = 'danger small'; del.textContent = 'Quitar';
       del.addEventListener('click', () => {
-        state.sheets = state.sheets.filter((x) => x.id !== sheet.id);
-        memory.delete(sheet.id); save(); renderCards();
+        removeSheet(sheet.id); save(); renderCards();
       });
       head.appendChild(del);
       card.appendChild(head);
@@ -320,17 +337,19 @@
       const score = scoreOf(sheet);
       const fields = document.createElement('div');
       fields.className = 'grid fields';
+      const hasCrops = sheet.crops && sheet.crops.reg;
       fields.innerHTML = `
+        ${hasCrops ? `<div class="crops wide"><img alt="Nombre escrito" src="${sheet.crops.name}"><img alt="Registro escrito" src="${sheet.crops.reg}"></div>` : ''}
         <label>Nombre y apellido <input type="text" class="f-name" placeholder="(opcional)" value="${escapeHtml(sheet.nombre || '')}"></label>
-        <label>N° de registro <input type="text" class="f-reg ${r && r.registroProblem ? 'warn' : ''}" inputmode="numeric" value="${escapeHtml(sheet.registro)}"></label>
+        <label>N° de registro <input type="text" class="f-reg ${sheet.registro ? '' : 'warn'}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
         <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
           L.modalidades.map((m, i) => `<option value="${i}" ${sheet.modalidad === i ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></label>
         <div class="score">Puntaje <b>${score.total}</b> / ${score.max}</div>`;
       card.appendChild(fields);
-      fields.querySelector('.f-name').addEventListener('change', (e) => { sheet.nombre = e.target.value; save(); });
-      fields.querySelector('.f-reg').addEventListener('change', (e) => { sheet.registro = e.target.value.trim(); save(); });
+      fields.querySelector('.f-name').addEventListener('change', (e) => { sheet.nombre = e.target.value.trim(); touch(sheet); });
+      fields.querySelector('.f-reg').addEventListener('change', (e) => { sheet.registro = e.target.value.trim(); e.target.classList.toggle('warn', !sheet.registro); touch(sheet); });
       fields.querySelector('.f-mod').addEventListener('change', (e) => {
-        sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); save();
+        sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); touch(sheet);
       });
 
       const rows = document.createElement('div');
@@ -348,7 +367,7 @@
           chip.addEventListener('click', () => {
             const a = sheet.answers[q];
             sheet.answers[q] = a.includes(o) ? a.filter((x) => x !== o) : [...a, o].sort();
-            save(); renderCards();
+            touch(sheet); renderCards();
           });
           row.appendChild(chip);
         }
@@ -371,12 +390,17 @@
         card.appendChild(det);
       }
       const warn = [];
-      if (r && r.registroProblem) warn.push('revisá el número de registro');
       if (r && r.modalidadProblem) warn.push('revisá la modalidad');
       const nr = sheet.answers.filter((a) => a.length === 0).length;
       if (nr) warn.push(`${nr} pregunta(s) sin marcar`);
       const nd = r ? r.flags.filter((f) => f.dubious).length : 0;
       if (nd) warn.push(`${nd} pregunta(s) con marcas dudosas`);
+      const regWarn = document.createElement('p');
+      regWarn.className = 'warn-text';
+      regWarn.textContent = '⚠ falta cargar el número de registro';
+      regWarn.hidden = !!sheet.registro;
+      card.insertBefore(regWarn, rows);
+      fields.querySelector('.f-reg').addEventListener('input', (e) => { regWarn.hidden = !!e.target.value.trim(); });
       if (warn.length) {
         const w = document.createElement('p');
         w.className = 'warn-text'; w.textContent = '⚠ ' + warn.join(' · ');
@@ -406,10 +430,11 @@
     }
     t.innerHTML = `<table><thead><tr><th>Registro</th><th>Nombre</th><th>Modalidad</th><th>Puntaje</th><th>Máx.</th><th>%</th></tr></thead><tbody>${
       rows.map(({ s, score }) => {
-        const dup = regCount[s.registro] > 1 || /\?/.test(s.registro);
-        return `<tr><td class="${dup ? 'warn' : ''}">${escapeHtml(s.registro)}${dup ? ' ⚠' : ''}</td><td>${escapeHtml(s.nombre || '')}</td><td>${
+        const dup = !s.registro || regCount[s.registro] > 1;
+        const img = (k) => (s.crops && s.crops[k] ? `<img class="mini" alt="" src="${s.crops[k]}">` : '');
+        return `<tr><td class="${dup ? 'warn' : ''}">${s.registro ? escapeHtml(s.registro) : img('reg') || 'falta'}${dup ? ' ⚠' : ''}</td><td>${s.nombre ? escapeHtml(s.nombre) : img('name')}</td><td>${
           s.modalidad == null ? '' : escapeHtml(L.modalidades[s.modalidad] || '')}</td><td><b>${score.total}</b></td><td>${score.max}</td><td>${score.percent}%</td></tr>`;
-      }).join('')}</tbody></table><p class="muted">${rows.length} hoja(s). ⚠ = registro repetido o con dígitos sin leer.</p>`;
+      }).join('')}</tbody></table><p class="muted">${rows.length} hoja(s). ⚠ = registro repetido o sin cargar.</p>`;
 
     const stats = [];
     for (let q = 0; q < L.numQuestions; q++) {
@@ -463,7 +488,7 @@
 
   $('clear-all').addEventListener('click', () => {
     if (!state.sheets.length || !confirm('¿Borrar todas las hojas corregidas?')) return;
-    state.sheets = []; memory.clear(); save(); renderResults();
+    state.sheets.slice().forEach((x) => removeSheet(x.id)); save(); renderResults();
   });
 
   function escapeHtml(s) {

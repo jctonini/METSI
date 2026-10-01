@@ -81,11 +81,13 @@ function renderPhoto(layout, marks, opts) {
     }
   }
 
-  // Manchas de "texto" cerca de los bordes para que haya ruido en la imagen.
-  for (let k = 0; k < 60; k++) {
-    const sx = 20 + rand() * 170, sy = 20 + rand() * 40;
+  // Manchas de "texto" para que haya ruido en la imagen.
+  for (let k = 0; k < 40; k++) {
+    const sx = 18 + rand() * 110, sy = 14 + rand() * 6;
     paint(sx, sy, sx + 1.5, sy + 0.4, () => true);
   }
+  // Tinta extra en zonas indicadas (por ejemplo, escritura a mano), en mm de la hoja.
+  for (const r of opts.ink || []) paint(r.x, r.y, r.x + r.w, r.y + r.h, () => true);
 
   // Desenfoque 3x3, iluminación despareja y ruido.
   const out = new Uint8ClampedArray(W * Hh * 4);

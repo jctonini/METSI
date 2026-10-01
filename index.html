@@ -23,9 +23,9 @@
       <h2>Configuración del examen</h2>
       <div class="grid">
         <label>Título del examen <input id="cfg-title" type="text" placeholder="1er parcial"></label>
-        <label>Cantidad de preguntas (1–66) <input id="cfg-q" type="number" min="1" max="66"></label>
+        <label>Cantidad de preguntas <input id="cfg-q" type="number" min="1" max="66"></label>
         <label>Opciones por pregunta <select id="cfg-opts"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label>
-        <label>Dígitos del número de registro <input id="cfg-digits" type="number" min="1" max="9"></label>
+        <label>Casilleros para el número de registro <input id="cfg-digits" type="number" min="1" max="9"></label>
         <label class="wide">Modalidades de cursada (una por línea, máx. 8)
           <textarea id="cfg-mod" rows="3"></textarea></label>
       </div>
@@ -49,8 +49,15 @@
     <!-- 2. HOJA -->
     <section id="tab-sheet" class="tab">
       <h2>Hoja de respuestas</h2>
-      <p class="hint">Imprimila en A4 al 100% (sin "ajustar a la página") y repartila a los alumnos. Es la misma para todos; tiene que estar impresa en negro y sin recortar las esquinas.</p>
-      <button id="print-sheet" class="primary">Imprimir / guardar como PDF</button>
+      <p class="hint">La hoja es de tamaño A5 (la mitad de una A4). Imprimila al 100% (sin "ajustar a la página") y repartila a los alumnos; es la misma para todos. Tiene que salir en negro y con las 4 marcas de las esquinas sin recortar. El alumno escribe a mano su nombre y su número de registro, y marca la modalidad y las respuestas.</p>
+      <div class="actions">
+        <label>Formato de impresión
+          <select id="print-mode">
+            <option value="2">2 hojas por A4 apaisada (cortar por la mitad)</option>
+            <option value="1">Una hoja A5</option>
+          </select></label>
+        <button id="print-sheet" class="primary">Imprimir / guardar como PDF</button>
+      </div>
       <div id="sheet-preview" class="sheet-preview"></div>
     </section>
 
@@ -90,6 +97,9 @@
       <div id="item-stats"></div>
     </section>
   </main>
+
+  <div id="print-area"></div>
+  <style id="page-style"></style>
 
   <script src="js/layout.js"></script>
   <script src="js/scoring.js"></script>

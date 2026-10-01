@@ -65,17 +65,34 @@ test('csv escapa separadores y comillas', () => {
 
 // ---------- layout ----------
 test('layout: sin burbujas superpuestas ni fuera de la hoja', () => {
-  for (const q of [10, 20, 45, 66]) {
-    const L = buildLayout({ numQuestions: q, numOptions: 5, regDigits: 9, modalidades: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] });
-    assert.equal(L.bubbles.filter((b) => b.kind === 'ans').length, q * 5);
+  const mods8 = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  for (const [q, opts, mods] of [[10, 4, ['a', 'b']], [20, 5, ['a', 'b', 'c']], [38, 5, ['a', 'b']], [57, 4, ['a', 'b']], [16, 6, mods8]]) {
+    const L = buildLayout({ numQuestions: q, numOptions: opts, regDigits: 9, modalidades: mods });
+    assert.equal(L.numQuestions, q, `capacidad insuficiente para ${q}x${opts}`);
+    assert.equal(L.bubbles.filter((b) => b.kind === 'ans').length, q * opts);
     for (const b of L.bubbles) {
-      assert.ok(b.x > 20 && b.x < 190 && b.y > 55 && b.y < 270, `fuera de zona: ${JSON.stringify(b)}`);
+      assert.ok(b.x > 14 && b.x < 134 && b.y > 55 && b.y < 193, `fuera de zona: ${JSON.stringify(b)}`);
     }
     for (let i = 0; i < L.bubbles.length; i++) {
       for (let j = i + 1; j < L.bubbles.length; j++) {
         const a = L.bubbles[i], c = L.bubbles[j];
         assert.ok(Math.hypot(a.x - c.x, a.y - c.y) > 2 * L.r + 0.8, `superpuestas ${JSON.stringify([a, c])}`);
       }
+    }
+  }
+});
+
+test('layout: la capacidad se limita y avisa', () => {
+  const L = buildLayout({ numQuestions: 500, numOptions: 5, modalidades: ['a', 'b'] });
+  assert.equal(L.numQuestions, L.maxQuestions);
+  assert.ok(L.maxQuestions >= 36);
+});
+test('layout: los campos manuscritos no pisan burbujas', () => {
+  const L = buildLayout({ numQuestions: 20, numOptions: 5, regDigits: 9, modalidades: ['a', 'b'] });
+  for (const f of [L.fields.name, L.fields.reg]) {
+    for (const b of L.bubbles) {
+      const inside = b.x > f.x - L.r && b.x < f.x + f.w + L.r && b.y > f.y - L.r && b.y < f.y + f.h + L.r;
+      assert.equal(inside, false);
     }
   }
 });
@@ -87,7 +104,6 @@ function makeExam(cfg, seed, opts) {
   opts = opts || {};
   const L = buildLayout(cfg);
   const rand = rng(seed);
-  const registro = Array.from({ length: L.regDigits }, () => Math.floor(rand() * 10));
   const modalidad = Math.floor(rand() * L.modalidades.length);
   const answers = Array.from({ length: L.numQuestions }, () => {
     const set = new Set();
@@ -98,11 +114,10 @@ function makeExam(cfg, seed, opts) {
   const marks = [];
   const kind = opts.kind || 'fill';
   for (const b of L.bubbles) {
-    if (b.kind === 'reg' && registro[b.col] === b.digit) marks.push({ x: b.x, y: b.y, kind });
     if (b.kind === 'mod' && modalidad === b.index) marks.push({ x: b.x, y: b.y, kind });
     if (b.kind === 'ans' && answers[b.q].includes(b.opt)) marks.push({ x: b.x, y: b.y, kind });
   }
-  return { L, registro, modalidad, answers, marks };
+  return { L, modalidad, answers, marks };
 }
 
 function checkRead(exam, photoOpts) {
@@ -110,7 +125,6 @@ function checkRead(exam, photoOpts) {
   const scan = scanImage(img, exam.L);
   assert.ok(scan.ok, scan.error);
   const r = interpret(scan, 0.25);
-  assert.equal(r.registro, exam.registro.join(''));
   assert.equal(r.modalidad, exam.modalidad);
   assert.deepEqual(r.answers, exam.answers);
   assert.equal(r.flags.some((f) => f.dubious || f.blank), false, 'no debería haber dudosas');
@@ -154,14 +168,25 @@ test('pregunta en blanco y marca tenue se señalan', () => {
   for (let q = 0; q < 20; q++) if (q !== 3 && q !== 4) assert.deepEqual(r.answers[q], exam.answers[q]);
 });
 
-test('registro con dígito sin marcar devuelve ?', () => {
+test('recorta nombre y registro de la foto, enderezados', () => {
+  const { cropRegion } = require('../js/scanner.js');
   const exam = makeExam(CFG10, 41);
-  const drop = exam.L.bubbles.find((b) => b.kind === 'reg' && b.col === 2 && b.digit === exam.registro[2]);
-  exam.marks = exam.marks.filter((m) => !(m.x === drop.x && m.y === drop.y));
-  const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 4 }), exam.L);
-  const r = interpret(scan, 0.25);
-  assert.equal(r.registro[2], '?');
-  assert.equal(r.registroProblem, true);
+  const f = exam.L.fields;
+  // "Escritura" simulada: una franja oscura en la mitad izquierda de los casilleros del registro.
+  const ink = [{ x: f.reg.x + 3, y: f.reg.y + 4, w: 20, h: 3 }];
+  const img = renderPhoto(exam.L, exam.marks, { seed: 4, ink });
+  const scan = scanImage(img, exam.L);
+  assert.ok(scan.ok, scan.error);
+  const crop = cropRegion(img, scan.H, f.reg, 10);
+  assert.equal(crop.width, Math.round(f.reg.w * 10));
+  assert.equal(crop.height, Math.round(f.reg.h * 10));
+  const mean = (x0, x1) => {
+    let s = 0, n = 0;
+    for (let y = 0; y < crop.height; y++) for (let x = x0; x < x1; x++) { s += crop.data[(y * crop.width + x) * 4]; n++; }
+    return s / n;
+  };
+  const dark = mean(40, 200), clean = mean(crop.width - 150, crop.width - 10);
+  assert.ok(dark < clean - 20, `la zona con tinta debe verse más oscura (${dark} vs ${clean})`);
 });
 
 test('foto sin hoja devuelve error claro', () => {

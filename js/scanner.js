@@ -179,9 +179,15 @@
         sum += v; n++;
       }
     }
-    // Se compara con el papel unos mm más abajo de la barra.
-    const q = applyH(H, b.x, b.y + 7);
-    const paper = sampleGray(g, w, h, q.x, q.y) || 255;
+    // Se compara con el papel unos mm más abajo de la barra (mediana de varios puntos).
+    const ref = [];
+    for (let i = -2; i <= 2; i++) {
+      const q = applyH(H, b.x + i * (b.w / 5), b.y + 4.5);
+      const v = sampleGray(g, w, h, q.x, q.y);
+      if (v !== null) ref.push(v);
+    }
+    ref.sort((a, c) => a - c);
+    const paper = ref.length ? ref[ref.length >> 1] : 255;
     return 1 - sum / n / Math.max(40, paper);
   }
 
@@ -192,7 +198,7 @@
   }
 
   // ---------- API ----------
-  // Devuelve { ok:true, H, scores:{ reg:[col][dígito], mod:[i], ans:[q][opción] } }
+  // Devuelve { ok:true, H, scores:{ mod:[i], ans:[q][opción] } }
   // o { ok:false, error }.
   function scanImage(img, layout) {
     const { width: w, height: h } = img;
@@ -226,7 +232,6 @@
     }
 
     const scores = {
-      reg: Array.from({ length: layout.regDigits }, () => new Array(10).fill(0)),
       mod: new Array(layout.modalidades.length).fill(0),
       ans: Array.from({ length: layout.numQuestions }, () => new Array(layout.numOptions).fill(0)),
     };
@@ -235,8 +240,7 @@
       if (s === null) {
         return { ok: false, error: 'Parte de la hoja quedó fuera de la foto. Sacala de nuevo con la hoja completa.' };
       }
-      if (b.kind === 'reg') scores.reg[b.col][b.digit] = s;
-      else if (b.kind === 'mod') scores.mod[b.index] = s;
+      if (b.kind === 'mod') scores.mod[b.index] = s;
       else scores.ans[b.q][b.opt] = s;
     }
     return { ok: true, H, rotated, scores };
@@ -250,14 +254,6 @@
     const dubious = (s) => s >= lo && s <= hi;
     const pickMarked = (arr) => arr.map((s, i) => (s >= thr ? i : -1)).filter((i) => i >= 0);
 
-    const regDigits = scan.scores.reg.map((col) => {
-      const marked = pickMarked(col);
-      return {
-        digit: marked.length === 1 ? marked[0] : null,
-        problem: marked.length !== 1 || col.some(dubious),
-      };
-    });
-    const registro = regDigits.map((d) => (d.digit === null ? '?' : String(d.digit))).join('');
     const modMarked = pickMarked(scan.scores.mod);
     const modalidad = modMarked.length === 1 ? modMarked[0] : null;
     const answers = scan.scores.ans.map(pickMarked);
@@ -266,8 +262,6 @@
       dubious: arr.some(dubious),
     }));
     return {
-      registro,
-      registroProblem: regDigits.some((d) => d.problem),
       modalidad,
       modalidadProblem: scan.scores.mod.length > 0 && (modMarked.length !== 1 || scan.scores.mod.some(dubious)),
       answers,
@@ -275,5 +269,23 @@
     };
   }
 
-  return { scanImage, interpret, solveHomography, applyH, toGray, binarize, components };
+  // Recorta del frame una zona rectangular de la hoja (en mm), ya enderezada.
+  // Devuelve { width, height, data } RGBA con `pxPerMm` píxeles por mm.
+  function cropRegion(img, H, rect, pxPerMm) {
+    const w = Math.round(rect.w * pxPerMm), h = Math.round(rect.h * pxPerMm);
+    const g = toGray(img);
+    const data = new Uint8ClampedArray(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const p = applyH(H, rect.x + (x + 0.5) / pxPerMm, rect.y + (y + 0.5) / pxPerMm);
+        const v = sampleGray(g, img.width, img.height, p.x, p.y);
+        const i = (y * w + x) * 4;
+        data[i] = data[i + 1] = data[i + 2] = v === null ? 255 : v;
+        data[i + 3] = 255;
+      }
+    }
+    return { width: w, height: h, data };
+  }
+
+  return { scanImage, interpret, cropRegion, solveHomography, applyH, toGray, binarize, components };
 });
