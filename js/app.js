@@ -5,32 +5,59 @@
   const { sheetSVG } = MetsiSheet;
   const { scanImage, interpret, applyH } = MetsiScanner;
   const { toDelimited, formatNumber } = MetsiCsv;
+  const { mergeStates } = MetsiMerge;
 
   const $ = (id) => document.getElementById(id);
   const STORAGE_KEY = 'metsi.corrector.v1';
+  const SETTINGS_KEY = 'metsi.settings.v1';
   const MAX_SIDE = 1600; // lado mayor con el que se analiza cada foto
   const THUMB_SIDE = 900; // lado mayor de la imagen que se conserva para revisar
 
   // ---------- estado ----------
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const defaults = () => ({
+    examId: newId(),
+    examCreatedAt: Date.now(),
     cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'Virtual'], penalty: 1, threshold: 0.25 },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
+    deleted: {},
+    cfgUpdatedAt: 0,
+    cfgHash: '',
+    lastSync: 0,
+    driveFolderName: '',
   });
   let state = load();
-  let nextId = state.sheets.reduce((m, s) => Math.max(m, s.id), 0) + 1;
-  const memory = new Map(); // id -> { thumb, scan, error } (no se guarda en localStorage)
+  const memory = new Map(); // id -> { thumb } (fotos en memoria; no se guardan en localStorage)
 
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (s && s.cfg && s.key && s.sheets) return s;
+      if (s && s.cfg && s.key && s.sheets) {
+        const merged = Object.assign(defaults(), s);
+        merged.sheets.forEach((sh) => { sh.id = String(sh.id); sh.createdAt = sh.createdAt || 0; sh.updatedAt = sh.updatedAt || 0; });
+        return merged;
+      }
     } catch (e) { /* sin almacenamiento: se usa el estado por defecto */ }
     return defaults();
   }
   function save() {
+    // Si cambió la configuración o la clave, se marca como modificada (para la sincronización).
+    const h = JSON.stringify([state.cfg, state.key]);
+    if (h !== state.cfgHash) { state.cfgHash = h; state.cfgUpdatedAt = Date.now(); }
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignorado */ }
+    updateSyncBar();
   }
+  const touch = (sheet) => { sheet.updatedAt = Date.now(); save(); };
+  function removeSheet(id) {
+    state.sheets = state.sheets.filter((x) => x.id !== id);
+    state.deleted[id] = Date.now();
+    memory.delete(id);
+  }
+
+  const loadSettings = () => { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (e) { return {}; } };
+  const saveSettings = (s) => { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (e) { /* ignorado */ } };
+  const clientId = () => (loadSettings().clientId || window.METSI_GOOGLE_CLIENT_ID || '').trim();
 
   const layout = () => buildLayout(state.cfg);
   const letters = (arr) => arr.map((i) => LETTERS[i]).join('');
@@ -66,6 +93,7 @@
   function confirmClearIfNeeded() {
     if (!state.sheets.length) return true;
     if (!confirm('Cambiar la estructura de la hoja borra las hojas ya corregidas. ¿Continuar?')) return false;
+    state.sheets.forEach((s) => { state.deleted[s.id] = Date.now(); });
     state.sheets = [];
     memory.clear();
     return true;
@@ -199,8 +227,9 @@
   }
 
   async function processFile(file) {
-    const id = nextId++;
+    const id = newId();
     const L = layout();
+    const now = Date.now();
     try {
       const bmp = await loadBitmap(file);
       const bw = bmp.width || bmp.naturalWidth, bh = bmp.height || bmp.naturalHeight;
@@ -211,30 +240,34 @@
       ctx.drawImage(bmp, 0, 0, c.width, c.height);
       const img = ctx.getImageData(0, 0, c.width, c.height);
       const scan = scanImage(img, L);
-      if (!scan.ok) {
-        state.sheets.push({ id, fileName: file.name, failed: true, error: scan.error, answers: [], registro: '', modalidad: null, nombre: '' });
-        return;
-      }
+      const fail = (error) => state.sheets.push({ id, fileName: file.name, failed: true, error, answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now });
+      if (!scan.ok) { fail(scan.error); return; }
       const t = document.createElement('canvas');
       const tk = Math.min(1, THUMB_SIDE / Math.max(c.width, c.height));
       t.width = Math.round(c.width * tk); t.height = Math.round(c.height * tk);
       t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
-      memory.set(id, { thumb: t, scan, scale: tk });
+      memory.set(id, { thumb: t });
       const r = interpret(scan, state.cfg.threshold);
+      const p7 = (v) => Number(v.toPrecision(7));
+      const p3 = (v) => Math.round(v * 1000) / 1000;
       state.sheets.push({
         id, fileName: file.name, failed: false, nombre: '', registro: r.registro, modalidad: r.modalidad,
-        answers: r.answers,
+        answers: r.answers, createdAt: now, updatedAt: now, photoId: null,
+        // Datos para revisar más tarde (también desde otro dispositivo): homografía ya
+        // escalada a la miniatura y puntajes de cada burbuja.
+        scan: {
+          H: scan.H.map((v, i) => p7(i < 6 ? v * tk : v)),
+          scores: { reg: scan.scores.reg.map((a) => a.map(p3)), mod: scan.scores.mod.map(p3), ans: scan.scores.ans.map((a) => a.map(p3)) },
+        },
       });
     } catch (err) {
-      state.sheets.push({ id, fileName: file.name, failed: true, error: 'No se pudo abrir la imagen.', answers: [], registro: '', modalidad: null, nombre: '' });
+      state.sheets.push({ id, fileName: file.name, failed: true, error: 'No se pudo abrir la imagen.', answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now });
     }
   }
 
-  // Burbujas dudosas según la sensibilidad actual (solo mientras la foto está en memoria).
+  // Dudas de lectura según la sensibilidad actual (usa los puntajes guardados de la hoja).
   function flagsFor(sheet) {
-    const mem = memory.get(sheet.id);
-    if (!mem) return null;
-    return interpret(mem.scan, state.cfg.threshold);
+    return sheet.scan ? interpret(sheet.scan, state.cfg.threshold) : null;
   }
 
   function drawOverlay(canvas, sheet, mem) {
@@ -242,9 +275,10 @@
     canvas.width = mem.thumb.width; canvas.height = mem.thumb.height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(mem.thumb, 0, 0);
-    const s = mem.scale * (mem.scan.imgScale || 1);
-    const pts = (b) => { const p = applyH(mem.scan.H, b.x, b.y); return { x: p.x * s, y: p.y * s }; };
-    const rad = Math.max(3, Math.abs(applyH(mem.scan.H, 0, 0).x - applyH(mem.scan.H, 2.2, 0).x) * s);
+    const H = sheet.scan.H;
+    const pts = (b) => applyH(H, b.x, b.y);
+    const o = applyH(H, 0, 0), e = applyH(H, 2.2, 0);
+    const rad = Math.max(3, Math.hypot(o.x - e.x, o.y - e.y));
     for (const b of L.bubbles) {
       let marked = false;
       if (b.kind === 'ans') marked = sheet.answers[b.q] && sheet.answers[b.q].includes(b.opt);
@@ -435,6 +469,9 @@
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
+
+  // Se completa con la sincronización con Drive.
+  function updateSyncBar() {}
 
   // ---------- inicio ----------
   fillConfig();
