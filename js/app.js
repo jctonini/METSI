@@ -1,6 +1,6 @@
 // Interfaz de la app: configuración del examen, hoja imprimible, corrección por foto y resultados.
 (function () {
-  const { buildLayout, maxQuestionsFor, LETTERS } = MetsiLayout;
+  const { buildLayout, maxQuestionsFor, DEFAULT_TEXTS, LETTERS } = MetsiLayout;
   const { scoreSheet } = MetsiScoring;
   const { sheetSVG } = MetsiSheet;
   const { scanImage, interpret, applyH, cropRegion } = MetsiScanner;
@@ -18,7 +18,8 @@
   const defaults = () => ({
     examId: newId(),
     examCreatedAt: Date.now(),
-    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 1, threshold: 0.25 },
+    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 1, threshold: 0.25,
+      sheet: { subtitle: '', nameLabel: '', regLabel: '', modLabel: '', instructions: '', logo: '' } },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
     deleted: {},
@@ -27,6 +28,8 @@
     lastSync: 0,
     driveFolderName: '',
   });
+  // Completa campos nuevos en estados guardados antes (o provenientes de otro dispositivo).
+  const fixCfg = (st) => { st.cfg.sheet = Object.assign({}, defaults().cfg.sheet, st.cfg.sheet); return st; };
   let state = load();
   const memory = new Map(); // id -> { thumb } (fotos en memoria; no se guardan en localStorage)
 
@@ -34,7 +37,7 @@
     try {
       const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (s && s.cfg && s.key && s.sheets) {
-        const merged = Object.assign(defaults(), s);
+        const merged = fixCfg(Object.assign(defaults(), s));
         merged.sheets.forEach((sh) => { sh.id = String(sh.id); sh.createdAt = sh.createdAt || 0; sh.updatedAt = sh.updatedAt || 0; });
         return merged;
       }
@@ -80,6 +83,7 @@
   }
 
   // ---------- 1. examen ----------
+  const SHEET_FIELDS = [['sh-subtitle', 'subtitle'], ['sh-name', 'nameLabel'], ['sh-reg', 'regLabel'], ['sh-mod', 'modLabel'], ['sh-instr', 'instructions']];
   function fillConfig() {
     const c = state.cfg;
     $('cfg-title').value = c.title;
@@ -90,6 +94,12 @@
     $('cfg-mod').value = c.modalidades.join('\n');
     $('cfg-penalty').value = String(c.penalty);
     $('cfg-thr').value = String(c.threshold);
+    for (const [id, k] of SHEET_FIELDS) {
+      $(id).value = c.sheet[k] || '';
+      $(id).placeholder = DEFAULT_TEXTS[k] || '';
+    }
+    $('sh-logo-prev').hidden = !c.sheet.logo;
+    $('sh-logo-prev').src = c.sheet.logo || '';
   }
 
   function confirmClearIfNeeded() {
@@ -197,6 +207,29 @@
   }
 
   // ---------- 2. hoja ----------
+  for (const [id, k] of SHEET_FIELDS) {
+    $(id).addEventListener('input', (e) => { state.cfg.sheet[k] = e.target.value; save(); renderSheet(); });
+  }
+  $('sh-logo-file').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const bmp = await loadBitmap(f);
+      const w0 = bmp.width || bmp.naturalWidth, h0 = bmp.height || bmp.naturalHeight;
+      const k = Math.min(1, 330 / w0, 170 / h0);
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w0 * k)); c.height = Math.max(1, Math.round(h0 * k));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(bmp, 0, 0, c.width, c.height);
+      let url = c.toDataURL('image/png');
+      if (url.length > 90000) url = c.toDataURL('image/jpeg', 0.85);
+      state.cfg.sheet.logo = url;
+      save(); fillConfig(); renderSheet();
+    } catch (err) { alert('No se pudo abrir esa imagen.'); }
+  });
+  $('sh-logo-clear').addEventListener('click', () => { state.cfg.sheet.logo = ''; save(); fillConfig(); renderSheet(); });
   function renderSheet() {
     $('sheet-preview').innerHTML = sheetSVG(layout());
   }
@@ -612,7 +645,7 @@
       const remote = await drive.readJson(folderId, 'datos.json');
       if (remote && remote.examId === state.examId) {
         const before = state.cfgUpdatedAt;
-        state = Object.assign(defaults(), mergeStates(state, remote));
+        state = fixCfg(Object.assign(defaults(), mergeStates(state, remote)));
         if (state.cfgUpdatedAt !== before) { fillConfig(); renderKey(); }
       }
 
@@ -700,7 +733,7 @@
       const remote = await drive.readJson(ex.folderId, 'datos.json');
       if (!remote) { alert('Ese examen no tiene datos guardados.'); return; }
       memory.clear();
-      state = Object.assign(defaults(), remote, { lastSync: Date.now(), driveFolderName: ex.name });
+      state = fixCfg(Object.assign(defaults(), remote, { lastSync: Date.now(), driveFolderName: ex.name }));
       state.sheets.forEach((sh) => { sh.id = String(sh.id); });
       save();
       refreshAll();

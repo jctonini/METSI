@@ -7,6 +7,7 @@ Se usa desde el navegador del celular o de la PC. Los resultados se sincronizan 
 
 1. **Examen**: cargá título, cantidad de preguntas, opciones por pregunta (2 a 6), casilleros del número de registro y las modalidades de cursada. Marcá las respuestas correctas de cada pregunta (puede haber varias) y su puntaje.
 2. **Hoja**: imprimí la hoja de respuestas. Es de tamaño **A5** y se imprimen **2 por hoja A4** apaisada (después se corta por la mitad). Es la misma para todos los alumnos del examen.
+   En la pestaña **Hoja** podés personalizar el encabezado (línea de materia/comisión/fecha), las etiquetas, las instrucciones del pie y poner tu **logo**. Los textos largos se ajustan solos y la grilla no se modifica, así la lectura de las fotos siempre funciona.
    El alumno escribe a mano su **nombre y apellido** y su **número de registro** (en los casilleros), marca su **modalidad de cursada** y rellena las burbujas de las respuestas.
 3. **Corregir**: sacá una foto de cada hoja (entera, en vertical, bien iluminada) o elegí fotos de la galería. La app lee las marcas de respuesta y la modalidad, y calcula el puntaje. El nombre y el registro son manuscritos: la app los **recorta de la foto y los muestra** para que los cargues mirando la imagen. Señala lo dudoso para que lo revises.
 4. **Resultados**: tabla con puntajes y aciertos por pregunta. Se descarga como CSV (Excel en español o Google Sheets) o se copia para pegar directo en una planilla.

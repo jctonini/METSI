@@ -63,6 +63,20 @@
           </select></label>
         <button id="print-sheet" class="primary">Imprimir / guardar como PDF</button>
       </div>
+      <h3>Personalizar la hoja</h3>
+      <p class="hint">El título se cambia en la pestaña <b>Examen</b>. Los textos largos se ajustan solos al espacio disponible; la grilla de respuestas no se modifica, así la lectura de las fotos siempre funciona. Dejá un campo vacío para usar el texto por defecto.</p>
+      <div class="grid">
+        <label class="wide">Línea de encabezado (materia, comisión, fecha, docente…) <input id="sh-subtitle" type="text" maxlength="120"></label>
+        <label>Etiqueta del nombre <input id="sh-name" type="text" maxlength="30"></label>
+        <label>Etiqueta del registro <input id="sh-reg" type="text" maxlength="40"></label>
+        <label class="wide">Etiqueta de la modalidad <input id="sh-mod" type="text" maxlength="60"></label>
+        <label class="wide">Instrucciones del pie <input id="sh-instr" type="text" maxlength="110"></label>
+        <div class="wide logo-row">
+          <label class="btn">🖼 Elegir logo <input id="sh-logo-file" type="file" accept="image/*" hidden></label>
+          <button id="sh-logo-clear" type="button">Quitar logo</button>
+          <img id="sh-logo-prev" alt="Logo" hidden>
+        </div>
+      </div>
       <div id="sheet-preview" class="sheet-preview"></div>
     </section>
 

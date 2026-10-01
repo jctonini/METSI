@@ -149,6 +149,31 @@ test('hoja dada vuelta 180°', () => {
 });
 test('marcas con cruz', () => checkRead(makeExam(CFG20, 23, { kind: 'cross' }), { seed: 10 }));
 
+test('lee bien con un logo oscuro grande junto a la esquina', () => {
+  const exam = makeExam(CFG20, 61);
+  const lr = exam.L.logoRect;
+  const img = renderPhoto(exam.L, exam.marks, { seed: 12, ink: [{ x: lr.x, y: lr.y, w: lr.w, h: lr.h }] });
+  const scan = scanImage(img, exam.L);
+  assert.ok(scan.ok, scan.error);
+  assert.deepEqual(interpret(scan, 0.25).answers, exam.answers);
+});
+test('layout: textos personalizados con valores por defecto', () => {
+  const L = buildLayout({ title: ' 1er parcial ', sheet: { subtitle: 'Metsi · Com. 3', nameLabel: '', logo: 'data:image/png;base64,AA' } });
+  assert.equal(L.texts.title, '1er parcial');
+  assert.equal(L.texts.subtitle, 'Metsi · Com. 3');
+  assert.equal(L.texts.nameLabel, 'Nombre y apellido:');
+  assert.equal(L.texts.logo, 'data:image/png;base64,AA');
+  assert.equal(buildLayout({}).texts.title, 'Hoja de respuestas');
+});
+test('hoja: los textos se escapan y los largos se comprimen', () => {
+  const { sheetSVG } = require('../js/sheet.js');
+  const L = buildLayout({ title: 'A<B & "C"', sheet: { subtitle: 'x'.repeat(120), regLabel: 'y'.repeat(40) }, modalidades: ['a'] });
+  const svg = sheetSVG(L);
+  assert.ok(svg.includes('A&lt;B &amp; &quot;C&quot;'));
+  assert.ok(/textLength=/.test(svg), 'debería comprimir textos largos');
+  assert.equal(svg.includes('<B'), false);
+});
+
 test('pregunta en blanco y marca tenue se señalan', () => {
   const exam = makeExam(CFG20, 31);
   // Borra todas las marcas de la pregunta 3 y deja una tenue en la pregunta 4.

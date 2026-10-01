@@ -53,6 +53,17 @@
     return best;
   }
 
+  const DEFAULT_TEXTS = {
+    subtitle: '',
+    nameLabel: 'Nombre y apellido:',
+    regLabel: 'N° de registro:',
+    modLabel: 'Modalidad de cursada (marcá una)',
+    instructions: 'Rellená por completo el círculo con birome o lápiz oscuro.',
+    logo: '',
+  };
+  // Área reservada para el logo (arriba a la izquierda, junto a la marca de la esquina).
+  const LOGO_RECT = { x: 16, y: 14.5, w: 22, h: 11.5 };
+
   function buildLayout(cfg) {
     cfg = cfg || {};
     const numOptions = clampInt(cfg.numOptions, LIMITS.minOptions, LIMITS.maxOptions, 4);
@@ -104,12 +115,20 @@
       }
     }
 
+    const custom = cfg.sheet || {};
+    const texts = {};
+    for (const k of Object.keys(DEFAULT_TEXTS)) {
+      const v = typeof custom[k] === 'string' ? custom[k].trim() : '';
+      texts[k] = v || (k === 'subtitle' || k === 'logo' ? '' : DEFAULT_TEXTS[k]);
+    }
+    texts.title = (cfg.title || '').trim() || 'Hoja de respuestas';
+
     return {
-      page: PAGE, markers: MARKERS, markerSize: MARKER_SIZE, orientationBar: ORIENTATION_BAR,
+      page: PAGE, markers: MARKERS, texts, logoRect: LOGO_RECT, markerSize: MARKER_SIZE, orientationBar: ORIENTATION_BAR,
       r: BUBBLE_R, numQuestions, numOptions, regDigits, modalidades, maxQuestions: maxQ,
       title: cfg.title || '', fields, mod, ans, bubbles, letters: LETTERS.slice(0, numOptions),
     };
   }
 
-  return { buildLayout, maxQuestionsFor, LIMITS, LETTERS, PAGE, MARKERS, MARKER_SIZE, ORIENTATION_BAR, BUBBLE_R };
+  return { buildLayout, maxQuestionsFor, DEFAULT_TEXTS, LIMITS, LETTERS, PAGE, MARKERS, MARKER_SIZE, ORIENTATION_BAR, BUBBLE_R };
 });

@@ -7,8 +7,14 @@
 
   function sheetSVG(L) {
     const o = [];
-    const text = (x, y, s, size, extra) =>
-      o.push(`<text x="${x}" y="${y}" font-size="${size}" ${extra || ''}>${esc(s)}</text>`);
+    // Si el texto es más largo que el espacio disponible, se comprime para que no pise nada.
+    const text = (x, y, s, size, extra, maxW) => {
+      const bold = /bold/.test(extra || '');
+      const est = String(s).length * size * (bold ? 0.6 : 0.55);
+      const fit = maxW && est > maxW ? ` textLength="${maxW}" lengthAdjust="spacingAndGlyphs"` : '';
+      o.push(`<text x="${x}" y="${y}" font-size="${size}" ${extra || ''}${fit}>${esc(s)}</text>`);
+    };
+    const T = L.texts;
 
     o.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.page.w} ${L.page.h}" width="${L.page.w}mm" height="${L.page.h}mm" font-family="Arial, Helvetica, sans-serif" fill="#000">`);
     o.push(`<rect width="${L.page.w}" height="${L.page.h}" fill="#fff"/>`);
@@ -20,11 +26,19 @@
     o.push(`<rect x="${b.x - b.w / 2}" y="${b.y - b.h / 2}" width="${b.w}" height="${b.h}"/>`);
 
     // Encabezado: nombre y registro se escriben a mano
-    text(L.page.w / 2, 22, L.title || 'Hoja de respuestas', 4.6, 'text-anchor="middle" font-weight="bold"');
-    text(16, 30, 'Nombre y apellido:', 3.2);
+    const lr = L.logoRect;
+    const hasLogo = !!T.logo;
+    if (hasLogo) {
+      o.push(`<image href="${esc(T.logo)}" x="${lr.x}" y="${lr.y}" width="${lr.w}" height="${lr.h}" preserveAspectRatio="xMidYMid meet"/>`);
+    }
+    const hx0 = hasLogo ? 42 : 16, hx1 = 132;
+    const hc = (hx0 + hx1) / 2;
+    text(hc, T.subtitle ? 20.5 : 22, T.title, 4.6, 'text-anchor="middle" font-weight="bold"', hx1 - hx0);
+    if (T.subtitle) text(hc, 25.6, T.subtitle, 3, 'text-anchor="middle"', hx1 - hx0);
+    text(16, 30, T.nameLabel, 3.2, '', 24);
     o.push(`<line x1="42" y1="30.3" x2="132" y2="30.3" stroke="#000" stroke-width="0.3"/>`);
 
-    text(16, 43, 'N° de registro:', 3.2);
+    text(16, 43, T.regLabel, 3.2, '', L.fields.regBoxes.x - 18);
     const rb = L.fields.regBoxes;
     for (let i = 0; i < rb.n; i++) {
       o.push(`<rect x="${rb.x + i * rb.pitch}" y="${rb.y}" width="${rb.w}" height="${rb.h}" fill="none" stroke="#000" stroke-width="0.3"/>`);
@@ -32,7 +46,7 @@
 
     // Modalidad
     if (L.mod.items.length) {
-      text(16, L.mod.labelY, 'Modalidad de cursada (marcá una)', 3.2, 'font-weight="bold"');
+      text(16, L.mod.labelY, T.modLabel, 3.2, 'font-weight="bold"', 116);
       L.mod.items.forEach((it) => text(it.textX, it.y + 1.1, it.name, 3.2));
     }
 
@@ -52,7 +66,7 @@
       o.push(`<circle cx="${bb.x}" cy="${bb.y}" r="${L.r}" fill="none" stroke="#000" stroke-width="0.35"/>`);
     }
 
-    text(L.page.w / 2, 195.5, 'Rellená por completo el círculo con birome o lápiz oscuro.', 2.4, 'text-anchor="middle"');
+    text(L.page.w / 2, 195.5, T.instructions, 2.4, 'text-anchor="middle"', 100);
     o.push('</svg>');
     return o.join('\n');
   }

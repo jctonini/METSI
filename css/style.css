@@ -68,6 +68,8 @@ th { color: var(--muted); font-weight: 600; }
 #results-table, #item-stats { overflow-x: auto; }
 
 #print-area { display: none; }
+.logo-row { display: flex; align-items: center; gap: 12px; flex-direction: row; flex-wrap: wrap; }
+.logo-row img { max-height: 44px; max-width: 120px; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
 .syncbar { display: flex; align-items: center; gap: 10px; padding: 6px 0 8px; font-size: .9rem; }
 .syncbar span { flex: 1; }
 .syncbar button { padding: 5px 10px; white-space: nowrap; }
