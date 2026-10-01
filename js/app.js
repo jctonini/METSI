@@ -18,7 +18,7 @@
   const defaults = () => ({
     examId: newId(),
     examCreatedAt: Date.now(),
-    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'Virtual'], penalty: 1, threshold: 0.25 },
+    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 1, threshold: 0.25 },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
     deleted: {},
