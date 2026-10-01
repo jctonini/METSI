@@ -76,6 +76,7 @@
     if (name === 'sheet') renderSheet();
     if (name === 'scan') renderCards();
     if (name === 'results') renderResults();
+    if (name === 'drive') $('drive-client').value = clientId();
   }
 
   // ---------- 1. examen ----------
@@ -219,6 +220,7 @@
     $('status').textContent = files.length ? `Listo: ${files.length} foto(s) procesada(s).` : '';
     save();
     renderCards();
+    if (files.length && clientId() && !hasToken()) setStatus('Tocá “Sincronizar” para subir estas hojas a Drive.', 'warn-text');
   });
 
   async function loadBitmap(file) {
@@ -379,14 +381,27 @@
       }
       card.appendChild(rows);
 
-      const mem = memory.get(sheet.id);
-      if (mem) {
+      if (sheet.scan && (memory.get(sheet.id) || sheet.photoId)) {
         const det = document.createElement('details');
         det.innerHTML = '<summary>Ver foto con lo detectado</summary>';
         const canvas = document.createElement('canvas');
         canvas.className = 'photo';
+        const msg = document.createElement('p');
+        msg.className = 'muted';
+        det.appendChild(msg);
         det.appendChild(canvas);
-        det.addEventListener('toggle', () => { if (det.open) drawOverlay(canvas, sheet, mem); });
+        det.addEventListener('toggle', async () => {
+          if (!det.open) return;
+          try {
+            let mem = memory.get(sheet.id);
+            if (!mem) {
+              msg.textContent = 'Descargando la foto desde Drive…';
+              mem = await fetchPhoto(sheet);
+            }
+            msg.textContent = '';
+            drawOverlay(canvas, sheet, mem);
+          } catch (e) { msg.textContent = 'No se pudo traer la foto: ' + e.message; }
+        });
         card.appendChild(det);
       }
       const warn = [];
@@ -495,11 +510,223 @@
     return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  // Se completa con la sincronización con Drive.
-  function updateSyncBar() {}
+  // ---------- Drive ----------
+  let token = null, tokenExpiry = 0, gisPromise = null, syncing = false, autoTimer = null;
+  const hasToken = () => !!token && Date.now() < tokenExpiry - 60000;
+
+  function loadGis() {
+    if (!gisPromise) {
+      gisPromise = new Promise((res, rej) => {
+        if (window.google && google.accounts && google.accounts.oauth2) return res();
+        const sc = document.createElement('script');
+        sc.src = 'https://accounts.google.com/gsi/client';
+        sc.onload = res;
+        sc.onerror = () => { gisPromise = null; rej(new Error('No se pudo cargar el acceso de Google. Revisá la conexión.')); };
+        document.head.appendChild(sc);
+      });
+    }
+    return gisPromise;
+  }
+
+  function getToken() {
+    if (hasToken()) return Promise.resolve(token);
+    const id = clientId();
+    if (!id) return Promise.reject(new Error('Falta el ID de cliente de Google (pestaña Drive).'));
+    return loadGis().then(() => new Promise((res, rej) => {
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: id,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (r) => {
+          if (r.error) return rej(new Error(r.error_description || r.error));
+          token = r.access_token;
+          tokenExpiry = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+          res(token);
+        },
+        error_callback: (e) => rej(new Error('No se completó el inicio de sesión de Google (' + ((e && e.type) || 'cancelado') + ').')),
+      });
+      client.requestAccessToken({ prompt: '' });
+    }));
+  }
+
+  const drive = MetsiDrive.createDrive({ fetch: (...a) => fetch(...a), getToken });
+  let rootFolderId = null;
+  const ensureRoot = async () => rootFolderId || (rootFolderId = await drive.ensureRootFolder());
+  const folderName = () => `${state.cfg.title || 'Examen'} · ${new Date(state.examCreatedAt).toISOString().slice(0, 10)}`;
+
+  // ¿Hay algo que todavía no está en Drive?
+  function pendingCount() {
+    const t = state.lastSync || 0;
+    const sheets = state.sheets.filter((x) => !x.failed && ((x.updatedAt || 0) > t || !x.photoId && memory.get(x.id))).length;
+    return sheets + (state.cfgUpdatedAt > t ? 1 : 0);
+  }
+
+  function setStatus(text, kind) {
+    const el = $('sync-status');
+    el.textContent = text;
+    el.className = kind || '';
+  }
+
+  function updateSyncBar() {
+    if (syncing) return;
+    const bar = $('syncbar');
+    if (!clientId()) {
+      bar.hidden = false;
+      setStatus('Drive sin configurar: los resultados quedan solo en este dispositivo.', 'muted');
+      $('sync-btn').textContent = 'Configurar';
+      return;
+    }
+    bar.hidden = false;
+    $('sync-btn').textContent = '☁ Sincronizar';
+    const n = pendingCount();
+    if (!state.lastSync) setStatus(n ? 'Todavía no sincronizado con Drive.' : 'Conectado a Drive (sin datos para subir).', n ? 'warn-text' : 'muted');
+    else if (n) setStatus(`Cambios sin sincronizar (${n}).`, 'warn-text');
+    else setStatus('Sincronizado con Drive ✔ ' + new Date(state.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 'ok-text');
+    // Si ya hay sesión abierta, los cambios suben solos a los pocos segundos.
+    clearTimeout(autoTimer);
+    if (n && hasToken()) autoTimer = setTimeout(() => syncNow().catch(() => {}), 2500);
+  }
+
+  function dataPayload() {
+    return {
+      version: 1, examId: state.examId, examCreatedAt: state.examCreatedAt,
+      cfg: state.cfg, key: state.key, cfgUpdatedAt: state.cfgUpdatedAt, cfgHash: state.cfgHash,
+      sheets: state.sheets.filter((x) => !x.failed), deleted: state.deleted,
+    };
+  }
+
+  function refreshAll() {
+    fillConfig(); syncKeyToConfig(); renderKey();
+    renderSheet(); renderCards(); renderResults();
+  }
+
+  async function syncNow() {
+    if (syncing) return;
+    syncing = true;
+    setStatus('Sincronizando con Drive…', 'muted');
+    try {
+      const root = await ensureRoot();
+      let folderId = await drive.findExamFolder(root, state.examId);
+      if (!folderId) folderId = await drive.createExamFolder(root, state.examId, folderName());
+      else if (state.driveFolderName && state.driveFolderName !== folderName()) await drive.renameFolder(folderId, folderName());
+
+      const remote = await drive.readJson(folderId, 'datos.json');
+      if (remote && remote.examId === state.examId) {
+        const before = state.cfgUpdatedAt;
+        state = Object.assign(defaults(), mergeStates(state, remote));
+        if (state.cfgUpdatedAt !== before) { fillConfig(); renderKey(); }
+      }
+
+      for (const sh of state.sheets) {
+        const mem = memory.get(sh.id);
+        if (sh.failed || sh.photoId || !mem) continue;
+        const blob = await new Promise((r) => mem.thumb.toBlob(r, 'image/jpeg', 0.8));
+        sh.photoId = await drive.upsertFile(folderId, `hoja-${sh.id}.jpg`, 'image/jpeg', blob, { examId: state.examId, sheetId: sh.id });
+      }
+
+      state.lastSync = Date.now();
+      state.driveFolderName = folderName();
+      await drive.upsertFile(folderId, 'datos.json', 'application/json', JSON.stringify(dataPayload()), { examId: state.examId });
+      await drive.upsertFile(folderId, 'resultados.csv', 'text/csv', toDelimited(exportRows(','), ','), { examId: state.examId });
+      syncing = false;
+      save();
+      renderCards(); renderResults();
+    } catch (e) {
+      syncing = false;
+      if (e.status === 401) token = null;
+      setStatus('No se pudo sincronizar: ' + (e.message || e), 'error');
+      throw e;
+    } finally {
+      syncing = false;
+    }
+  }
+
+  // Fotos descargadas de Drive para revisar una hoja en otro dispositivo.
+  async function fetchPhoto(sheet) {
+    const blob = await drive.downloadBlob(sheet.photoId);
+    const bmp = await createImageBitmap(blob);
+    const t = document.createElement('canvas');
+    t.width = bmp.width; t.height = bmp.height;
+    t.getContext('2d').drawImage(bmp, 0, 0);
+    const mem = { thumb: t };
+    memory.set(sheet.id, mem);
+    return mem;
+  }
+
+  async function runSync() {
+    try { await syncNow(); } catch (e) { /* el estado ya muestra el error */ }
+  }
+
+  $('sync-btn').addEventListener('click', () => {
+    if (!clientId()) showTab('drive'); else runSync();
+  });
+  $('drive-connect').addEventListener('click', () => { persistClientId(); runSync(); });
+  function persistClientId() {
+    const st = loadSettings();
+    st.clientId = $('drive-client').value.trim();
+    saveSettings(st);
+    updateSyncBar();
+  }
+  $('drive-client').addEventListener('change', persistClientId);
+
+  async function renderDriveExams() {
+    const box = $('drive-exams');
+    box.innerHTML = '<p class="muted">Buscando…</p>';
+    try {
+      const exams = await drive.listExams(await ensureRoot());
+      if (!exams.length) { box.innerHTML = '<p class="muted">Todavía no hay exámenes guardados en Drive.</p>'; return; }
+      box.innerHTML = '';
+      exams.forEach((ex) => {
+        const row = document.createElement('div');
+        row.className = 'exam-row';
+        const cur = ex.examId === state.examId;
+        row.innerHTML = `<span><b>${escapeHtml(ex.name)}</b>${cur ? ' <span class="muted">(el que tenés abierto)</span>' : ''}<br><span class="muted">modificado ${new Date(ex.modifiedTime).toLocaleString()}</span></span>`;
+        const btn = document.createElement('button');
+        btn.textContent = cur ? 'Actualizar' : 'Abrir';
+        btn.addEventListener('click', () => openFromDrive(ex));
+        row.appendChild(btn);
+        box.appendChild(row);
+      });
+    } catch (e) {
+      box.innerHTML = `<p class="error">No se pudo leer Drive: ${escapeHtml(e.message || e)}</p>`;
+    }
+  }
+  $('drive-list').addEventListener('click', renderDriveExams);
+
+  async function openFromDrive(ex) {
+    if (ex.examId === state.examId) { await runSync(); refreshAll(); return; }
+    if (pendingCount() && !confirm('Hay cambios de este dispositivo sin sincronizar. Se subirán a Drive antes de abrir el otro examen. ¿Seguir?')) return;
+    try {
+      if (pendingCount()) await syncNow();
+      const remote = await drive.readJson(ex.folderId, 'datos.json');
+      if (!remote) { alert('Ese examen no tiene datos guardados.'); return; }
+      memory.clear();
+      state = Object.assign(defaults(), remote, { lastSync: Date.now(), driveFolderName: ex.name });
+      state.sheets.forEach((sh) => { sh.id = String(sh.id); });
+      save();
+      refreshAll();
+      showTab('results');
+    } catch (e) { alert('No se pudo abrir el examen: ' + (e.message || e)); }
+  }
+
+  $('new-exam').addEventListener('click', async () => {
+    if (!confirm('Se cierra este examen y se empieza uno nuevo con la misma configuración. Los resultados del actual quedan guardados (en Drive, si lo sincronizaste). ¿Seguir?')) return;
+    if (clientId() && pendingCount()) {
+      try { await syncNow(); } catch (e) { if (!confirm('No se pudo sincronizar con Drive. Si seguís, los cambios pendientes de este examen se pierden. ¿Seguir igual?')) return; }
+    }
+    const keep = { cfg: state.cfg, key: state.key };
+    memory.clear();
+    state = Object.assign(defaults(), { cfg: JSON.parse(JSON.stringify(keep.cfg)), key: JSON.parse(JSON.stringify(keep.key)) });
+    save();
+    refreshAll();
+    showTab('scan');
+  });
+
 
   // ---------- inicio ----------
   fillConfig();
   syncKeyToConfig();
   renderKey();
+  $('drive-client').value = clientId();
+  if (clientId()) loadGis().catch(() => {});
+  updateSyncBar();
 })();

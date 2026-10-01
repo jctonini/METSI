@@ -14,7 +14,12 @@
       <button data-tab="sheet">2. Hoja</button>
       <button data-tab="scan">3. Corregir</button>
       <button data-tab="results">4. Resultados</button>
+      <button data-tab="drive">☁ Drive</button>
     </nav>
+    <div id="syncbar" class="syncbar" hidden>
+      <span id="sync-status" class="muted"></span>
+      <button id="sync-btn" type="button">☁ Sincronizar</button>
+    </div>
   </header>
 
   <main>
@@ -96,17 +101,48 @@
       <h3>Aciertos por pregunta</h3>
       <div id="item-stats"></div>
     </section>
+
+    <!-- DRIVE -->
+    <section id="tab-drive" class="tab">
+      <h2>Sincronización con Google Drive</h2>
+      <p class="hint">Guarda en tu Drive una carpeta por examen (<b>METSI Corrector</b> / <i>nombre del examen</i>) con las fotos de las hojas, los datos y una planilla <code>resultados.csv</code>. Iniciando sesión con la misma cuenta de Google, podés ver y corregir los resultados desde el celular y desde la PC. La app solo accede a los archivos que ella misma crea.</p>
+      <label>ID de cliente de Google <input id="drive-client" type="text" placeholder="123456789-abc….apps.googleusercontent.com" autocomplete="off"></label>
+      <div class="actions">
+        <button id="drive-connect" class="primary" type="button">Conectar con Google y sincronizar</button>
+      </div>
+      <details>
+        <summary>¿Cómo obtengo el ID de cliente? (se hace una sola vez, unos 10 minutos)</summary>
+        <ol class="steps">
+          <li>Entrá a <b>console.cloud.google.com</b> con tu cuenta de Google y creá un proyecto nuevo (por ejemplo "METSI").</li>
+          <li>En <b>APIs y servicios → Biblioteca</b>, buscá <b>Google Drive API</b> y tocá <b>Habilitar</b>.</li>
+          <li>En <b>APIs y servicios → Pantalla de consentimiento de OAuth</b>, elegí tipo <b>Externo</b>, completá el nombre de la app y tu email, y en <b>Usuarios de prueba</b> agregá tu propia cuenta de Google.</li>
+          <li>En <b>Credenciales → Crear credenciales → ID de cliente de OAuth</b>, tipo <b>Aplicación web</b>. En <b>Orígenes de JavaScript autorizados</b> agregá la dirección https donde publicaste esta app (por ejemplo <code>https://tu-usuario.github.io</code>).</li>
+          <li>Copiá el ID de cliente que te muestra (termina en <code>.apps.googleusercontent.com</code>), pegalo arriba y tocá el botón. Hacelo igual en el celular y en la PC.</li>
+        </ol>
+        <p class="hint">La app tiene que abrirse desde esa dirección https; no funciona abriendo el archivo <code>index.html</code> desde la carpeta. En la primera sesión Google puede avisar que la app no está verificada: es normal porque es tuya, elegí "Continuar".</p>
+      </details>
+
+      <h3>Exámenes guardados en Drive</h3>
+      <button id="drive-list" type="button">Ver exámenes en Drive</button>
+      <div id="drive-exams"></div>
+
+      <h3>Examen actual</h3>
+      <p class="hint">Para el siguiente parcial, empezá un examen nuevo: se conserva la configuración y se vacían las hojas. El examen anterior queda guardado en Drive.</p>
+      <button id="new-exam" type="button">Empezar un examen nuevo</button>
+    </section>
   </main>
 
   <div id="print-area"></div>
   <style id="page-style"></style>
 
+  <script src="js/config.js"></script>
   <script src="js/layout.js"></script>
   <script src="js/scoring.js"></script>
   <script src="js/csv.js"></script>
   <script src="js/sheet.js"></script>
   <script src="js/scanner.js"></script>
   <script src="js/merge.js"></script>
+  <script src="js/drive.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

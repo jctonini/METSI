@@ -211,5 +211,81 @@ test('hoja cortada (falta una esquina) devuelve error', () => {
   assert.equal(r.ok, false);
 });
 
+// ---------- Drive (simulado) y combinación de estados ----------
+const { createDrive } = require('../js/drive.js');
+const { mergeStates } = require('../js/merge.js');
+const { createMockDrive } = require('./mockdrive.js');
+
+const asyncTests = [];
+function atest(name, fn) { asyncTests.push([name, fn]); }
+
+atest('drive: crea carpetas, sube y lee archivos (texto y binario)', async () => {
+  const mock = createMockDrive();
+  const d = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' });
+  const root = await d.ensureRootFolder();
+  assert.equal(await d.ensureRootFolder(), root, 'no duplica la carpeta raíz');
+  assert.equal(await d.findExamFolder(root, 'e1'), null);
+  const folder = await d.createExamFolder(root, 'e1', "1er parcial · d'Ana");
+  assert.equal(await d.findExamFolder(root, 'e1'), folder);
+  await d.upsertFile(folder, 'datos.json', 'application/json', JSON.stringify({ hola: 'ñandú' }), { examId: 'e1' });
+  await d.upsertFile(folder, 'datos.json', 'application/json', JSON.stringify({ hola: 'ñandú 2' }), { examId: 'e1' });
+  assert.deepEqual(await d.readJson(folder, 'datos.json'), { hola: 'ñandú 2' });
+  assert.equal([...mock.files.values()].filter((f) => f.name === 'datos.json').length, 1, 'reemplaza, no duplica');
+  const bytes = Buffer.from([0xff, 0xd8, 0xff, 0x00, 0x0d, 0x0a, 0x80, 0x7f]);
+  const pid = await d.upsertFile(folder, 'hoja-1.jpg', 'image/jpeg', new Blob([bytes]), { examId: 'e1' });
+  const back = Buffer.from(await (await d.downloadBlob(pid)).arrayBuffer());
+  assert.deepEqual([...back], [...bytes], 'la foto vuelve idéntica');
+  const exams = await d.listExams(root);
+  assert.equal(exams.length, 1);
+  assert.equal(exams[0].examId, 'e1');
+  await d.renameFolder(folder, 'Otro nombre');
+  assert.equal((await d.listExams(root))[0].name, 'Otro nombre');
+});
+
+atest('drive: sin credenciales devuelve 401 con status', async () => {
+  const mock = createMockDrive();
+  const d = createDrive({ fetch: (u, o) => mock.fetch(u, { ...o, headers: {} }), getToken: async () => 'tok' });
+  await assert.rejects(() => d.ensureRootFolder(), (e) => e.status === 401);
+});
+
+const sh = (id, t, extra) => ({ id, createdAt: t, updatedAt: t, answers: [[0]], registro: '', ...extra });
+test('merge: une hojas de ambos lados, ordenadas por creación', () => {
+  const m = mergeStates({ sheets: [sh('a', 1), sh('c', 3)], deleted: {} }, { sheets: [sh('b', 2)], deleted: {} });
+  assert.deepEqual(m.sheets.map((x) => x.id), ['a', 'b', 'c']);
+});
+test('merge: gana la edición más reciente de una misma hoja', () => {
+  const local = { sheets: [sh('a', 1, { registro: 'viejo' })], deleted: {} };
+  const remote = { sheets: [{ ...sh('a', 1), updatedAt: 9, registro: '123' }], deleted: {} };
+  assert.equal(mergeStates(local, remote).sheets[0].registro, '123');
+  assert.equal(mergeStates(remote, local).sheets[0].registro, '123');
+});
+test('merge: una hoja borrada no reaparece, pero una editada después sí', () => {
+  const del = { sheets: [], deleted: { a: 5 } };
+  assert.equal(mergeStates(del, { sheets: [sh('a', 1)], deleted: {} }).sheets.length, 0);
+  assert.equal(mergeStates({ sheets: [sh('a', 1)], deleted: {} }, del).sheets.length, 0);
+  assert.equal(mergeStates(del, { sheets: [{ ...sh('a', 1), updatedAt: 8 }], deleted: {} }).sheets.length, 1);
+});
+test('merge: conserva el photoId aunque gane la otra versión', () => {
+  const local = { sheets: [sh('a', 1, { photoId: 'P' })], deleted: {} };
+  const remote = { sheets: [{ ...sh('a', 1), updatedAt: 7 }], deleted: {} };
+  assert.equal(mergeStates(local, remote).sheets[0].photoId, 'P');
+});
+test('merge: configuración y clave de la versión más nueva', () => {
+  const a = { cfg: { t: 'a' }, key: [1], cfgUpdatedAt: 1, sheets: [], deleted: {} };
+  const b = { cfg: { t: 'b' }, key: [2], cfgUpdatedAt: 5, sheets: [], deleted: {} };
+  assert.deepEqual(mergeStates(a, b).cfg, { t: 'b' });
+  assert.deepEqual(mergeStates(b, a).key, [2]);
+});
+
+(async () => {
+  for (const [name, fn] of asyncTests) {
+    try { await fn(); passed++; console.log('  ok  ' + name); }
+    catch (e) { failed++; console.log('FALLA ' + name + '\n' + (e.stack || e)); }
+  }
+  finish();
+})();
+
+function finish() {
 console.log(`\n${passed} pasaron, ${failed} fallaron`);
 process.exit(failed ? 1 : 0);
+}
