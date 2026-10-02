@@ -58,6 +58,44 @@ test('sin errores de punto flotante', () => {
   assert.equal(scoreSheet([[0, 1]], [k], 1).total, 0.666667);
 });
 
+// ---------- descuento libre (0 a 1) y formato de números ----------
+test('descuento libre: el caso de la pregunta 8 (correctas B y C, marcó A–E) según el valor', () => {
+  const k = { correct: [1, 2], points: 1 };
+  const all = [0, 1, 2, 3, 4];
+  assert.equal(scoreQuestion(all, k, 1).earned, 0);
+  assert.equal(scoreQuestion(all, k, 0.5).earned, 0.25);
+  assert.equal(scoreQuestion(all, k, 0.33).earned, 0.505);
+  assert.equal(scoreQuestion(all, k, 0.25).earned, 0.625);
+  assert.equal(scoreQuestion(all, k, 0).earned, 1); // sin descuento, marcar todo da el máximo (se avisa en pantalla)
+});
+test('descuento libre: más descuento nunca da más puntaje', () => {
+  const k = { correct: [0, 2], points: 2 };
+  for (const marked of [[0], [0, 1], [0, 2, 3], [0, 1, 2, 3, 4], [1, 3]]) {
+    let prev = Infinity;
+    for (const f of [0, 0.1, 0.25, 0.33, 0.5, 0.75, 1]) {
+      const e = scoreQuestion(marked, k, f).earned;
+      assert.ok(e <= prev + 1e-9, `${marked} con ${f}`);
+      prev = e;
+    }
+  }
+});
+test('formato: hasta 3 decimales, sin ceros de más y con coma si se pide', () => {
+  const { formatNumber } = require('../js/csv.js');
+  assert.equal(formatNumber(4.666667, true), '4,667');
+  assert.equal(formatNumber(0.5, true), '0,5');
+  assert.equal(formatNumber(10, true), '10');
+  assert.equal(formatNumber(0.666667, false), '0.667');
+  assert.equal(formatNumber(0.505, true), '0,505');
+});
+test('versión: los archivos de index.html llevan el número de versión actual (correr: node tools/version.js)', () => {
+  const V = require('../tools/version.js');
+  const now = V.compute();
+  const declared = V.declared();
+  assert.ok(declared.length >= 10, 'index.html debería versionar sus archivos');
+  assert.deepEqual([...new Set(declared)], [now], 'cambió el código sin actualizar la versión');
+  assert.match(require('fs').readFileSync(require('path').join(__dirname, '../js/version.js'), 'utf8'), new RegExp(now));
+});
+
 // ---------- csv ----------
 test('csv escapa separadores y comillas', () => {
   assert.equal(toDelimited([['a;b', 'c"d', 'e']], ';'), '"a;b";"c""d";e\r\n');

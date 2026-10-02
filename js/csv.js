@@ -15,10 +15,12 @@
   }
 
   // Excel en configuración regional hispana espera ';' y usa coma decimal.
+  const round3 = (n) => Math.round(Number(n) * 1000) / 1000;
+  // Hasta 3 decimales (sin ceros de más); con coma decimal si `decimalComma`.
   function formatNumber(n, decimalComma) {
-    const s = String(n);
+    const s = String(round3(n));
     return decimalComma ? s.replace('.', ',') : s;
   }
 
-  return { toDelimited, formatNumber };
+  return { toDelimited, formatNumber, round3 };
 });
