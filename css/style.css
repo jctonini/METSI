@@ -32,7 +32,8 @@ button.small { padding: 4px 10px; font-size: .85rem; margin-left: auto; }
 .actions label { min-width: 200px; }
 .status { color: var(--muted); min-height: 1.4em; }
 
-.key { margin-top: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 6px 16px; }
+.key { margin-top: 8px; column-width: 330px; column-gap: 24px; }
+.key .key-row { break-inside: avoid; }
 .key-row, .ans-row { display: flex; align-items: center; gap: 6px; padding: 4px 0; flex-wrap: wrap; }
 .key-row.annulled .qnum { color: var(--warn); }
 .qnum { width: 28px; text-align: right; font-weight: 600; margin-right: 4px; }
@@ -50,7 +51,8 @@ button.small { padding: 4px 10px; font-size: .85rem; margin-left: auto; }
 .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .fields { align-items: end; }
 .score { font-size: 1.1rem; }
-.answers { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 0 12px; margin-top: 10px; }
+.answers { margin-top: 10px; column-width: 290px; column-gap: 20px; }
+.answers .ans-row { break-inside: avoid; }
 .ans-row .chip { width: 34px; height: 34px; }
 .ans-row.blank { background: var(--warn-bg); border-radius: 8px; }
 .ans-row.dubious { outline: 2px solid var(--warn); border-radius: 8px; }
@@ -68,6 +70,15 @@ th { color: var(--muted); font-weight: 600; }
 #results-table, #item-stats { overflow-x: auto; }
 
 #print-area { display: none; }
+dialog { max-width: min(560px, 94vw); width: 100%; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); padding: 18px; }
+dialog::backdrop { background: rgba(0, 0, 0, .5); }
+dialog h3 { margin: 0 0 8px; }
+dialog .actions { margin: 14px 0 0; }
+dialog .crops img { max-height: 70px; width: auto; }
+.blockers { border: 2px solid var(--danger); border-radius: 10px; padding: 10px 14px; margin: 10px 0; background: var(--warn-bg); }
+.blockers ul { margin: 6px 0 10px; padding-left: 20px; }
+.card.missing { border-color: var(--danger); border-width: 2px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
 .logo-row { display: flex; align-items: center; gap: 12px; flex-direction: row; flex-wrap: wrap; }
 .logo-row img { max-height: 44px; max-width: 120px; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
 .syncbar { display: flex; align-items: center; gap: 10px; padding: 6px 0 8px; font-size: .9rem; }

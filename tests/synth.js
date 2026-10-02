@@ -56,6 +56,11 @@ function renderPhoto(layout, marks, opts) {
   const b = layout.orientationBar;
   paint(b.x - b.w / 2, b.y - b.h / 2, b.x + b.w / 2, b.y + b.h / 2, () => true);
 
+  // Código de versión (cuadraditos al pie), si la hoja lo lleva.
+  for (const bit of layout.versionBits || []) {
+    if (bit.on) paint(bit.x - bit.size / 2, bit.y - bit.size / 2, bit.x + bit.size / 2, bit.y + bit.size / 2, () => true);
+  }
+
   // Contorno de todas las burbujas.
   const R = layout.r, lw = 0.17;
   for (const bb of layout.bubbles) {

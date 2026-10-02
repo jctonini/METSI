@@ -8,8 +8,11 @@ Se usa desde el navegador del celular o de la PC. Los resultados se sincronizan 
 1. **Examen**: cargá título, cantidad de preguntas, opciones por pregunta (2 a 6), casilleros del número de registro y las modalidades de cursada. Marcá las respuestas correctas de cada pregunta (puede haber varias) y su puntaje.
 2. **Hoja**: imprimí la hoja de respuestas. Es de tamaño **A5** y se imprimen **2 por hoja A4** apaisada (después se corta por la mitad). Es la misma para todos los alumnos del examen.
    En la pestaña **Hoja** podés personalizar el encabezado (línea de materia/comisión/fecha), las etiquetas, las instrucciones del pie y poner tu **logo**. Los textos largos se ajustan solos y la grilla no se modifica, así la lectura de las fotos siempre funciona.
-   El alumno escribe a mano su **nombre y apellido** y su **número de registro** (en los casilleros), marca su **modalidad de cursada** y rellena las burbujas de las respuestas.
+   El alumno escribe a mano su **nombre y apellido**, su **número de registro** (en los casilleros) y la **fecha**, marca su **modalidad de cursada** y rellena las burbujas de las respuestas **con birome**. Al pie, la hoja aclara que en caso de diferencias prevalecen las respuestas marcadas en la grilla.
 3. **Corregir**: sacá una foto de cada hoja (entera, en vertical, bien iluminada) o elegí fotos de la galería. La app lee las marcas de respuesta y la modalidad, y calcula el puntaje. El nombre y el registro son manuscritos: la app los **recorta de la foto y los muestra** para que los cargues mirando la imagen. Señala lo dudoso para que lo revises.
+   - **Identificación obligatoria:** cada hoja necesita **nombre o registro** cargado (la modalidad puede faltar). Mientras haya hojas sin ninguno de los dos, la app no deja descargar ni copiar los resultados.
+   - **Repetidos:** si el **registro** coincide con el de otra hoja (con el mismo nombre, con otro o sin nombre), o el **nombre** coincide y a una le falta el registro, la app frena y pregunta si son personas distintas, si es la misma hoja cargada dos veces, o si hay que corregir el dato. El mismo nombre con registros distintos solo avisa (pueden ser homónimos). Los nombres se comparan sin importar mayúsculas, tildes ni espacios de más.
+   - **Foto repetida:** avisa si cargás el mismo archivo dos veces, y también si una foto parece ser **el mismo papel fotografiado otra vez** (compara la letra del nombre y del registro).
 4. **Resultados**: tabla con puntajes y aciertos por pregunta. Se descarga como CSV (Excel en español o Google Sheets) o se copia para pegar directo en una planilla.
 5. **Drive**: sincronización entre celular y PC (ver abajo).
 
@@ -21,6 +24,15 @@ La app **no decide quién aprueba**: solo calcula el puntaje. El criterio de apr
 - Se admite **puntaje parcial**: cada opción correcta marcada suma su parte, aunque no se marquen todas.
 - Cada opción incorrecta marcada descuenta su parte (configurable: una parte completa, media parte o nada). Una pregunta nunca baja de 0.
 - Una pregunta sin ninguna respuesta correcta definida se considera **anulada** y suma sus puntos a todos.
+
+## Versiones de la hoja
+
+La hoja lleva una versión impresa al pie ("V2") y un código de 3 cuadraditos que la app lee sola, así cada foto se interpreta con el diseño que le corresponde:
+
+- **V1** (sin código): las primeras hojas impresas. Solo se **leen**; la app ya no las genera. Su geometría está congelada y una prueba (`tests/fixtures/layout-v1.json`) evita que cambie por error.
+- **V2**: más espacio para escribir el nombre, campo de fecha, leyendas al pie y código de versión.
+
+Si una foto trae una versión más nueva que la que conoce la app, avisa que hay que actualizarla en vez de leerla mal. Se pueden mezclar hojas V1 y V2 en una misma tanda.
 
 ## Capacidad de la hoja A5
 
@@ -49,7 +61,7 @@ Sin esa configuración la app funciona igual, pero los resultados quedan solo en
 
 - Hoja completa, con las 4 marcas negras de las esquinas visibles.
 - Luz pareja, sin sombras fuertes. Hoja apoyada en una mesa y lo más plana posible.
-- Los alumnos deben rellenar el círculo con birome o lápiz oscuro. Las cruces y marcas parciales se leen, pero las muy tenues quedan señaladas como dudosas.
+- Los alumnos deben rellenar el círculo con **birome** (no lápiz). Las cruces y marcas parciales se leen; las muy tenues quedan señaladas como dudosas.
 
 ## Desarrollo
 
@@ -63,5 +75,7 @@ node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas, CSV, co
 - `js/scoring.js`: cálculo de puntajes.
 - `js/csv.js`: exportación.
 - `js/merge.js`: combina los datos de dos dispositivos.
+- `js/identity.js`: reglas de identificación y duplicados, y detección del mismo archivo.
+- `js/similar.js`: parecido de letra entre fotos (misma hoja fotografiada dos veces).
 - `js/drive.js`: cliente de la API de Google Drive.
 - `js/app.js`, `index.html`, `css/style.css`: interfaz.

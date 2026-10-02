@@ -6,6 +6,8 @@
   const { scanImage, interpret, applyH, cropRegion } = MetsiScanner;
   const { toDelimited, formatNumber } = MetsiCsv;
   const { mergeStates } = MetsiMerge;
+  const Identity = MetsiIdentity;
+  const Similar = MetsiSimilar;
 
   const $ = (id) => document.getElementById(id);
   const STORAGE_KEY = 'metsi.corrector.v1';
@@ -19,7 +21,7 @@
     examId: newId(),
     examCreatedAt: Date.now(),
     cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 1, threshold: 0.1, thrVersion: 2,
-      sheet: { subtitle: '', nameLabel: '', regLabel: '', modLabel: '', instructions: '', logo: '' } },
+      sheet: { subtitle: '', nameLabel: '', regLabel: '', modLabel: '', instructions: '', legal: '', logo: '' } },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
     deleted: {},
@@ -92,7 +94,7 @@
   }
 
   // ---------- 1. examen ----------
-  const SHEET_FIELDS = [['sh-subtitle', 'subtitle'], ['sh-name', 'nameLabel'], ['sh-reg', 'regLabel'], ['sh-mod', 'modLabel'], ['sh-instr', 'instructions']];
+  const SHEET_FIELDS = [['sh-subtitle', 'subtitle'], ['sh-name', 'nameLabel'], ['sh-reg', 'regLabel'], ['sh-mod', 'modLabel'], ['sh-instr', 'instructions'], ['sh-legal', 'legal']];
   function fillConfig() {
     const c = state.cfg;
     $('cfg-title').value = c.title;
@@ -254,12 +256,18 @@
   $('file').addEventListener('change', async (e) => {
     const files = [...e.target.files];
     e.target.value = '';
+    const tally = { added: 0, skipped: 0, discarded: 0, failed: 0 };
     for (let i = 0; i < files.length; i++) {
       $('status').textContent = `Procesando ${i + 1} de ${files.length}…`;
       await new Promise((r) => setTimeout(r, 20)); // deja que se actualice la pantalla
-      await processFile(files[i]);
+      tally[await processFile(files[i])]++;
     }
-    $('status').textContent = files.length ? `Listo: ${files.length} foto(s) procesada(s).` : '';
+    const parts = [];
+    if (tally.added) parts.push(`${tally.added} cargada(s)`);
+    if (tally.skipped) parts.push(`${tally.skipped} omitida(s) por repetida(s)`);
+    if (tally.discarded) parts.push(`${tally.discarded} descartada(s) por parecerse a otra hoja`);
+    if (tally.failed) parts.push(`${tally.failed} con error de lectura`);
+    $('status').textContent = files.length ? 'Listo: ' + parts.join(', ') + '.' : '';
     save();
     renderCards();
     if (files.length && clientId() && !hasToken()) setStatus('Tocá “Sincronizar” para subir estas hojas a Drive.', 'warn-text');
@@ -280,10 +288,128 @@
     } finally { URL.revokeObjectURL(url); }
   }
 
+  // ---------- ventana de consulta ----------
+  // buttons: [{ label, value, kind }]; `cancel` es el valor si se cierra con Esc.
+  function askDialog({ title, html, buttons, cancel }) {
+    return new Promise((resolve) => {
+      const dlg = $('dlg');
+      $('dlg-title').textContent = title;
+      $('dlg-body').innerHTML = html;
+      const act = $('dlg-actions');
+      act.innerHTML = '';
+      let done = false;
+      const finish = (v) => { if (done) return; done = true; dlg.close(); resolve(v); };
+      buttons.forEach((b) => {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.textContent = b.label;
+        if (b.kind) el.className = b.kind;
+        el.addEventListener('click', () => finish(b.value));
+        act.appendChild(el);
+      });
+      dlg.addEventListener('cancel', (e) => { e.preventDefault(); finish(cancel); }, { once: true });
+      dlg.showModal();
+    });
+  }
+
+  // Zonas que se recortan de la foto para que el docente lea nombre y registro.
+  function displayRects(L) {
+    return {
+      name: L.version >= 2 ? { x: 16, y: 26.2, w: 116, h: 10.2 } : L.fields.name,
+      reg: L.fields.reg,
+    };
+  }
+
+  const sheetNumber = (sh) => state.sheets.indexOf(sh) + 1;
+  const cropsHtml = (sh) => (sh.crops && sh.crops.reg
+    ? `<div class="crops"><img alt="" src="${sh.crops.name}"><img alt="" src="${sh.crops.reg}"></div>` : '');
+
+  const KIND_TEXT = {
+    'same-data': (n, o) => `Tiene el mismo nombre y el mismo registro que la <b>Hoja ${n}</b>.`,
+    'same-reg-diff-name': (n, o, sh) => `El registro <b>${escapeHtml(sh.registro)}</b> ya está en la <b>Hoja ${n}</b> con otro nombre («${escapeHtml(o.nombre)}»; esta hoja dice «${escapeHtml(sh.nombre)}»).`,
+    'same-reg': (n, o, sh) => `El registro <b>${escapeHtml(sh.registro || o.registro)}</b> ya está cargado en la <b>Hoja ${n}</b>.`,
+    'same-name-incomplete': (n, o, sh) => `El nombre coincide con el de la <b>Hoja ${n}</b> y a alguna de las dos le falta el registro: puede ser la misma persona.`,
+  };
+
+  // Consulta por cada conflicto sin resolver de la hoja. Devuelve 'ok' | 'edit' | 'removed'.
+  async function resolveConflicts(sheet) {
+    for (;;) {
+      const list = Identity.conflictsFor(sheet, state.sheets);
+      if (!list.length) return 'ok';
+      const c = list[0];
+      const n = sheetNumber(c.other);
+      const ans = await askDialog({
+        title: 'Posible alumno repetido',
+        html: `<p>Esta hoja (<b>Hoja ${sheetNumber(sheet)}</b>): ${KIND_TEXT[c.kind](n, c.other, sheet)}</p>
+          <p class="muted">Hoja ${n}:</p>${cropsHtml(c.other)}
+          <p class="muted">Hoja ${sheetNumber(sheet)}:</p>${cropsHtml(sheet)}
+          <p>¿Son personas distintas, o es la misma hoja cargada dos veces?</p>`,
+        buttons: [
+          { label: 'Son personas distintas: mantener las dos', value: 'keep' },
+          { label: 'Es la misma hoja: quitar esta', value: 'remove', kind: 'danger' },
+          { label: 'Corregir el dato', value: 'edit', kind: 'primary' },
+        ],
+        cancel: 'edit',
+      });
+      if (ans === 'keep') {
+        sheet.ack = [...(sheet.ack || []), c.other.id];
+        c.other.ack = [...(c.other.ack || []), sheet.id];
+        sheet.updatedAt = c.other.updatedAt = Date.now();
+        save();
+      } else if (ans === 'remove') {
+        removeSheet(sheet.id); save();
+        return 'removed';
+      } else return 'edit';
+    }
+  }
+
+  // Al cambiar el nombre o el registro, la confirmación anterior ("son personas distintas") ya no vale.
+  function clearAck(sheet) {
+    sheet.ack = [];
+    for (const o of state.sheets) if (o.ack && o.ack.includes(sheet.id)) { o.ack = o.ack.filter((x) => x !== sheet.id); o.updatedAt = Date.now(); }
+  }
+
+  // Todo lo que impide exportar: hojas sin nombre ni registro y repetidos sin resolver.
+  const exportBlockers = () => Identity.analyze(state.sheets);
+  const isBlocked = (b) => b.missing.length > 0 || b.hard.length > 0;
+
+  async function reviewConflicts() {
+    for (let guard = 0; guard < 500; guard++) {
+      const { hard } = exportBlockers();
+      if (!hard.length) break;
+      const res = await resolveConflicts(hard[0].a);
+      if (res === 'edit') { showTab('scan'); focusSheet(hard[0].a.id); return; }
+    }
+    renderCards(); renderResults();
+  }
+  function focusSheet(id) {
+    const card = document.querySelector(`[data-sheet="${id}"]`);
+    if (card) { card.scrollIntoView({ block: 'start' }); const f = card.querySelector('.f-reg') || card.querySelector('.f-name'); if (f) f.focus(); }
+  }
+
+  // Devuelve 'added' | 'skipped' | 'discarded' | 'failed'
   async function processFile(file) {
     const id = newId();
-    const L = layout();
     const now = Date.now();
+
+    // 1) ¿Es exactamente el mismo archivo que ya se cargó?
+    let fileHash = '';
+    try { fileHash = Identity.hashBytes(new Uint8Array(await file.arrayBuffer())); } catch (e) { /* sin hash: se procesa igual */ }
+    const sameFile = fileHash && state.sheets.find((x) => !x.failed && x.fileHash === fileHash);
+    if (sameFile) {
+      const ans = await askDialog({
+        title: 'Esta foto ya fue cargada',
+        html: `<p>«${escapeHtml(file.name)}» es idéntica a la foto de la <b>Hoja ${sheetNumber(sameFile)}</b>.</p>${cropsHtml(sameFile)}<p>¿Querés cargarla de todos modos?</p>`,
+        buttons: [{ label: 'Omitir esta foto', value: 'skip', kind: 'primary' }, { label: 'Cargarla igual', value: 'load' }],
+        cancel: 'skip',
+      });
+      if (ans === 'skip') return 'skipped';
+    }
+
+    const failSheet = (error) => {
+      state.sheets.push({ id, fileName: file.name, failed: true, error, answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now });
+      return 'failed';
+    };
     try {
       const bmp = await loadBitmap(file);
       const bw = bmp.width || bmp.naturalWidth, bh = bmp.height || bmp.naturalHeight;
@@ -293,14 +419,14 @@
       const ctx = c.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(bmp, 0, 0, c.width, c.height);
       const img = ctx.getImageData(0, 0, c.width, c.height);
-      const scan = scanImage(img, L);
-      const fail = (error) => state.sheets.push({ id, fileName: file.name, failed: true, error, answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now });
-      if (!scan.ok) { fail(scan.error); return; }
+      // La app detecta sola la versión de la hoja (V1: las primeras impresas; V2: formato actual).
+      const scan = scanImage(img, (v) => buildLayout(state.cfg, v));
+      if (!scan.ok) return failSheet(scan.error);
+      const L = scan.layout;
       const t = document.createElement('canvas');
       const tk = Math.min(1, THUMB_SIDE / Math.max(c.width, c.height));
       t.width = Math.round(c.width * tk); t.height = Math.round(c.height * tk);
       t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
-      memory.set(id, { thumb: t });
       const r = interpret(scan, state.cfg.threshold);
       const p7 = (v) => Number(v.toPrecision(7));
       const p3 = (v) => Math.round(v * 1000) / 1000;
@@ -312,19 +438,47 @@
         cc.getContext('2d').putImageData(new ImageData(cr.data, cr.width, cr.height), 0, 0);
         return cc.toDataURL('image/jpeg', 0.8);
       };
-      state.sheets.push({
-        id, fileName: file.name, failed: false, nombre: '', registro: '', modalidad: r.modalidad,
+      const rects = displayRects(L);
+      const sheet = {
+        id, fileName: file.name, fileHash, failed: false, version: scan.version, nombre: '', registro: '', modalidad: r.modalidad,
         answers: r.answers, createdAt: now, updatedAt: now, photoId: null,
-        crops: { name: crop(L.fields.name), reg: crop(L.fields.reg) },
+        crops: { name: crop(rects.name), reg: crop(rects.reg) },
+        // Firma de la letra: sirve para avisar si se fotografió dos veces el mismo papel.
+        sig: Similar.signature((rect, ppm) => cropRegion(img, scan.H, rect, ppm), L),
         // Datos para revisar más tarde (también desde otro dispositivo): homografía ya
         // escalada a la miniatura y puntajes de cada burbuja.
         scan: {
           H: scan.H.map((v, i) => p7(i < 6 ? v * tk : v)),
           scores: { mod: scan.scores.mod.map(p3), ans: scan.scores.ans.map((a) => a.map(p3)) },
         },
-      });
+      };
+
+      // 2) ¿Parece el mismo papel fotografiado otra vez? (misma letra de nombre y registro)
+      let best = null;
+      for (const other of state.sheets) {
+        if (other.failed || !other.sig) continue;
+        const cmp = Similar.compare(sheet.sig, other.sig);
+        if (cmp.score !== null && cmp.score >= Similar.SIMILAR_THRESHOLD && (!best || cmp.score > best.score)) best = { other, score: cmp.score };
+      }
+      if (best) {
+        const ans = await askDialog({
+          title: 'Esta foto parece una hoja ya cargada',
+          html: `<p>La letra del nombre y del registro es muy parecida a la de la <b>Hoja ${sheetNumber(best.other)}</b> (parecido ${Math.round(best.score * 100)}%). Puede ser el mismo papel fotografiado dos veces.</p>
+            <p class="muted">Hoja ${sheetNumber(best.other)} (ya cargada):</p>${cropsHtml(best.other)}
+            <p class="muted">Esta foto:</p>${cropsHtml(sheet)}`,
+          buttons: [
+            { label: 'Es la misma hoja: descartar esta foto', value: 'discard', kind: 'primary' },
+            { label: 'Es otra hoja: cargarla', value: 'keep' },
+          ],
+          cancel: 'keep',
+        });
+        if (ans === 'discard') return 'discarded';
+      }
+      memory.set(id, { thumb: t });
+      state.sheets.push(sheet);
+      return 'added';
     } catch (err) {
-      state.sheets.push({ id, fileName: file.name, failed: true, error: 'No se pudo abrir la imagen.', answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now });
+      return failSheet('No se pudo abrir la imagen.');
     }
   }
 
@@ -334,7 +488,7 @@
   }
 
   function drawOverlay(canvas, sheet, mem) {
-    const L = layout();
+    const L = buildLayout(state.cfg, sheet.version || 1);
     canvas.width = mem.thumb.width; canvas.height = mem.thumb.height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(mem.thumb, 0, 0);
@@ -353,17 +507,40 @@
     }
   }
 
+  // Aviso con lo que impide exportar (hojas sin nombre ni registro, repetidos sin resolver).
+  function renderBanner(el, an) {
+    if (!el) return;
+    const items = [];
+    if (an.missing.length) items.push(`${an.missing.length} hoja(s) sin nombre ni registro: ${an.missing.map((x) => 'Hoja ' + sheetNumber(x)).join(', ')}.`);
+    if (an.hard.length) items.push(`${an.hard.length} posible(s) alumno(s) repetido(s) sin resolver: ${an.hard.map((c) => `Hoja ${sheetNumber(c.a)} y Hoja ${sheetNumber(c.b)}`).join('; ')}.`);
+    el.hidden = !items.length;
+    if (!items.length) { el.innerHTML = ''; return; }
+    el.className = 'blockers';
+    el.innerHTML = `<b>No se puede exportar todavía</b><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>`;
+    if (an.hard.length) {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'primary'; btn.textContent = 'Revisar repetidos';
+      btn.addEventListener('click', reviewConflicts);
+      el.appendChild(btn);
+    }
+  }
+
   function renderCards() {
     const box = $('cards');
     box.innerHTML = '';
     const L = layout();
+    const an = Identity.analyze(state.sheets);
+    const missingIds = new Set(an.missing.map((x) => x.id));
+    const hardIds = new Set(an.hard.flatMap((c) => [c.a.id, c.b.id]));
+    renderBanner($('scan-banner'), an);
     state.sheets.forEach((sheet, idx) => {
       const card = document.createElement('div');
-      card.className = 'card' + (sheet.failed ? ' failed' : '');
+      card.className = 'card' + (sheet.failed ? ' failed' : '') + (missingIds.has(sheet.id) || hardIds.has(sheet.id) ? ' missing' : '');
+      card.dataset.sheet = sheet.id;
       box.appendChild(card);
       const head = document.createElement('div');
       head.className = 'card-head';
-      head.innerHTML = `<b>Hoja ${idx + 1}</b> <span class="muted">${escapeHtml(sheet.fileName || '')}</span>`;
+      head.innerHTML = `<b>Hoja ${idx + 1}</b> <span class="muted">${sheet.failed ? '' : 'formato V' + (sheet.version || 1) + ' · '}${escapeHtml(sheet.fileName || '')}</span>`;
       const del = document.createElement('button');
       del.className = 'danger small'; del.textContent = 'Quitar';
       del.addEventListener('click', () => {
@@ -384,14 +561,19 @@
       const hasCrops = sheet.crops && sheet.crops.reg;
       fields.innerHTML = `
         ${hasCrops ? `<div class="crops wide"><img alt="Nombre escrito" src="${sheet.crops.name}"><img alt="Registro escrito" src="${sheet.crops.reg}"></div>` : ''}
-        <label>Nombre y apellido <input type="text" class="f-name" placeholder="(opcional)" value="${escapeHtml(sheet.nombre || '')}"></label>
-        <label>N° de registro <input type="text" class="f-reg ${sheet.registro ? '' : 'warn'}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
+        <label>Nombre y apellido <input type="text" class="f-name ${missingIds.has(sheet.id) ? 'warn' : ''}" placeholder="nombre o registro: hace falta uno" value="${escapeHtml(sheet.nombre || '')}"></label>
+        <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
         <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
           L.modalidades.map((m, i) => `<option value="${i}" ${sheet.modalidad === i ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></label>
         <div class="score">Puntaje <b>${score.total}</b> / ${score.max}</div>`;
       card.appendChild(fields);
-      fields.querySelector('.f-name').addEventListener('change', (e) => { sheet.nombre = e.target.value.trim(); touch(sheet); });
-      fields.querySelector('.f-reg').addEventListener('change', (e) => { sheet.registro = e.target.value.trim(); e.target.classList.toggle('warn', !sheet.registro); touch(sheet); });
+      const afterIdChange = async () => {
+        const res = await resolveConflicts(sheet);
+        renderCards();
+        if (res === 'edit') focusSheet(sheet.id);
+      };
+      fields.querySelector('.f-name').addEventListener('change', (e) => { sheet.nombre = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
+      fields.querySelector('.f-reg').addEventListener('change', (e) => { sheet.registro = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
       fields.querySelector('.f-mod').addEventListener('change', (e) => {
         sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); touch(sheet);
       });
@@ -452,12 +634,16 @@
       if (nr) warn.push(`${nr} pregunta(s) sin marcar`);
       const nd = r ? r.flags.filter((f) => f.dubious).length : 0;
       if (nd) warn.push(`${nd} pregunta(s) con marcas dudosas`);
-      const regWarn = document.createElement('p');
-      regWarn.className = 'warn-text';
-      regWarn.textContent = '⚠ falta cargar el número de registro';
-      regWarn.hidden = !!sheet.registro;
-      card.insertBefore(regWarn, rows);
-      fields.querySelector('.f-reg').addEventListener('input', (e) => { regWarn.hidden = !!e.target.value.trim(); });
+      if (missingIds.has(sheet.id)) {
+        const w = document.createElement('p');
+        w.className = 'warn-text'; w.textContent = '⛔ Falta el nombre o el registro: cargá al menos uno para poder exportar.';
+        card.insertBefore(w, rows);
+      }
+      for (const c of Identity.softFor(sheet, state.sheets)) {
+        const w = document.createElement('p');
+        w.className = 'muted'; w.textContent = `ℹ Mismo nombre que la Hoja ${sheetNumber(c.other)}, con otro registro (${c.other.registro}). Puede ser un homónimo.`;
+        card.insertBefore(w, rows);
+      }
       if (warn.length) {
         const w = document.createElement('p');
         w.className = 'warn-text'; w.textContent = '⚠ ' + warn.join(' · ');
@@ -478,6 +664,9 @@
   }
 
   function renderResults() {
+    const an = Identity.analyze(state.sheets);
+    renderBanner($('results-blockers'), an);
+    $('dl-csv').disabled = $('copy-tsv').disabled = isBlocked(an);
     const { L, rows, regCount } = tableData();
     const t = $('results-table');
     if (!rows.length) {
@@ -521,7 +710,16 @@
     return [header, ...body];
   }
 
+  const blockExport = () => {
+    const an = exportBlockers();
+    if (!isBlocked(an)) return false;
+    renderResults();
+    alert('No se puede exportar todavía: ' + (an.missing.length ? an.missing.length + ' hoja(s) sin nombre ni registro. ' : '') + (an.hard.length ? an.hard.length + ' posible(s) repetido(s) sin resolver.' : ''));
+    return true;
+  };
+
   $('dl-csv').addEventListener('click', () => {
+    if (blockExport()) return;
     const sep = $('csv-sep').value;
     const text = '﻿' + toDelimited(exportRows(sep), sep);
     const a = document.createElement('a');
@@ -533,6 +731,7 @@
   });
 
   $('copy-tsv').addEventListener('click', async () => {
+    if (blockExport()) return;
     // Al pegar en una planilla de Sheets o Excel se usa punto como decimal si el separador no es ';'.
     const text = toDelimited(exportRows(','), '\t');
     try {

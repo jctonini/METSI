@@ -181,27 +181,68 @@
     return st === null ? null : st.mean;
   }
 
-  function barDarkness(g, w, h, H, layout) {
-    const b = layout.orientationBar;
-    let sum = 0, n = 0;
-    for (let i = -2; i <= 2; i++) {
-      for (let j = -1; j <= 1; j++) {
-        const p = applyH(H, b.x + i * (b.w / 5), b.y + j * (b.h / 4));
-        const v = sampleGray(g, w, h, p.x, p.y);
-        if (v === null) return 0;
-        sum += v; n++;
-      }
-    }
-    // Se compara con el papel unos mm más abajo de la barra (mediana de varios puntos).
+  // Papel de referencia: mediana de varios puntos de la hoja (en mm) para comparar contra la tinta.
+  function paperLevel(g, w, h, H, pts) {
     const ref = [];
-    for (let i = -2; i <= 2; i++) {
-      const q = applyH(H, b.x + i * (b.w / 5), b.y + 4.5);
+    for (const [x, y] of pts) {
+      const q = applyH(H, x, y);
       const v = sampleGray(g, w, h, q.x, q.y);
       if (v !== null) ref.push(v);
     }
     ref.sort((a, c) => a - c);
-    const paper = ref.length ? ref[ref.length >> 1] : 255;
-    return 1 - sum / n / Math.max(40, paper);
+    return Math.max(40, ref.length ? ref[ref.length >> 1] : 255);
+  }
+
+  // Oscurecimiento medio (0 papel, 1 negro) de un conjunto de puntos en mm, contra `paper`.
+  function darkness(g, w, h, H, pts, paper) {
+    let sum = 0;
+    for (const [x, y] of pts) {
+      const q = applyH(H, x, y);
+      const v = sampleGray(g, w, h, q.x, q.y);
+      if (v === null) return null;
+      sum += v;
+    }
+    return 1 - sum / pts.length / paper;
+  }
+
+  // Barra de orientación (parte común a todas las versiones: la v2 es más ancha).
+  const BAR_COMMON = { x: 74, y: 10, w: 20, h: 4 };
+  function barDarkness(g, w, h, H) {
+    const b = BAR_COMMON;
+    const pts = [];
+    for (let i = -2; i <= 2; i++) for (let j = -1; j <= 1; j++) pts.push([b.x + i * (b.w / 5), b.y + j * (b.h / 4)]);
+    const d = darkness(g, w, h, H, pts, paperLevel(g, w, h, H, [-2, -1, 0, 1, 2].map((i) => [b.x + i * (b.w / 5), b.y + 4.5])));
+    return d === null ? 0 : d;
+  }
+
+  // Versión de la hoja: código de 3 cuadraditos al pie + ancho de la barra (la v2 es más ancha).
+  // Las dos señales tienen que coincidir; si no, mejor pedir otra foto que leer con el diseño equivocado.
+  function detectVersion(g, w, h, H, vc, latest) {
+    const refPts = [];
+    for (let i = 0; i < 7; i++) refPts.push([vc.x0 - 1 + i * (vc.bits * vc.pitch / 6), vc.y + 3.6]);
+    const paper = paperLevel(g, w, h, H, refPts);
+    let value = 0;
+    for (let i = 0; i < vc.bits; i++) {
+      const cx = vc.x0 + i * vc.pitch, cy = vc.y;
+      const pts = [[cx, cy]];
+      for (let k = 0; k < 8; k++) pts.push([cx + 0.9 * Math.cos(k * Math.PI / 4), cy + 0.9 * Math.sin(k * Math.PI / 4)]);
+      const d = darkness(g, w, h, H, pts, paper);
+      if (d === null) return { error: 'Parte de la hoja quedó fuera de la foto. Sacala de nuevo con la hoja completa.' };
+      if (d >= 0.35) value |= 1 << i;
+      else if (d > 0.15) return { error: 'No se pudo reconocer el formato de la hoja (revisá la luz y que el pie de la hoja se vea completo).' };
+    }
+    const version = value + 1;
+    if (version > latest) {
+      return { error: 'Esta hoja es de un formato más nuevo (V' + version + '). Actualizá la app para poder leerla.' };
+    }
+    // Control cruzado con el ancho de la barra superior.
+    const barRef = paperLevel(g, w, h, H, [-1, 0, 1].map((i) => [BAR_COMMON.x + i * 5, BAR_COMMON.y + 4.5]));
+    const wideD = darkness(g, w, h, H, [[BAR_COMMON.x - 12.5, BAR_COMMON.y], [BAR_COMMON.x + 12.5, BAR_COMMON.y], [BAR_COMMON.x - 12.5, BAR_COMMON.y + 1], [BAR_COMMON.x + 12.5, BAR_COMMON.y - 1]], barRef);
+    const wide = wideD !== null && wideD >= 0.4;
+    if (wideD === null || (wideD > 0.15 && wideD < 0.4) || wide !== (version >= 2)) {
+      return { error: 'No se pudo reconocer el formato de la hoja. Sacá otra foto con buena luz y con la hoja completa.' };
+    }
+    return { version };
   }
 
   function buildH(layout, m) {
@@ -211,9 +252,12 @@
   }
 
   // ---------- API ----------
-  // Devuelve { ok:true, H, scores:{ mod:[i], ans:[q][opción] } }
-  // o { ok:false, error }.
-  function scanImage(img, layout) {
+  // `layoutSource`: función (versión) => layout, o un layout fijo (se omite la detección de versión).
+  // Devuelve { ok:true, H, version, layout, scores:{ mod:[i], ans:[q][opción] } } o { ok:false, error }.
+  function scanImage(img, layoutSource) {
+    const fixed = typeof layoutSource === 'function' ? null : layoutSource;
+    const layoutFor = fixed ? () => fixed : layoutSource;
+    const base = layoutFor(1);
     const { width: w, height: h } = img;
     const g = toGray(img);
     const win = Math.max(15, Math.round(Math.max(w, h) / 12)) | 1;
@@ -232,17 +276,27 @@
 
     // Orientación: la barra negra del encabezado tiene que quedar arriba. Se compara contra la
     // hoja dada vuelta 180° en lugar de exigir un negro absoluto (las impresoras y la luz varían).
-    const H0 = buildH(layout, m);
+    // Las marcas de las esquinas son iguales en todas las versiones.
+    const H0 = buildH(base, m);
     const m2 = { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl };
-    const H180 = buildH(layout, m2);
+    const H180 = buildH(base, m2);
     if (!H0 || !H180) return { ok: false, error: 'No se pudo calcular la posición de la hoja.' };
-    const d0 = barDarkness(g, w, h, H0, layout);
-    const d180 = barDarkness(g, w, h, H180, layout);
+    const d0 = barDarkness(g, w, h, H0);
+    const d180 = barDarkness(g, w, h, H180);
     let H = H0;
     let rotated = false;
     if (d180 > d0) { H = H180; rotated = true; }
     if (Math.max(d0, d180) < 0.2 || Math.abs(d0 - d180) < 0.15) {
       return { ok: false, error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
+    }
+
+    let layout = fixed;
+    let version = fixed ? fixed.version : 1;
+    if (!fixed) {
+      const det = detectVersion(g, w, h, H, base.versionCode, base.latestVersion);
+      if (det.error) return { ok: false, error: det.error };
+      version = det.version;
+      layout = layoutFor(version);
     }
 
     const scores = {
@@ -257,7 +311,7 @@
       if (b.kind === 'mod') scores.mod[b.index] = s;
       else scores.ans[b.q][b.opt] = s;
     }
-    return { ok: true, H, rotated, scores };
+    return { ok: true, H, rotated, version, layout, scores };
   }
 
   // Convierte los puntajes de burbuja en respuestas.
