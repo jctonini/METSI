@@ -74,8 +74,14 @@ function renderPhoto(layout, marks, opts) {
         const dx = sx - cx, dy = sy - cy;
         return Math.abs(dx - dy) < 0.45 && Math.abs(dx) < R + 0.4 || Math.abs(dx + dy) < 0.45 && Math.abs(dx) < R + 0.4;
       });
+    } else if (m.kind === 'thincross') {
+      // Cruz hecha con birome fina, como la que se ve en una foto real.
+      paint(cx - R, cy - R, cx + R, cy + R, (sx, sy) => {
+        const dx = sx - cx, dy = sy - cy;
+        return (Math.abs(dx - dy) < 0.22 || Math.abs(dx + dy) < 0.22) && Math.abs(dx) < R + 0.2;
+      });
     } else if (m.kind === 'light') {
-      paint(cx - R, cy - R, cx + R, cy + R, (sx, sy) => Math.hypot(sx - cx, sy - cy) < 0.75);
+      paint(cx - R, cy - R, cx + R, cy + R, (sx, sy) => Math.hypot(sx - cx, sy - cy) < 0.5);
     } else {
       paint(cx - R, cy - R, cx + R, cy + R, (sx, sy) => Math.hypot(sx - cx, sy - cy) < R * 0.92);
     }

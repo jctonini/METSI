@@ -143,16 +143,18 @@
   const PAPER_RADIUS = 3.0;
   const PAPER_POINTS = 12;
 
-  // 0 = burbuja vacía, 1 = totalmente rellena. null si cae fuera de la imagen.
-  function bubbleScore(g, w, h, H, bx, by) {
-    let sum = 0, n = 0;
+  // Mide una burbuja: `mean` = oscurecimiento promedio del interior (0 vacía, 1 llena) y
+  // `top` = promedio del cuarto más oscuro de los puntos (detecta trazos finos como una cruz).
+  // null si cae fuera de la imagen.
+  function bubbleStats(g, w, h, H, bx, by) {
+    const dark = [];
     for (const [rad, pts] of INNER_RINGS) {
       for (let i = 0; i < pts; i++) {
         const a = (2 * Math.PI * i) / pts;
         const p = applyH(H, bx + rad * Math.cos(a), by + rad * Math.sin(a));
         const v = sampleGray(g, w, h, p.x, p.y);
         if (v === null) return null;
-        sum += v; n++;
+        dark.push(v);
       }
     }
     const paper = [];
@@ -165,7 +167,18 @@
     }
     paper.sort((a, b) => a - b);
     const paperLevel = Math.max(40, paper[paper.length >> 1]);
-    return Math.max(0, Math.min(1, 1 - sum / n / paperLevel));
+    const d = dark.map((v) => Math.max(0, Math.min(1, 1 - v / paperLevel))).sort((a, b) => b - a);
+    const mean = d.reduce((s, v) => s + v, 0) / d.length;
+    const k = Math.max(1, Math.round(d.length * TOP_FRACTION));
+    const top = d.slice(0, k).reduce((s, v) => s + v, 0) / k;
+    return { mean, top };
+  }
+
+  const TOP_FRACTION = 0.25;
+  // Puntaje final: 0 = burbuja vacía, 1 = totalmente rellena.
+  function bubbleScore(g, w, h, H, bx, by) {
+    const st = bubbleStats(g, w, h, H, bx, by);
+    return st === null ? null : st.mean;
   }
 
   function barDarkness(g, w, h, H, layout) {
@@ -217,18 +230,19 @@
       return { ok: false, error: 'La hoja parece estar girada o muy inclinada. Sacá la foto con la hoja en vertical.' };
     }
 
-    let H = buildH(layout, m);
-    if (!H) return { ok: false, error: 'No se pudo calcular la posición de la hoja.' };
+    // Orientación: la barra negra del encabezado tiene que quedar arriba. Se compara contra la
+    // hoja dada vuelta 180° en lugar de exigir un negro absoluto (las impresoras y la luz varían).
+    const H0 = buildH(layout, m);
+    const m2 = { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl };
+    const H180 = buildH(layout, m2);
+    if (!H0 || !H180) return { ok: false, error: 'No se pudo calcular la posición de la hoja.' };
+    const d0 = barDarkness(g, w, h, H0, layout);
+    const d180 = barDarkness(g, w, h, H180, layout);
+    let H = H0;
     let rotated = false;
-    if (barDarkness(g, w, h, H, layout) < 0.5) {
-      // Probar con la hoja dada vuelta 180°.
-      const m2 = { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl };
-      const H2 = buildH(layout, m2);
-      if (H2 && barDarkness(g, w, h, H2, layout) >= 0.5) {
-        H = H2; rotated = true;
-      } else {
-        return { ok: false, error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
-      }
+    if (d180 > d0) { H = H180; rotated = true; }
+    if (Math.max(d0, d180) < 0.2 || Math.abs(d0 - d180) < 0.15) {
+      return { ok: false, error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
     }
 
     const scores = {
@@ -246,13 +260,27 @@
     return { ok: true, H, rotated, scores };
   }
 
-  // Convierte los puntajes de burbuja en respuestas. `threshold`: desde qué relleno cuenta como marcada.
-  // Las burbujas con relleno intermedio se marcan como dudosas para revisión manual.
+  // Convierte los puntajes de burbuja en respuestas.
+  // A cada puntaje se le descuenta el "nivel base" de la propia foto (la mediana de todas las
+  // burbujas, casi todas vacías): así la luz, el papel y la impresora no cambian el resultado y
+  // se pueden detectar trazos finos como una cruz. `threshold`: cuánto más oscura que el fondo
+  // tiene que estar una burbuja para contar como marcada. Las que quedan apenas por debajo
+  // (hay "algo" pero no alcanza) se señalan como dudosas para revisar a mano.
+  const DEFAULT_THRESHOLD = 0.1;
+
+  function median(arr) {
+    const a = arr.slice().sort((x, y) => x - y);
+    return a.length ? a[a.length >> 1] : 0;
+  }
+
   function interpret(scan, threshold) {
-    const thr = threshold == null ? 0.25 : threshold;
-    const lo = thr * 0.4, hi = thr * 1.2;
-    const dubious = (s) => s >= lo && s <= hi;
-    const pickMarked = (arr) => arr.map((s, i) => (s >= thr ? i : -1)).filter((i) => i >= 0);
+    const thr = threshold == null ? DEFAULT_THRESHOLD : threshold;
+    const all = [].concat(...scan.scores.ans, scan.scores.mod);
+    const base = median(all);
+    const adj = (v) => Math.max(0, v - base);
+    const lo = thr * 0.5;
+    const dubious = (v) => adj(v) >= lo && adj(v) < thr;
+    const pickMarked = (arr) => arr.map((v, i) => (adj(v) >= thr ? i : -1)).filter((i) => i >= 0);
 
     const modMarked = pickMarked(scan.scores.mod);
     const modalidad = modMarked.length === 1 ? modMarked[0] : null;
@@ -287,5 +315,5 @@
     return { width: w, height: h, data };
   }
 
-  return { scanImage, interpret, cropRegion, solveHomography, applyH, toGray, binarize, components };
+  return { scanImage, interpret, cropRegion, findMarkers, bubbleScore, bubbleStats, barDarkness, buildH, solveHomography, applyH, toGray, binarize, components };
 });

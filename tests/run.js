@@ -124,7 +124,7 @@ function checkRead(exam, photoOpts) {
   const img = renderPhoto(exam.L, exam.marks, photoOpts);
   const scan = scanImage(img, exam.L);
   assert.ok(scan.ok, scan.error);
-  const r = interpret(scan, 0.25);
+  const r = interpret(scan);
   assert.equal(r.modalidad, exam.modalidad);
   assert.deepEqual(r.answers, exam.answers);
   assert.equal(r.flags.some((f) => f.dubious || f.blank), false, 'no debería haber dudosas');
@@ -147,6 +147,10 @@ test('hoja dada vuelta 180°', () => {
   const { scan } = checkRead(makeExam(CFG20, 22), { seed: 9, rot180: true });
   assert.equal(scan.rotated, true);
 });
+test('cruces finas de birome (como en una foto real)', () => {
+  checkRead(makeExam(CFG20, 24, { kind: 'thincross' }), { seed: 11 });
+  checkRead(makeExam(CFG20, 25, { kind: 'thincross' }), { seed: 12, paper: 150, lighting: 0.4 });
+});
 test('marcas con cruz', () => checkRead(makeExam(CFG20, 23, { kind: 'cross' }), { seed: 10 }));
 
 test('lee bien con un logo oscuro grande junto a la esquina', () => {
@@ -155,7 +159,7 @@ test('lee bien con un logo oscuro grande junto a la esquina', () => {
   const img = renderPhoto(exam.L, exam.marks, { seed: 12, ink: [{ x: lr.x, y: lr.y, w: lr.w, h: lr.h }] });
   const scan = scanImage(img, exam.L);
   assert.ok(scan.ok, scan.error);
-  assert.deepEqual(interpret(scan, 0.25).answers, exam.answers);
+  assert.deepEqual(interpret(scan).answers, exam.answers);
 });
 test('layout: textos personalizados con valores por defecto', () => {
   const L = buildLayout({ title: ' 1er parcial ', sheet: { subtitle: 'Metsi · Com. 3', nameLabel: '', logo: 'data:image/png;base64,AA' } });
@@ -185,7 +189,7 @@ test('pregunta en blanco y marca tenue se señalan', () => {
   exam.marks.push({ x: b4.x, y: b4.y, kind: 'light' });
   const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 3 }), exam.L);
   assert.ok(scan.ok, scan.error);
-  const r = interpret(scan, 0.25);
+  const r = interpret(scan);
   assert.equal(r.flags[3].blank, true);
   assert.deepEqual(r.answers[3], []);
   assert.equal(r.flags[4].dubious || r.answers[4].length === 0, true, 'la marca tenue debe ser dudosa o no contarse');

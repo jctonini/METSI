@@ -18,7 +18,7 @@
   const defaults = () => ({
     examId: newId(),
     examCreatedAt: Date.now(),
-    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 1, threshold: 0.25,
+    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 1, threshold: 0.1, thrVersion: 2,
       sheet: { subtitle: '', nameLabel: '', regLabel: '', modLabel: '', instructions: '', logo: '' } },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
@@ -29,7 +29,16 @@
     driveFolderName: '',
   });
   // Completa campos nuevos en estados guardados antes (o provenientes de otro dispositivo).
-  const fixCfg = (st) => { st.cfg.sheet = Object.assign({}, defaults().cfg.sheet, st.cfg.sheet); return st; };
+  const fixCfg = (st) => {
+    st.cfg.sheet = Object.assign({}, defaults().cfg.sheet, st.cfg.sheet);
+    // La sensibilidad cambió de escala (ahora se mide sobre el nivel base de cada foto).
+    if (st.cfg.thrVersion !== 2) {
+      const old = Number(st.cfg.threshold);
+      st.cfg.threshold = old <= 0.2 ? 0.06 : old >= 0.35 ? 0.2 : 0.1;
+      st.cfg.thrVersion = 2;
+    }
+    return st;
+  };
   let state = load();
   const memory = new Map(); // id -> { thumb } (fotos en memoria; no se guardan en localStorage)
 
