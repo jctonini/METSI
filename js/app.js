@@ -5,6 +5,8 @@
   const { sheetSVG } = MetsiSheet;
   const { scanImage, interpret, applyH, cropRegion } = MetsiScanner;
   const { toDelimited, formatNumber } = MetsiCsv;
+  const { scoreQuestion } = MetsiScoring;
+  const fmt = (n) => formatNumber(n, true); // en pantalla: hasta 3 decimales, con coma
   const { mergeStates } = MetsiMerge;
   const Identity = MetsiIdentity;
   const Similar = MetsiSimilar;
@@ -20,7 +22,7 @@
   const defaults = () => ({
     examId: newId(),
     examCreatedAt: Date.now(),
-    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 1, threshold: 0.1, thrVersion: 2,
+    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 0.33, threshold: 0.1, thrVersion: 2,
       sheet: { subtitle: '', nameLabel: '', regLabel: '', modLabel: '', instructions: '', legal: '', logo: '' } },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
@@ -104,6 +106,7 @@
     $('cfg-digits').value = c.regDigits;
     $('cfg-mod').value = c.modalidades.join('\n');
     $('cfg-penalty').value = String(c.penalty);
+    renderPenaltyExample();
     $('cfg-thr').value = String(c.threshold);
     for (const [id, k] of SHEET_FIELDS) {
       $(id).value = c.sheet[k] || '';
@@ -165,7 +168,19 @@
     });
     fillConfig();
   });
-  $('cfg-penalty').addEventListener('change', (e) => { state.cfg.penalty = Number(e.target.value); save(); renderKey(); });
+  function renderPenaltyExample() {
+    const f = state.cfg.penalty;
+    const key = { correct: [1, 2], points: 1 }; // ejemplo: correctas B y C, vale 1 punto
+    const p = (marked) => fmt(scoreQuestion(marked, key, f).earned);
+    $('penalty-example').textContent = `Ejemplo con el descuento actual (${fmt(f)}): en una pregunta de 1 punto con correctas B y C, si el alumno marca solo B y C recibe ${p([1, 2])}; si marca B, C y una incorrecta recibe ${p([1, 2, 0])}; si marca las cinco opciones (A–E) recibe ${p([0, 1, 2, 3, 4])}.`
+      + (f === 0 ? ' Atención: con 0 marcar todas las opciones da el puntaje completo.' : '');
+  }
+  $('cfg-penalty').addEventListener('change', (e) => {
+    const v = Number(String(e.target.value).replace(',', '.'));
+    state.cfg.penalty = isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.33;
+    e.target.value = String(state.cfg.penalty);
+    save(); renderPenaltyExample(); renderKey(); rescoreEverything();
+  });
   $('cfg-thr').addEventListener('change', (e) => { state.cfg.threshold = Number(e.target.value); save(); renderCards(); });
   $('apply-pts').addEventListener('click', () => {
     const p = Number($('cfg-allpts').value);
@@ -205,13 +220,12 @@
       row.appendChild(pts);
       const lbl = document.createElement('span');
       lbl.className = 'ptslabel';
-      lbl.textContent = k.correct.length === 0 ? 'pts · anulada' : k.correct.length > 1 ? `pts · ${round2(k.points / k.correct.length)} c/u` : 'pts';
+      lbl.textContent = k.correct.length === 0 ? 'pts · anulada' : k.correct.length > 1 ? `pts · ${fmt(k.points / k.correct.length)} c/u` : 'pts';
       row.appendChild(lbl);
       box.appendChild(row);
     });
-    $('max-total').textContent = round2(state.key.reduce((s, k) => s + (Number(k.points) || 0), 0));
+    $('max-total').textContent = fmt(state.key.reduce((s, k) => s + (Number(k.points) || 0), 0));
   }
-  const round2 = (n) => Math.round(n * 100) / 100;
   function rescoreEverything() { /* el puntaje se calcula al dibujar; esto refresca vistas abiertas */
     if ($('tab-scan').classList.contains('active')) renderCards();
     if ($('tab-results').classList.contains('active')) renderResults();
@@ -565,7 +579,7 @@
         <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
         <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
           L.modalidades.map((m, i) => `<option value="${i}" ${sheet.modalidad === i ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></label>
-        <div class="score">Puntaje <b>${score.total}</b> / ${score.max}</div>`;
+        <div class="score">Puntaje <b>${fmt(score.total)}</b> / ${fmt(score.max)}</div>`;
       card.appendChild(fields);
       const afterIdChange = async () => {
         const res = await resolveConflicts(sheet);
@@ -599,7 +613,7 @@
         }
         const pq = score.perQuestion[q];
         const pt = document.createElement('span');
-        pt.className = 'qpts'; pt.textContent = `${pq.earned}/${pq.max}`;
+        pt.className = 'qpts'; pt.textContent = `${fmt(pq.earned)}/${fmt(pq.max)}`;
         row.appendChild(pt);
         rows.appendChild(row);
       }
@@ -679,7 +693,7 @@
         const dup = !s.registro || regCount[s.registro] > 1;
         const img = (k) => (s.crops && s.crops[k] ? `<img class="mini" alt="" src="${s.crops[k]}">` : '');
         return `<tr><td class="${dup ? 'warn' : ''}">${s.registro ? escapeHtml(s.registro) : img('reg') || 'falta'}${dup ? ' ⚠' : ''}</td><td>${s.nombre ? escapeHtml(s.nombre) : img('name')}</td><td>${
-          s.modalidad == null ? '' : escapeHtml(L.modalidades[s.modalidad] || '')}</td><td><b>${score.total}</b></td><td>${score.max}</td><td>${score.percent}%</td></tr>`;
+          s.modalidad == null ? '' : escapeHtml(L.modalidades[s.modalidad] || '')}</td><td><b>${fmt(score.total)}</b></td><td>${fmt(score.max)}</td><td>${fmt(score.percent)}%</td></tr>`;
       }).join('')}</tbody></table><p class="muted">${rows.length} hoja(s). ⚠ = registro repetido o sin cargar.</p>`;
 
     const stats = [];
@@ -967,6 +981,8 @@
   fillConfig();
   syncKeyToConfig();
   renderKey();
+  $('app-version').textContent = window.METSI_VERSION ? 'versión ' + window.METSI_VERSION : '';
+  renderPenaltyExample();
   $('drive-client').value = clientId();
   if (clientId()) loadGis().catch(() => {});
   updateSyncBar();

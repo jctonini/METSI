@@ -22,7 +22,8 @@ La app **no decide quién aprueba**: solo calcula el puntaje. El criterio de apr
 
 - Cada pregunta tiene un puntaje propio, que se **reparte en partes iguales entre sus respuestas correctas**.
 - Se admite **puntaje parcial**: cada opción correcta marcada suma su parte, aunque no se marquen todas.
-- Cada opción incorrecta marcada descuenta su parte (configurable: una parte completa, media parte o nada). Una pregunta nunca baja de 0.
+- Cada opción incorrecta marcada resta una fracción de lo que vale una opción correcta. Esa fracción es un **número entre 0 y 1 que elegís** en la pestaña Examen (0 = no resta; 1 = cada incorrecta anula un acierto; el valor inicial de un examen nuevo es 0,33). Una pregunta nunca baja de 0. Con 0, marcar todas las opciones da el puntaje completo, y la app lo avisa. Ejemplo con 0,33: pregunta de 1 punto con correctas B y C; marcando solo B y C se recibe 1, marcando B, C y una incorrecta 0,835 y marcando A–E 0,505.
+- En pantalla y en el CSV los puntajes se muestran con hasta 3 decimales.
 - Una pregunta sin ninguna respuesta correcta definida se considera **anulada** y suma sus puntos a todos.
 
 ## Versiones de la hoja
@@ -65,7 +66,10 @@ Sin esa configuración la app funciona igual, pero los resultados quedan solo en
 
 ## Desarrollo
 
+Los archivos de la app se cargan con un número de versión (`?v=…`, visible arriba en la app) para que el navegador no use copias viejas. **Después de cambiar código o estilos, correr `node tools/version.js`**; una prueba avisa si se olvidó.
+
 ```
+node tools/version.js  # actualiza el número de versión de los archivos
 node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas, CSV, combinación de datos y Drive simulado
 ```
 
@@ -78,4 +82,5 @@ node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas, CSV, co
 - `js/identity.js`: reglas de identificación y duplicados, y detección del mismo archivo.
 - `js/similar.js`: parecido de letra entre fotos (misma hoja fotografiada dos veces).
 - `js/drive.js`: cliente de la API de Google Drive.
+- `tools/version.js`: calcula y aplica el número de versión.
 - `js/app.js`, `index.html`, `css/style.css`: interfaz.

@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>METSI · Corrector de multiple choice</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=37fd68dd">
 </head>
 <body>
   <header class="top">
-    <h1>METSI · Corrector de multiple choice</h1>
+    <h1>METSI · Corrector de multiple choice <small id="app-version" class="muted"></small></h1>
     <nav id="tabs">
       <button data-tab="exam" class="active">1. Examen</button>
       <button data-tab="sheet">2. Hoja</button>
@@ -40,13 +40,11 @@
       <div class="grid">
         <label>Puntos por pregunta (aplicar a todas)
           <span class="inline"><input id="cfg-allpts" type="number" min="0" step="0.25" value="1"><button id="apply-pts" type="button">Aplicar</button></span></label>
-        <label>Descuento por opción incorrecta marcada
-          <select id="cfg-penalty">
-            <option value="1">Cada incorrecta anula una correcta (recomendado)</option>
-            <option value="0.5">Cada incorrecta resta media parte</option>
-            <option value="0">Sin descuento</option>
-          </select></label>
+        <label>Descuento por cada opción incorrecta marcada (de 0 a 1)
+          <input id="cfg-penalty" type="number" min="0" max="1" step="0.05" inputmode="decimal"></label>
       </div>
+      <p class="hint" id="penalty-help">Cada opción incorrecta que el alumno marca resta esa fracción de lo que vale una opción correcta. <b>0</b> = no resta nada (marcar todas las opciones daría el puntaje completo). <b>1</b> = cada incorrecta anula un acierto. Una pregunta nunca baja de 0.</p>
+      <p class="hint" id="penalty-example"></p>
       <div id="key" class="key"></div>
       <p class="total">Puntaje máximo del examen: <b id="max-total">0</b></p>
     </section>
@@ -157,16 +155,17 @@
   <div id="print-area"></div>
   <style id="page-style"></style>
 
-  <script src="js/config.js"></script>
-  <script src="js/layout.js"></script>
-  <script src="js/scoring.js"></script>
-  <script src="js/csv.js"></script>
-  <script src="js/sheet.js"></script>
-  <script src="js/scanner.js"></script>
-  <script src="js/merge.js"></script>
-  <script src="js/identity.js"></script>
-  <script src="js/similar.js"></script>
-  <script src="js/drive.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/version.js?v=37fd68dd"></script>
+  <script src="js/config.js?v=37fd68dd"></script>
+  <script src="js/layout.js?v=37fd68dd"></script>
+  <script src="js/scoring.js?v=37fd68dd"></script>
+  <script src="js/csv.js?v=37fd68dd"></script>
+  <script src="js/sheet.js?v=37fd68dd"></script>
+  <script src="js/scanner.js?v=37fd68dd"></script>
+  <script src="js/merge.js?v=37fd68dd"></script>
+  <script src="js/identity.js?v=37fd68dd"></script>
+  <script src="js/similar.js?v=37fd68dd"></script>
+  <script src="js/drive.js?v=37fd68dd"></script>
+  <script src="js/app.js?v=37fd68dd"></script>
 </body>
 </html>
