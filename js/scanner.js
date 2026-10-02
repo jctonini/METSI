@@ -143,16 +143,18 @@
   const PAPER_RADIUS = 3.0;
   const PAPER_POINTS = 12;
 
-  // 0 = burbuja vacía, 1 = totalmente rellena. null si cae fuera de la imagen.
-  function bubbleScore(g, w, h, H, bx, by) {
-    let sum = 0, n = 0;
+  // Mide una burbuja: `mean` = oscurecimiento promedio del interior (0 vacía, 1 llena) y
+  // `top` = promedio del cuarto más oscuro de los puntos (detecta trazos finos como una cruz).
+  // null si cae fuera de la imagen.
+  function bubbleStats(g, w, h, H, bx, by) {
+    const dark = [];
     for (const [rad, pts] of INNER_RINGS) {
       for (let i = 0; i < pts; i++) {
         const a = (2 * Math.PI * i) / pts;
         const p = applyH(H, bx + rad * Math.cos(a), by + rad * Math.sin(a));
         const v = sampleGray(g, w, h, p.x, p.y);
         if (v === null) return null;
-        sum += v; n++;
+        dark.push(v);
       }
     }
     const paper = [];
@@ -165,30 +167,82 @@
     }
     paper.sort((a, b) => a - b);
     const paperLevel = Math.max(40, paper[paper.length >> 1]);
-    return Math.max(0, Math.min(1, 1 - sum / n / paperLevel));
+    const d = dark.map((v) => Math.max(0, Math.min(1, 1 - v / paperLevel))).sort((a, b) => b - a);
+    const mean = d.reduce((s, v) => s + v, 0) / d.length;
+    const k = Math.max(1, Math.round(d.length * TOP_FRACTION));
+    const top = d.slice(0, k).reduce((s, v) => s + v, 0) / k;
+    return { mean, top };
   }
 
-  function barDarkness(g, w, h, H, layout) {
-    const b = layout.orientationBar;
-    let sum = 0, n = 0;
-    for (let i = -2; i <= 2; i++) {
-      for (let j = -1; j <= 1; j++) {
-        const p = applyH(H, b.x + i * (b.w / 5), b.y + j * (b.h / 4));
-        const v = sampleGray(g, w, h, p.x, p.y);
-        if (v === null) return 0;
-        sum += v; n++;
-      }
-    }
-    // Se compara con el papel unos mm más abajo de la barra (mediana de varios puntos).
+  const TOP_FRACTION = 0.25;
+  // Puntaje final: 0 = burbuja vacía, 1 = totalmente rellena.
+  function bubbleScore(g, w, h, H, bx, by) {
+    const st = bubbleStats(g, w, h, H, bx, by);
+    return st === null ? null : st.mean;
+  }
+
+  // Papel de referencia: mediana de varios puntos de la hoja (en mm) para comparar contra la tinta.
+  function paperLevel(g, w, h, H, pts) {
     const ref = [];
-    for (let i = -2; i <= 2; i++) {
-      const q = applyH(H, b.x + i * (b.w / 5), b.y + 4.5);
+    for (const [x, y] of pts) {
+      const q = applyH(H, x, y);
       const v = sampleGray(g, w, h, q.x, q.y);
       if (v !== null) ref.push(v);
     }
     ref.sort((a, c) => a - c);
-    const paper = ref.length ? ref[ref.length >> 1] : 255;
-    return 1 - sum / n / Math.max(40, paper);
+    return Math.max(40, ref.length ? ref[ref.length >> 1] : 255);
+  }
+
+  // Oscurecimiento medio (0 papel, 1 negro) de un conjunto de puntos en mm, contra `paper`.
+  function darkness(g, w, h, H, pts, paper) {
+    let sum = 0;
+    for (const [x, y] of pts) {
+      const q = applyH(H, x, y);
+      const v = sampleGray(g, w, h, q.x, q.y);
+      if (v === null) return null;
+      sum += v;
+    }
+    return 1 - sum / pts.length / paper;
+  }
+
+  // Barra de orientación (parte común a todas las versiones: la v2 es más ancha).
+  const BAR_COMMON = { x: 74, y: 10, w: 20, h: 4 };
+  function barDarkness(g, w, h, H) {
+    const b = BAR_COMMON;
+    const pts = [];
+    for (let i = -2; i <= 2; i++) for (let j = -1; j <= 1; j++) pts.push([b.x + i * (b.w / 5), b.y + j * (b.h / 4)]);
+    const d = darkness(g, w, h, H, pts, paperLevel(g, w, h, H, [-2, -1, 0, 1, 2].map((i) => [b.x + i * (b.w / 5), b.y + 4.5])));
+    return d === null ? 0 : d;
+  }
+
+  // Versión de la hoja: código de 3 cuadraditos al pie + ancho de la barra (la v2 es más ancha).
+  // Las dos señales tienen que coincidir; si no, mejor pedir otra foto que leer con el diseño equivocado.
+  function detectVersion(g, w, h, H, vc, latest) {
+    const refPts = [];
+    for (let i = 0; i < 7; i++) refPts.push([vc.x0 - 1 + i * (vc.bits * vc.pitch / 6), vc.y + 3.6]);
+    const paper = paperLevel(g, w, h, H, refPts);
+    let value = 0;
+    for (let i = 0; i < vc.bits; i++) {
+      const cx = vc.x0 + i * vc.pitch, cy = vc.y;
+      const pts = [[cx, cy]];
+      for (let k = 0; k < 8; k++) pts.push([cx + 0.9 * Math.cos(k * Math.PI / 4), cy + 0.9 * Math.sin(k * Math.PI / 4)]);
+      const d = darkness(g, w, h, H, pts, paper);
+      if (d === null) return { error: 'Parte de la hoja quedó fuera de la foto. Sacala de nuevo con la hoja completa.' };
+      if (d >= 0.35) value |= 1 << i;
+      else if (d > 0.15) return { error: 'No se pudo reconocer el formato de la hoja (revisá la luz y que el pie de la hoja se vea completo).' };
+    }
+    const version = value + 1;
+    if (version > latest) {
+      return { error: 'Esta hoja es de un formato más nuevo (V' + version + '). Actualizá la app para poder leerla.' };
+    }
+    // Control cruzado con el ancho de la barra superior.
+    const barRef = paperLevel(g, w, h, H, [-1, 0, 1].map((i) => [BAR_COMMON.x + i * 5, BAR_COMMON.y + 4.5]));
+    const wideD = darkness(g, w, h, H, [[BAR_COMMON.x - 12.5, BAR_COMMON.y], [BAR_COMMON.x + 12.5, BAR_COMMON.y], [BAR_COMMON.x - 12.5, BAR_COMMON.y + 1], [BAR_COMMON.x + 12.5, BAR_COMMON.y - 1]], barRef);
+    const wide = wideD !== null && wideD >= 0.4;
+    if (wideD === null || (wideD > 0.15 && wideD < 0.4) || wide !== (version >= 2)) {
+      return { error: 'No se pudo reconocer el formato de la hoja. Sacá otra foto con buena luz y con la hoja completa.' };
+    }
+    return { version };
   }
 
   function buildH(layout, m) {
@@ -198,9 +252,12 @@
   }
 
   // ---------- API ----------
-  // Devuelve { ok:true, H, scores:{ mod:[i], ans:[q][opción] } }
-  // o { ok:false, error }.
-  function scanImage(img, layout) {
+  // `layoutSource`: función (versión) => layout, o un layout fijo (se omite la detección de versión).
+  // Devuelve { ok:true, H, version, layout, scores:{ mod:[i], ans:[q][opción] } } o { ok:false, error }.
+  function scanImage(img, layoutSource) {
+    const fixed = typeof layoutSource === 'function' ? null : layoutSource;
+    const layoutFor = fixed ? () => fixed : layoutSource;
+    const base = layoutFor(1);
     const { width: w, height: h } = img;
     const g = toGray(img);
     const win = Math.max(15, Math.round(Math.max(w, h) / 12)) | 1;
@@ -217,18 +274,29 @@
       return { ok: false, error: 'La hoja parece estar girada o muy inclinada. Sacá la foto con la hoja en vertical.' };
     }
 
-    let H = buildH(layout, m);
-    if (!H) return { ok: false, error: 'No se pudo calcular la posición de la hoja.' };
+    // Orientación: la barra negra del encabezado tiene que quedar arriba. Se compara contra la
+    // hoja dada vuelta 180° en lugar de exigir un negro absoluto (las impresoras y la luz varían).
+    // Las marcas de las esquinas son iguales en todas las versiones.
+    const H0 = buildH(base, m);
+    const m2 = { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl };
+    const H180 = buildH(base, m2);
+    if (!H0 || !H180) return { ok: false, error: 'No se pudo calcular la posición de la hoja.' };
+    const d0 = barDarkness(g, w, h, H0);
+    const d180 = barDarkness(g, w, h, H180);
+    let H = H0;
     let rotated = false;
-    if (barDarkness(g, w, h, H, layout) < 0.5) {
-      // Probar con la hoja dada vuelta 180°.
-      const m2 = { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl };
-      const H2 = buildH(layout, m2);
-      if (H2 && barDarkness(g, w, h, H2, layout) >= 0.5) {
-        H = H2; rotated = true;
-      } else {
-        return { ok: false, error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
-      }
+    if (d180 > d0) { H = H180; rotated = true; }
+    if (Math.max(d0, d180) < 0.2 || Math.abs(d0 - d180) < 0.15) {
+      return { ok: false, error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
+    }
+
+    let layout = fixed;
+    let version = fixed ? fixed.version : 1;
+    if (!fixed) {
+      const det = detectVersion(g, w, h, H, base.versionCode, base.latestVersion);
+      if (det.error) return { ok: false, error: det.error };
+      version = det.version;
+      layout = layoutFor(version);
     }
 
     const scores = {
@@ -243,16 +311,30 @@
       if (b.kind === 'mod') scores.mod[b.index] = s;
       else scores.ans[b.q][b.opt] = s;
     }
-    return { ok: true, H, rotated, scores };
+    return { ok: true, H, rotated, version, layout, scores };
   }
 
-  // Convierte los puntajes de burbuja en respuestas. `threshold`: desde qué relleno cuenta como marcada.
-  // Las burbujas con relleno intermedio se marcan como dudosas para revisión manual.
+  // Convierte los puntajes de burbuja en respuestas.
+  // A cada puntaje se le descuenta el "nivel base" de la propia foto (la mediana de todas las
+  // burbujas, casi todas vacías): así la luz, el papel y la impresora no cambian el resultado y
+  // se pueden detectar trazos finos como una cruz. `threshold`: cuánto más oscura que el fondo
+  // tiene que estar una burbuja para contar como marcada. Las que quedan apenas por debajo
+  // (hay "algo" pero no alcanza) se señalan como dudosas para revisar a mano.
+  const DEFAULT_THRESHOLD = 0.1;
+
+  function median(arr) {
+    const a = arr.slice().sort((x, y) => x - y);
+    return a.length ? a[a.length >> 1] : 0;
+  }
+
   function interpret(scan, threshold) {
-    const thr = threshold == null ? 0.25 : threshold;
-    const lo = thr * 0.4, hi = thr * 1.2;
-    const dubious = (s) => s >= lo && s <= hi;
-    const pickMarked = (arr) => arr.map((s, i) => (s >= thr ? i : -1)).filter((i) => i >= 0);
+    const thr = threshold == null ? DEFAULT_THRESHOLD : threshold;
+    const all = [].concat(...scan.scores.ans, scan.scores.mod);
+    const base = median(all);
+    const adj = (v) => Math.max(0, v - base);
+    const lo = thr * 0.5;
+    const dubious = (v) => adj(v) >= lo && adj(v) < thr;
+    const pickMarked = (arr) => arr.map((v, i) => (adj(v) >= thr ? i : -1)).filter((i) => i >= 0);
 
     const modMarked = pickMarked(scan.scores.mod);
     const modalidad = modMarked.length === 1 ? modMarked[0] : null;
@@ -287,5 +369,5 @@
     return { width: w, height: h, data };
   }
 
-  return { scanImage, interpret, cropRegion, solveHomography, applyH, toGray, binarize, components };
+  return { scanImage, interpret, cropRegion, findMarkers, bubbleScore, bubbleStats, barDarkness, buildH, solveHomography, applyH, toGray, binarize, components };
 });

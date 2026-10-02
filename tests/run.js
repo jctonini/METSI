@@ -102,7 +102,8 @@ const MODALIDADES = ['Presencial', 'Virtual', 'Híbrida'];
 
 function makeExam(cfg, seed, opts) {
   opts = opts || {};
-  const L = buildLayout(cfg);
+  const L = buildLayout(cfg, opts.version || 2);
+  const layoutFor = (v) => buildLayout(cfg, v);
   const rand = rng(seed);
   const modalidad = Math.floor(rand() * L.modalidades.length);
   const answers = Array.from({ length: L.numQuestions }, () => {
@@ -117,14 +118,14 @@ function makeExam(cfg, seed, opts) {
     if (b.kind === 'mod' && modalidad === b.index) marks.push({ x: b.x, y: b.y, kind });
     if (b.kind === 'ans' && answers[b.q].includes(b.opt)) marks.push({ x: b.x, y: b.y, kind });
   }
-  return { L, modalidad, answers, marks };
+  return { L, cfg, layoutFor, modalidad, answers, marks };
 }
 
 function checkRead(exam, photoOpts) {
   const img = renderPhoto(exam.L, exam.marks, photoOpts);
-  const scan = scanImage(img, exam.L);
+  const scan = scanImage(img, exam.layoutFor);
   assert.ok(scan.ok, scan.error);
-  const r = interpret(scan, 0.25);
+  const r = interpret(scan);
   assert.equal(r.modalidad, exam.modalidad);
   assert.deepEqual(r.answers, exam.answers);
   assert.equal(r.flags.some((f) => f.dubious || f.blank), false, 'no debería haber dudosas');
@@ -147,15 +148,19 @@ test('hoja dada vuelta 180°', () => {
   const { scan } = checkRead(makeExam(CFG20, 22), { seed: 9, rot180: true });
   assert.equal(scan.rotated, true);
 });
+test('cruces finas de birome (como en una foto real)', () => {
+  checkRead(makeExam(CFG20, 24, { kind: 'thincross' }), { seed: 11 });
+  checkRead(makeExam(CFG20, 25, { kind: 'thincross' }), { seed: 12, paper: 150, lighting: 0.4 });
+});
 test('marcas con cruz', () => checkRead(makeExam(CFG20, 23, { kind: 'cross' }), { seed: 10 }));
 
 test('lee bien con un logo oscuro grande junto a la esquina', () => {
   const exam = makeExam(CFG20, 61);
   const lr = exam.L.logoRect;
   const img = renderPhoto(exam.L, exam.marks, { seed: 12, ink: [{ x: lr.x, y: lr.y, w: lr.w, h: lr.h }] });
-  const scan = scanImage(img, exam.L);
+  const scan = scanImage(img, exam.layoutFor);
   assert.ok(scan.ok, scan.error);
-  assert.deepEqual(interpret(scan, 0.25).answers, exam.answers);
+  assert.deepEqual(interpret(scan).answers, exam.answers);
 });
 test('layout: textos personalizados con valores por defecto', () => {
   const L = buildLayout({ title: ' 1er parcial ', sheet: { subtitle: 'Metsi · Com. 3', nameLabel: '', logo: 'data:image/png;base64,AA' } });
@@ -174,6 +179,72 @@ test('hoja: los textos se escapan y los largos se comprimen', () => {
   assert.equal(svg.includes('<B'), false);
 });
 
+// ---------- versiones de la hoja ----------
+test('v1 congelada: las posiciones coinciden con las de las hojas ya impresas', () => {
+  const fx = require('./fixtures/layout-v1.json');
+  for (const [k, f] of Object.entries(fx)) {
+    const L = buildLayout(f.cfg, 1);
+    const got = { cfg: f.cfg, numQuestions: L.numQuestions, maxQuestions: L.maxQuestions, page: L.page, markers: L.markers, markerSize: L.markerSize,
+      orientationBar: L.orientationBar, r: L.r, fields: L.fields, mod: { labelY: L.mod.labelY, items: L.mod.items }, ans: L.ans, bubbles: L.bubbles };
+    assert.equal(JSON.stringify(got), JSON.stringify(f), 'cambió la v1 (' + k + ')');
+  }
+});
+test('v1 y v2: códigos de versión y espacio para el nombre', () => {
+  const v1 = buildLayout(CFG20, 1), v2 = buildLayout(CFG20, 2);
+  assert.deepEqual(v1.versionBits.map((b) => b.on), [false, false, false]);
+  assert.deepEqual(v2.versionBits.map((b) => b.on), [true, false, false]);
+  const space = (L) => L.header.nameLineY - (L.header.subtitleY + 1);
+  assert.ok(space(v2) - space(v1) >= 4.5, 'la v2 debe dar al menos ~5 mm más para escribir el nombre');
+  // Con 2 modalidades (el caso real) la capacidad no baja; con más filas de modalidades baja como mucho una fila.
+  const two = { numQuestions: 20, numOptions: 5, regDigits: 7, modalidades: ['Presencial', 'A distancia'] };
+  assert.equal(buildLayout(two, 2).maxQuestions, buildLayout(two, 1).maxQuestions);
+  assert.ok(v2.maxQuestions >= v1.maxQuestions - 2);
+});
+test('lee hojas v1 (ya impresas) y v2 y detecta cada versión', () => {
+  for (const version of [1, 2]) {
+    for (let s = 1; s <= 4; s++) {
+      const exam = makeExam(CFG20, 300 + s, { version });
+      const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, jitter: 70 }), exam.layoutFor);
+      assert.ok(scan.ok, scan.error);
+      assert.equal(scan.version, version);
+      assert.deepEqual(interpret(scan).answers, exam.answers);
+      assert.equal(interpret(scan).modalidad, exam.modalidad);
+    }
+  }
+});
+test('hoja v1 dada vuelta 180° también se lee', () => {
+  const exam = makeExam(CFG10, 330, { version: 1 });
+  const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 5, rot180: true }), exam.layoutFor);
+  assert.ok(scan.ok, scan.error);
+  assert.equal(scan.version, 1);
+  assert.deepEqual(interpret(scan).answers, exam.answers);
+});
+test('una versión futura se rechaza con un aviso, sin leer mal', () => {
+  const exam = makeExam(CFG10, 331);
+  exam.L.versionBits[0].on = false; exam.L.versionBits[1].on = true; // valor 2 => V3
+  const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 6 }), exam.layoutFor);
+  assert.equal(r.ok, false);
+  assert.match(r.error, /más nuevo.*V3/);
+});
+test('señales de versión contradictorias se rechazan', () => {
+  const exam = makeExam(CFG10, 332);
+  exam.L.orientationBar = buildLayout(CFG10, 1).orientationBar; // v2 con barra angosta (como v1)
+  const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 7 }), exam.layoutFor);
+  assert.equal(r.ok, false);
+  assert.match(r.error, /formato/);
+});
+test('hoja: la v2 imprime leyendas, fecha y versión; la v1 no', () => {
+  const { sheetSVG } = require('../js/sheet.js');
+  const svg2 = sheetSVG(buildLayout({ ...CFG10, title: 'Parcial' }, 2));
+  assert.ok(svg2.includes('Rellená el círculo por completo con birome'));
+  assert.ok(svg2.includes('prevalecen aquellas marcadas en la hoja de respuestas'));
+  assert.ok(svg2.includes('Fecha:'));
+  assert.ok(svg2.includes('>V2<'));
+  const svg1 = sheetSVG(buildLayout(CFG10, 1));
+  assert.equal(svg1.includes('Fecha:'), false);
+  assert.equal(svg1.includes('>V1<'), false);
+});
+
 test('pregunta en blanco y marca tenue se señalan', () => {
   const exam = makeExam(CFG20, 31);
   // Borra todas las marcas de la pregunta 3 y deja una tenue en la pregunta 4.
@@ -183,9 +254,9 @@ test('pregunta en blanco y marca tenue se señalan', () => {
   });
   const b4 = exam.L.bubbles.find((x) => x.kind === 'ans' && x.q === 4 && x.opt === 1);
   exam.marks.push({ x: b4.x, y: b4.y, kind: 'light' });
-  const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 3 }), exam.L);
+  const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 3 }), exam.layoutFor);
   assert.ok(scan.ok, scan.error);
-  const r = interpret(scan, 0.25);
+  const r = interpret(scan);
   assert.equal(r.flags[3].blank, true);
   assert.deepEqual(r.answers[3], []);
   assert.equal(r.flags[4].dubious || r.answers[4].length === 0, true, 'la marca tenue debe ser dudosa o no contarse');
@@ -200,7 +271,7 @@ test('recorta nombre y registro de la foto, enderezados', () => {
   // "Escritura" simulada: una franja oscura en la mitad izquierda de los casilleros del registro.
   const ink = [{ x: f.reg.x + 3, y: f.reg.y + 4, w: 20, h: 3 }];
   const img = renderPhoto(exam.L, exam.marks, { seed: 4, ink });
-  const scan = scanImage(img, exam.L);
+  const scan = scanImage(img, exam.layoutFor);
   assert.ok(scan.ok, scan.error);
   const crop = cropRegion(img, scan.H, f.reg, 10);
   assert.equal(crop.width, Math.round(f.reg.w * 10));
@@ -232,8 +303,117 @@ test('hoja cortada (falta una esquina) devuelve error', () => {
       img.data[i] = img.data[i + 1] = img.data[i + 2] = 200;
     }
   }
-  const r = scanImage(img, exam.L);
+  const r = scanImage(img, exam.layoutFor);
   assert.equal(r.ok, false);
+});
+
+// ---------- identificación y duplicados ----------
+const ID = require('../js/identity.js');
+const hoja = (id, nombre, registro, extra) => ({ id, nombre, registro, ...extra });
+
+test('identidad: los nombres se normalizan (mayúsculas, tildes, signos, espacios)', () => {
+  assert.equal(ID.normName('  GÓMEZ,  María '), 'gomez maria');
+  assert.equal(ID.normName('Gomez Maria'), ID.normName('gómez   maria'));
+  assert.equal(ID.normReg(' 12.345 '), '12345');
+});
+test('identidad: hace falta nombre o registro (la modalidad no cuenta)', () => {
+  const r = ID.analyze([hoja('a', '', ''), hoja('b', 'Ana', ''), hoja('c', '', '123'), hoja('d', '  ', ' ', { modalidad: 1 })]);
+  assert.deepEqual(r.missing.map((s) => s.id), ['a', 'd']);
+});
+test('identidad: mismo registro frena (con mismo nombre, otro nombre o sin nombre)', () => {
+  const kinds = (a, b) => ID.analyze([a, b]).hard.map((c) => c.kind);
+  assert.deepEqual(kinds(hoja('a', 'Ana Gómez', '55'), hoja('b', 'ana gomez', '55')), ['same-data']);
+  assert.deepEqual(kinds(hoja('a', 'Ana Gómez', '55'), hoja('b', 'Ana G.', '55')), ['same-reg-diff-name']);
+  assert.deepEqual(kinds(hoja('a', 'Ana Gómez', '55'), hoja('b', '', '55')), ['same-reg']);
+});
+test('identidad: mismo nombre con registros distintos solo avisa', () => {
+  const r = ID.analyze([hoja('a', 'Ana Gómez', '55'), hoja('b', 'Ana Gómez', '56')]);
+  assert.equal(r.hard.length, 0);
+  assert.equal(r.soft.length, 1);
+});
+test('identidad: si falta el registro en una, se compara por el nombre', () => {
+  assert.equal(ID.analyze([hoja('a', 'Ana Gómez', ''), hoja('b', 'Ana Gómez', '55')]).hard.length, 1);
+  assert.equal(ID.analyze([hoja('a', 'Ana Gómez', ''), hoja('b', 'Luis Paz', '55')]).hard.length, 0);
+  assert.equal(ID.analyze([hoja('a', '', '55'), hoja('b', 'Luis Paz', '56')]).hard.length, 0);
+});
+test('identidad: confirmar que son distintas resuelve el conflicto', () => {
+  const a = hoja('a', 'Ana', '55', { ack: ['b'] }), b = hoja('b', 'Ana', '55');
+  assert.equal(ID.analyze([a, b]).hard.length, 0);
+  assert.equal(ID.analyze([b, a]).hard.length, 0);
+  // una tercera hoja con el mismo registro vuelve a consultar
+  assert.equal(ID.analyze([a, b, hoja('c', 'Ana', '55')]).hard.length, 2);
+});
+test('identidad: las hojas con error de lectura no cuentan', () => {
+  const r = ID.analyze([hoja('a', '', '', { failed: true }), hoja('b', 'Ana', '1'), hoja('c', 'Ana', '1', { failed: true })]);
+  assert.equal(r.missing.length, 0);
+  assert.equal(r.hard.length, 0);
+});
+test('identidad: conflictos de una hoja concreta', () => {
+  const all = [hoja('a', 'Ana', '55'), hoja('b', 'Ana G', '55'), hoja('c', 'Luis', '9')];
+  assert.deepEqual(ID.conflictsFor(all[0], all).map((c) => c.other.id), ['b']);
+  assert.equal(ID.conflictsFor(all[2], all).length, 0);
+});
+test('identidad: hash de archivo igual para bytes iguales, distinto si cambia uno', () => {
+  const a = new Uint8Array([1, 2, 3, 4, 5, 250]), b = new Uint8Array([1, 2, 3, 4, 5, 250]), c = new Uint8Array([1, 2, 3, 4, 6, 250]);
+  assert.equal(ID.hashBytes(a), ID.hashBytes(b));
+  assert.notEqual(ID.hashBytes(a), ID.hashBytes(c));
+});
+
+// ---------- parecido de letra ----------
+const SIM = require('../js/similar.js');
+function strokes(seed, w, h, count, thick) {
+  const r = rng(seed), bits = new Uint8Array(w * h);
+  for (let s = 0; s < count; s++) {
+    const x0 = r() * w, y0 = r() * h, x1 = r() * w, y1 = r() * h;
+    for (let k = 0; k <= 40; k++) {
+      const x = Math.round(x0 + (x1 - x0) * k / 40), y = Math.round(y0 + (y1 - y0) * k / 40);
+      for (let dy = 0; dy < thick; dy++) for (let dx = 0; dx < thick; dx++) {
+        if (x + dx < w && y + dy < h) bits[(y + dy) * w + x + dx] = 1;
+      }
+    }
+  }
+  return bits;
+}
+function shiftBits(bits, w, h, dx, dy, flip, seed) {
+  const r = rng(seed), out = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const sx = x - dx, sy = y - dy;
+    let v = sx >= 0 && sy >= 0 && sx < w && sy < h ? bits[sy * w + sx] : 0;
+    if (r() < flip) v = 1 - v;
+    out[y * w + x] = v;
+  }
+  return out;
+}
+const fakeSig = (seed, opts) => {
+  opts = opts || {};
+  const W = 22, Hh = 26, n = 7, NW = 360, NH = 31;
+  const reg = new Uint8Array(n * W * Hh);
+  for (let k = 0; k < n; k++) {
+    let box = strokes(seed * 100 + k, W, Hh, 4, 2);
+    if (opts.dx !== undefined) box = shiftBits(box, W, Hh, opts.dx, opts.dy, 0.02, seed + k);
+    reg.set(box, k * W * Hh);
+  }
+  let name = strokes(seed * 7 + 1, NW, NH, 14, 2);
+  if (opts.dx !== undefined) name = shiftBits(name, NW, NH, opts.dx * 2, opts.dy, 0.01, seed);
+  return SIM.makeSignature({ n, w: W, h: Hh, bits: reg }, { w: NW, h: NH, bits: name });
+};
+test('letra: la misma hoja fotografiada otra vez (corrida y con ruido) se reconoce', () => {
+  for (let s = 1; s <= 6; s++) {
+    const c = SIM.compare(fakeSig(s), fakeSig(s, { dx: (s % 3) - 1, dy: 1 - (s % 2) }));
+    assert.ok(c.reg > 0.65, 'registro ' + c.reg);
+    assert.ok(c.name > 0.65, 'nombre ' + c.name);
+    assert.ok(c.score >= SIM.SIMILAR_THRESHOLD);
+  }
+});
+test('letra: dos hojas distintas no se confunden', () => {
+  let max = -1;
+  for (let a = 1; a <= 8; a++) for (let b = a + 1; b <= 8; b++) max = Math.max(max, SIM.compare(fakeSig(a), fakeSig(b)).score);
+  assert.ok(max < 0.4, 'el parecido máximo entre hojas distintas fue ' + max);
+});
+test('letra: sin tinta no se puede comparar (null)', () => {
+  const empty = SIM.makeSignature({ n: 7, w: 22, h: 26, bits: new Uint8Array(7 * 22 * 26) }, null);
+  assert.equal(SIM.compare(empty, fakeSig(1)).score, null);
+  assert.equal(SIM.compare(empty, empty).score, null);
 });
 
 // ---------- Drive (simulado) y combinación de estados ----------
