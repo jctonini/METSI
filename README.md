@@ -71,7 +71,7 @@ Sin esa configuración la app funciona igual, pero los resultados quedan solo en
 - Hoja completa, con las 4 marcas negras de las esquinas visibles.
 - Luz pareja, sin sombras fuertes. Hoja apoyada en una mesa y lo más plana posible.
 - Si imprimiste dos hojas por A4 y no las cortaste, se puede fotografiar igual: la app elige la hoja que está completa en la foto (la otra puede verse cortada o a un costado). Conviene que la hoja a corregir quede entera y lo más centrada posible.
-- Los alumnos deben rellenar el círculo con **birome** (no lápiz). Las cruces y marcas parciales se leen; las muy tenues quedan señaladas como dudosas.
+- Los alumnos deben rellenar el círculo con **birome** (no lápiz). Las cruces y marcas parciales se leen. Un punto suelto cuenta como respuesta si mide al menos ~1 mm; entre ~0,8 mm queda señalado como dudoso y un puntito menor se ignora. La tinta se mide en un círculo de 1,2 mm alrededor del centro de cada burbuja.
 
 ## Desarrollo
 

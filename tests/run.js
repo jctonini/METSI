@@ -380,6 +380,29 @@ test('V3: una mancha negra cuadrada suelta no se confunde con una esquina', () =
   assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
 });
 
+test('un punto cuenta como respuesta si es lo bastante grande (y un puntito suelto no)', () => {
+  const L = buildLayout(CFG20, 3);
+  const radii = [0.2, 0.3, 0.5, 0.6, 0.8, 1.0, 1.5]; // radios en mm (diámetro = el doble)
+  const marks = radii.map((r, q) => { const b = L.bubbles.find((x) => x.kind === 'ans' && x.q === q && x.opt === 1); return { x: b.x, y: b.y, kind: 'dot', r }; });
+  for (const seed of [1, 2, 3]) {
+    const scan = scanImage(renderPhoto(L, marks, { seed, jitter: 60, paper: 190, lighting: 0.3 }), (v) => buildLayout(CFG20, v));
+    assert.ok(scan.ok, scan.error);
+    const r = interpret(scan, undefined, groupsOf(scan.layout));
+    const counts = radii.map((_, q) => r.answers[q].includes(1));
+    assert.deepEqual(counts.slice(0, 2), [false, false], 'los puntitos de 0,4 y 0,6 mm no deben contar');
+    assert.deepEqual(counts.slice(4), [true, true, true], 'los puntos de 1,6 mm o más deben contar');
+  }
+});
+test('las cruces finas se leen aunque la foto tenga las burbujas vacías más oscuras (borrosa)', () => {
+  // Foto de peor calidad: papel más oscuro y mucho ruido; las cruces finas tienen que seguir contando.
+  for (let s = 1; s <= 3; s++) {
+    const exam = makeExam(CFG20, 600 + s, { kind: 'thincross' });
+    const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, paper: 140, lighting: 0.35, noise: 30, jitter: 100 }), exam.layoutFor);
+    assert.ok(scan.ok, scan.error);
+    assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+  }
+});
+
 test('pregunta en blanco y marca tenue se señalan', () => {
   const exam = makeExam(CFG20, 31);
   // Borra todas las marcas de la pregunta 3 y deja una tenue en la pregunta 4.
@@ -388,7 +411,7 @@ test('pregunta en blanco y marca tenue se señalan', () => {
     return !(b.kind === 'ans' && (b.q === 3 || b.q === 4));
   });
   const b4 = exam.L.bubbles.find((x) => x.kind === 'ans' && x.q === 4 && x.opt === 1);
-  exam.marks.push({ x: b4.x, y: b4.y, kind: 'light' });
+  exam.marks.push({ x: b4.x, y: b4.y, kind: 'dot', r: 0.4 }); // punto de 0,8 mm
   const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 3 }), exam.layoutFor);
   assert.ok(scan.ok, scan.error);
   const r = interpret(scan);
