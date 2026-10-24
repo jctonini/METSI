@@ -4,7 +4,8 @@
 // answers:  [[índices marcados], ...] una entrada por pregunta
 // penalty:  factor de descuento por cada opción incorrecta marcada, como fracción
 //           de lo que vale una opción correcta (1 = cada incorrecta anula una correcta,
-//           0 = sin descuento). Ninguna pregunta baja de 0.
+//           0 = sin descuento). Ninguna pregunta baja de 0. Solo se descuentan las marcas
+//           que exceden la cantidad de correctas (marcar 2 con 2 correctas no descuenta).
 //
 // El puntaje de la pregunta se reparte en partes iguales entre sus respuestas correctas.
 // Una pregunta con `correct` vacío se considera anulada: da el puntaje completo a todos.
@@ -25,7 +26,10 @@
       if (correct.includes(m)) hits++;
       else wrong++;
     }
-    const earned = Math.max(0, share * hits - (Number(penalty) || 0) * share * wrong);
+    // Las incorrectas solo descuentan por el exceso de marcas sobre la cantidad de correctas:
+    // quien marca tantas opciones como correctas hay (aunque alguna sea incorrecta) no pierde por eso.
+    const penalized = Math.min(wrong, Math.max(0, hits + wrong - correct.length));
+    const earned = Math.max(0, share * hits - (Number(penalty) || 0) * share * penalized);
     return { earned: round(Math.min(points, earned)), max: points, annulled: false };
   }
 

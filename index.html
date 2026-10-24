@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>METSI · Corrector de multiple choice</title>
-  <link rel="stylesheet" href="css/style.css?v=25dee0fc">
+  <link rel="stylesheet" href="css/style.css?v=f070d1e0">
 </head>
 <body>
   <header class="top">
@@ -43,7 +43,7 @@
         <label>Descuento por cada opción incorrecta marcada (de 0 a 1)
           <input id="cfg-penalty" type="number" min="0" max="1" step="0.05" inputmode="decimal"></label>
       </div>
-      <p class="hint" id="penalty-help">Cada opción incorrecta que el alumno marca resta esa fracción de lo que vale una opción correcta. <b>0</b> = no resta nada (marcar todas las opciones daría el puntaje completo). <b>1</b> = cada incorrecta anula un acierto. Una pregunta nunca baja de 0.</p>
+      <p class="hint" id="penalty-help">Las opciones marcadas de más (por encima de la cantidad de correctas de la pregunta) restan esa fracción de lo que vale una opción correcta: marcar tantas opciones como correctas hay no descuenta, aunque alguna sea incorrecta. <b>0</b> = no resta nada (marcar todas las opciones daría el puntaje completo). <b>1</b> = cada incorrecta anula un acierto. Una pregunta nunca baja de 0.</p>
       <p class="hint" id="penalty-example"></p>
       <div id="key" class="key"></div>
       <p class="total">Puntaje máximo del examen: <b id="max-total">0</b></p>
@@ -158,18 +158,18 @@
   <div id="print-area"></div>
   <style id="page-style"></style>
 
-  <script src="js/version.js?v=25dee0fc"></script>
-  <script src="js/config.js?v=25dee0fc"></script>
-  <script src="js/layout.js?v=25dee0fc"></script>
-  <script src="js/scoring.js?v=25dee0fc"></script>
-  <script src="js/csv.js?v=25dee0fc"></script>
-  <script src="js/sheet.js?v=25dee0fc"></script>
-  <script src="js/scanner.js?v=25dee0fc"></script>
-  <script src="js/merge.js?v=25dee0fc"></script>
-  <script src="js/review.js?v=25dee0fc"></script>
-  <script src="js/identity.js?v=25dee0fc"></script>
-  <script src="js/similar.js?v=25dee0fc"></script>
-  <script src="js/drive.js?v=25dee0fc"></script>
-  <script src="js/app.js?v=25dee0fc"></script>
+  <script src="js/version.js?v=f070d1e0"></script>
+  <script src="js/config.js?v=f070d1e0"></script>
+  <script src="js/layout.js?v=f070d1e0"></script>
+  <script src="js/scoring.js?v=f070d1e0"></script>
+  <script src="js/csv.js?v=f070d1e0"></script>
+  <script src="js/sheet.js?v=f070d1e0"></script>
+  <script src="js/scanner.js?v=f070d1e0"></script>
+  <script src="js/merge.js?v=f070d1e0"></script>
+  <script src="js/review.js?v=f070d1e0"></script>
+  <script src="js/identity.js?v=f070d1e0"></script>
+  <script src="js/similar.js?v=f070d1e0"></script>
+  <script src="js/drive.js?v=f070d1e0"></script>
+  <script src="js/app.js?v=f070d1e0"></script>
 </body>
 </html>
