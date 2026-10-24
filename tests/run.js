@@ -69,13 +69,18 @@ test('descuento libre: el caso de la pregunta 8 (correctas B y C, marcó A–E) 
   assert.equal(scoreQuestion(all, k, 0.25).earned, 0.625);
   assert.equal(scoreQuestion(all, k, 0).earned, 1); // sin descuento, marcar todo da el máximo (se avisa en pantalla)
 });
-test('descuento: solo cuentan las marcas por encima de la cantidad de correctas', () => {
-  const q7 = { correct: [0, 1], points: 5 };
-  assert.equal(scoreQuestion([0, 2], q7, 0.33).earned, 2.5); // 2 marcas, 2 correctas: sin descuento
-  const q9 = { correct: [0, 1, 2], points: 5 };
-  assert.equal(scoreQuestion([1, 3, 4], q9, 0.33).earned, 1.666667); // 3 marcas, 3 correctas
-  assert.equal(scoreQuestion([0, 1, 3, 4], q7, 0.5).earned, 2.5); // 4 marcas, 2 correctas: descuentan 2
-  assert.equal(scoreQuestion([0, 1, 2], q7, 0.5).earned, 3.75); // 1 de exceso
+test('descuento: cada incorrecta resta; marcar todas vale 0 si las correctas son la mitad o menos', () => {
+  const q = (c) => ({ correct: c, points: 1 });
+  assert.equal(scoreQuestion([0, 2], q([0, 1]), 0.33, 5).earned, 0.335);
+  assert.equal(scoreQuestion([0, 2, 3], q([0, 1]), 0.33, 5).earned, 0.17);
+  assert.equal(scoreQuestion([0, 1, 2], q([0, 1]), 0.33, 5).earned, 0.835);
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1]), 0.33, 5).earned, 0); // todas, 2 de 5
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0]), 0, 5).earned, 0); // aun sin descuento
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1, 2]), 0.33, 5).earned, 0.78); // 3 de 5: fórmula
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1, 2, 3]), 0.33, 5).earned, 0.9175);
+  assert.equal(scoreQuestion([0, 1, 2, 3], q([0, 1]), 0.33, 4).earned, 0); // 4 de 4 con 2 correctas
+  assert.equal(scoreQuestion([0, 1, 2, 3], q([0, 1, 2]), 0.33, 4).earned, 0.89);
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1, 2, 3, 4]), 0.33, 5).earned, 1); // clave con todas
 });
 test('descuento libre: más descuento nunca da más puntaje', () => {
   const k = { correct: [0, 2], points: 2 };
