@@ -441,7 +441,7 @@
       const tk = Math.min(1, THUMB_SIDE / Math.max(c.width, c.height));
       t.width = Math.round(c.width * tk); t.height = Math.round(c.height * tk);
       t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
-      const r = interpret(scan, state.cfg.threshold);
+      const r = interpret(scan, state.cfg.threshold, groupsOf(L));
       const p7 = (v) => Number(v.toPrecision(7));
       const p3 = (v) => Math.round(v * 1000) / 1000;
       // Recortes de lo escrito a mano (nombre y registro) para transcribirlos mirando la imagen.
@@ -496,9 +496,12 @@
     }
   }
 
+  // Columnas de preguntas de la hoja: cada una tiene su propio nivel de fondo al interpretar.
+  const groupsOf = (L) => L.ans.cols.map((c) => [c.qStart, c.qEnd]);
+
   // Dudas de lectura según la sensibilidad actual (usa los puntajes guardados de la hoja).
   function flagsFor(sheet) {
-    return sheet.scan ? interpret(sheet.scan, state.cfg.threshold) : null;
+    return sheet.scan ? interpret(sheet.scan, state.cfg.threshold, groupsOf(buildLayout(state.cfg, sheet.version || 1))) : null;
   }
 
   function drawOverlay(canvas, sheet, mem) {

@@ -315,37 +315,72 @@
   }
 
   // Convierte los puntajes de burbuja en respuestas.
-  // A cada puntaje se le descuenta el "nivel base" de la propia foto (la mediana de todas las
-  // burbujas, casi todas vacías): así la luz, el papel y la impresora no cambian el resultado y
-  // se pueden detectar trazos finos como una cruz. `threshold`: cuánto más oscura que el fondo
-  // tiene que estar una burbuja para contar como marcada. Las que quedan apenas por debajo
-  // (hay "algo" pero no alcanza) se señalan como dudosas para revisar a mano.
+  // A cada puntaje se le descuenta el "nivel base" de su zona de la foto (lo que mide una burbuja
+  // vacía por la luz, el papel y la impresora): así se detectan hasta trazos finos como una cruz.
+  // El nivel base se calcula SOLO con las burbujas vacías: se separan en dos grupos (claras y
+  // oscuras) y se toma un valor bajo del grupo de claras. Así no se rompe cuando el alumno
+  // marca más de la mitad de las burbujas (con la mediana de todas, pasaba eso).
+  // `groups`: lista de [primera, última+1] pregunta de cada columna de la hoja; cada columna tiene
+  // su propio nivel base porque la luz puede cambiar de un lado al otro de la hoja.
+  // `threshold`: cuánto más oscura que el fondo tiene que estar una burbuja para contar como
+  // marcada. Las que quedan apenas por debajo se señalan como dudosas para revisar a mano.
   const DEFAULT_THRESHOLD = 0.1;
+  const MIN_CLUSTER_GAP = 0.15; // diferencia mínima entre burbujas vacías y marcadas
+  const BASE_QUANTILE = 0.3;
+  const WINDOW_BEFORE = 4, WINDOW_AFTER = 4; // filas vecinas que se usan para el nivel base
 
-  function median(arr) {
-    const a = arr.slice().sort((x, y) => x - y);
-    return a.length ? a[a.length >> 1] : 0;
+  function quantile(sortedAsc, q) {
+    if (!sortedAsc.length) return 0;
+    return sortedAsc[Math.min(sortedAsc.length - 1, Math.floor(q * sortedAsc.length))];
   }
 
-  function interpret(scan, threshold) {
-    const thr = threshold == null ? DEFAULT_THRESHOLD : threshold;
-    const all = [].concat(...scan.scores.ans, scan.scores.mod);
-    const base = median(all);
-    const adj = (v) => Math.max(0, v - base);
-    const lo = thr * 0.5;
-    const dubious = (v) => adj(v) >= lo && adj(v) < thr;
-    const pickMarked = (arr) => arr.map((v, i) => (adj(v) >= thr ? i : -1)).filter((i) => i >= 0);
+  // Nivel de una burbuja vacía a partir de todos los puntajes de una zona.
+  function emptyLevel(values) {
+    const v = values.slice().sort((x, y) => x - y);
+    if (!v.length) return 0;
+    let lo = v[0], hi = v[v.length - 1];
+    if (hi - lo < MIN_CLUSTER_GAP) return quantile(v, BASE_QUANTILE); // sin marcas claras
+    for (let it = 0; it < 30; it++) {
+      const mid = (lo + hi) / 2;
+      const low = v.filter((x) => x <= mid), high = v.filter((x) => x > mid);
+      if (!low.length || !high.length) break;
+      const nlo = low.reduce((a, c) => a + c, 0) / low.length, nhi = high.reduce((a, c) => a + c, 0) / high.length;
+      if (Math.abs(nlo - lo) < 1e-6 && Math.abs(nhi - hi) < 1e-6) break;
+      lo = nlo; hi = nhi;
+    }
+    return quantile(v.filter((x) => x <= (lo + hi) / 2), BASE_QUANTILE);
+  }
 
-    const modMarked = pickMarked(scan.scores.mod);
+  function interpret(scan, threshold, groups) {
+    const thr = threshold == null ? DEFAULT_THRESHOLD : threshold;
+    const ans = scan.scores.ans;
+    const grp = groups && groups.length ? groups : [[0, ans.length]];
+    // El nivel base de cada pregunta se calcula con las filas cercanas de su misma columna
+    // (la luz de una foto suele cambiar de arriba hacia abajo y de un lado al otro).
+    const baseOfQ = new Array(ans.length).fill(0);
+    for (const [q0, q1] of grp) {
+      for (let q = q0; q < Math.min(q1, ans.length); q++) {
+        const from = Math.max(q0, q - WINDOW_BEFORE), to = Math.min(q1, q + WINDOW_AFTER + 1);
+        baseOfQ[q] = emptyLevel([].concat(...ans.slice(from, to)));
+      }
+    }
+    // Modalidad: se compara con el nivel base de la primera pregunta (queda justo arriba).
+    const modBase = ans.length ? baseOfQ[0] : 0;
+    const adj = (v, base) => Math.max(0, v - base);
+    const lo = thr * 0.7; // por debajo de esto es ruido de la foto, no una marca tenue
+    const dubiousV = (v, base) => adj(v, base) >= lo && adj(v, base) < thr;
+    const markedIdx = (arr, base) => arr.map((v, i) => (adj(v, base) >= thr ? i : -1)).filter((i) => i >= 0);
+
+    const modMarked = markedIdx(scan.scores.mod, modBase);
     const modalidad = modMarked.length === 1 ? modMarked[0] : null;
-    const answers = scan.scores.ans.map(pickMarked);
-    const flags = scan.scores.ans.map((arr, q) => ({
+    const answers = ans.map((arr, q) => markedIdx(arr, baseOfQ[q]));
+    const flags = ans.map((arr, q) => ({
       blank: answers[q].length === 0,
-      dubious: arr.some(dubious),
+      dubious: arr.some((v) => dubiousV(v, baseOfQ[q])),
     }));
     return {
       modalidad,
-      modalidadProblem: scan.scores.mod.length > 0 && (modMarked.length !== 1 || scan.scores.mod.some(dubious)),
+      modalidadProblem: scan.scores.mod.length > 0 && (modMarked.length !== 1 || scan.scores.mod.some((v) => dubiousV(v, modBase))),
       answers,
       flags,
     };

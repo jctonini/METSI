@@ -4,6 +4,7 @@ const { buildLayout } = require('../js/layout.js');
 const { scoreQuestion, scoreSheet } = require('../js/scoring.js');
 const { toDelimited } = require('../js/csv.js');
 const { scanImage, interpret } = require('../js/scanner.js');
+const groupsOf = (L) => L.ans.cols.map((c) => [c.qStart, c.qEnd]);
 const { renderPhoto, rng } = require('./synth.js');
 
 let passed = 0, failed = 0;
@@ -281,6 +282,32 @@ test('hoja: la v2 imprime leyendas, fecha y versión; la v1 no', () => {
   const svg1 = sheetSVG(buildLayout(CFG10, 1));
   assert.equal(svg1.includes('Fecha:'), false);
   assert.equal(svg1.includes('>V1<'), false);
+});
+
+test('hoja con más de la mitad de las burbujas marcadas (nivel base robusto)', () => {
+  // Reproduce una prueba real: casi todo marcado y luz despareja entre columnas.
+  const L = buildLayout(CFG20, 2);
+  const rand = rng(77);
+  const answers = Array.from({ length: L.numQuestions }, () => {
+    const s = new Set();
+    const n = 3 + Math.floor(rand() * 3); // 3 a 5 marcas por pregunta
+    while (s.size < n) s.add(Math.floor(rand() * L.numOptions));
+    return [...s].sort((a, b) => a - b);
+  });
+  const marks = [];
+  for (const b of L.bubbles) {
+    if (b.kind === 'ans' && answers[b.q].includes(b.opt)) marks.push({ x: b.x, y: b.y, kind: 'fill' });
+    if (b.kind === 'mod' && b.index === 0) marks.push({ x: b.x, y: b.y, kind: 'fill' });
+  }
+  const total = L.bubbles.filter((b) => b.kind === 'ans').length;
+  assert.ok(answers.flat().length > total * 0.6, 'la hoja de prueba debe tener muchas marcas');
+  for (const lighting of [0.25, 0.5]) {
+    const scan = scanImage(renderPhoto(L, marks, { seed: 21, lighting, paper: 200 }), (v) => buildLayout(CFG20, v));
+    assert.ok(scan.ok, scan.error);
+    const r = interpret(scan, undefined, groupsOf(scan.layout));
+    assert.deepEqual(r.answers, answers, 'lighting ' + lighting);
+    assert.equal(r.modalidad, 0);
+  }
 });
 
 test('pregunta en blanco y marca tenue se señalan', () => {
