@@ -18,6 +18,13 @@ Se usa desde el navegador del celular o de la PC. Los resultados se sincronizan 
 
 La app **no decide quién aprueba**: solo calcula el puntaje. El criterio de aprobación se aplica después sobre la planilla.
 
+## Casos a revisar (para mejorar la lectura)
+
+- En cada hoja hay un botón **🚩 Marcar a revisar** (con una nota opcional) y una **🚩 por pregunta**, para avisar que la app leyó algo mal. Una foto que la app no pudo leer también se puede marcar.
+- La app guarda lo que leyó **por su cuenta**; si después corregís una respuesta a mano, queda marcada con **✎**. Esas diferencias son lo más útil para calibrar.
+- En **Resultados → Casos a revisar** aparece la lista, y se puede **descargar en JSON**. Con Drive conectado, se guardan solos en `METSI Corrector / <examen> / a-revisar`: un `casos.json` (puntajes de cada burbuja, geometría, tus correcciones y notas) y la **foto de cada hoja con el nombre, el registro y la fecha tapados**. Los casos no incluyen nombres ni registros.
+- Una foto que la app no pudo leer no se puede tapar (no se sabe dónde está el nombre), así que **solo se sube si vos lo pedís** con "Enviar esta foto a análisis" y confirmás el aviso.
+
 ## Puntaje
 
 - Cada pregunta tiene un puntaje propio, que se **reparte en partes iguales entre sus respuestas correctas**.
@@ -30,8 +37,9 @@ La app **no decide quién aprueba**: solo calcula el puntaje. El criterio de apr
 
 La hoja lleva una versión impresa al pie ("V2") y un código de 3 cuadraditos que la app lee sola, así cada foto se interpreta con el diseño que le corresponde:
 
-- **V1** (sin código): las primeras hojas impresas. Solo se **leen**; la app ya no las genera. Su geometría está congelada y una prueba (`tests/fixtures/layout-v1.json`) evita que cambie por error.
+- **V1** (sin código; cuatro cuadrados): las primeras hojas impresas. Solo se **leen**; la app ya no las genera. Su geometría está congelada y una prueba (`tests/fixtures/layout-v1.json`) evita que cambie por error.
 - **V2**: más espacio para escribir el nombre, campo de fecha, leyendas al pie y código de versión.
+- **V3** (la que genera la app hoy): igual que la V2, pero las **marcas de las esquinas tienen forma propia**: cuadrados a la izquierda y barras a la derecha (misma superficie negra). Así cada esquina se identifica sola, la orientación de la hoja (al derecho o dada vuelta) se deduce de las formas, y una mancha o la marca de otra hoja no se confunde con una esquina.
 
 Si una foto trae una versión más nueva que la que conoce la app, avisa que hay que actualizarla en vez de leerla mal. Se pueden mezclar hojas V1 y V2 en una misma tanda.
 
@@ -62,6 +70,7 @@ Sin esa configuración la app funciona igual, pero los resultados quedan solo en
 
 - Hoja completa, con las 4 marcas negras de las esquinas visibles.
 - Luz pareja, sin sombras fuertes. Hoja apoyada en una mesa y lo más plana posible.
+- Si imprimiste dos hojas por A4 y no las cortaste, se puede fotografiar igual: la app elige la hoja que está completa en la foto (la otra puede verse cortada o a un costado). Conviene que la hoja a corregir quede entera y lo más centrada posible.
 - Los alumnos deben rellenar el círculo con **birome** (no lápiz). Las cruces y marcas parciales se leen; las muy tenues quedan señaladas como dudosas.
 
 ## Desarrollo
@@ -79,6 +88,7 @@ node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas, CSV, co
 - `js/scoring.js`: cálculo de puntajes.
 - `js/csv.js`: exportación.
 - `js/merge.js`: combina los datos de dos dispositivos.
+- `js/review.js`: casos a revisar (banderas, correcciones a mano) y su exportación.
 - `js/identity.js`: reglas de identificación y duplicados, y detección del mismo archivo.
 - `js/similar.js`: parecido de letra entre fotos (misma hoja fotografiada dos veces).
 - `js/drive.js`: cliente de la API de Google Drive.

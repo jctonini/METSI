@@ -50,12 +50,12 @@
       let sp = 0;
       stack[sp++] = start;
       seen[start] = 1;
-      let area = 0, sx = 0, sy = 0;
+      let area = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
       let minx = w, maxx = 0, miny = h, maxy = 0;
       while (sp > 0) {
         const p = stack[--sp];
         const x = p % w, y = (p - x) / w;
-        area++; sx += x; sy += y;
+        area++; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
         if (x < minx) minx = x;
         if (x > maxx) maxx = x;
         if (y < miny) miny = y;
@@ -65,7 +65,13 @@
         if (y > 0 && bin[p - w] && !seen[p - w]) { seen[p - w] = 1; stack[sp++] = p - w; }
         if (y < h - 1 && bin[p + w] && !seen[p + w]) { seen[p + w] = 1; stack[sp++] = p + w; }
       }
-      comps.push({ area, cx: sx / area, cy: sy / area, minx, maxx, miny, maxy });
+      // Elongación (largo / ancho de la mancha, sin importar cómo esté girada): 1 para un cuadrado,
+      // ~4 para una barra de 4 a 1.
+      const mx = sx / area, my = sy / area;
+      const vxx = sxx / area - mx * mx + 1 / 12, vyy = syy / area - my * my + 1 / 12, vxy = sxy / area - mx * my;
+      const tr = (vxx + vyy) / 2, df = Math.sqrt(((vxx - vyy) / 2) ** 2 + vxy * vxy);
+      const elong = Math.sqrt((tr + df) / Math.max(1e-9, tr - df));
+      comps.push({ area, cx: mx, cy: my, minx, maxx, miny, maxy, elong });
     }
     return comps;
   }
@@ -217,7 +223,7 @@
 
   // Versión de la hoja: código de 3 cuadraditos al pie + ancho de la barra (la v2 es más ancha).
   // Las dos señales tienen que coincidir; si no, mejor pedir otra foto que leer con el diseño equivocado.
-  function detectVersion(g, w, h, H, vc, latest) {
+  function detectVersion(g, w, h, H, vc, latest, family) {
     const refPts = [];
     for (let i = 0; i < 7; i++) refPts.push([vc.x0 - 1 + i * (vc.bits * vc.pitch / 6), vc.y + 3.6]);
     const paper = paperLevel(g, w, h, H, refPts);
@@ -235,7 +241,12 @@
     if (version > latest) {
       return { error: 'Esta hoja es de un formato más nuevo (V' + version + '). Actualizá la app para poder leerla.' };
     }
-    // Control cruzado con el ancho de la barra superior.
+    // La forma de las marcas de esquina (familia) tiene que coincidir con la versión del código.
+    if (family === 'bars' ? version < 3 : version >= 3) {
+      return { error: 'No se pudo reconocer el formato de la hoja. Sacá otra foto con buena luz y con la hoja completa.' };
+    }
+    if (family === 'bars') return { version };
+    // V1 y V2: control cruzado con el ancho de la barra superior.
     const barRef = paperLevel(g, w, h, H, [-1, 0, 1].map((i) => [BAR_COMMON.x + i * 5, BAR_COMMON.y + 4.5]));
     const wideD = darkness(g, w, h, H, [[BAR_COMMON.x - 12.5, BAR_COMMON.y], [BAR_COMMON.x + 12.5, BAR_COMMON.y], [BAR_COMMON.x - 12.5, BAR_COMMON.y + 1], [BAR_COMMON.x + 12.5, BAR_COMMON.y - 1]], barRef);
     const wide = wideD !== null && wideD >= 0.4;
@@ -251,6 +262,128 @@
     return solveHomography(src, dst);
   }
 
+  // ¿Los aros impresos de las burbujas caen donde corresponde con esta geometría? Promedio de lo oscuro que
+  // es el papel sobre el borde de cada burbuja. Con 4 marcas equivocadas el cuadro de burbujas se corre y baja.
+  function ringScore(g, w, h, H, layout) {
+    let sum = 0, n = 0;
+    for (const b of layout.bubbles) {
+      const ring = [], paper = [];
+      for (let k = 0; k < 8; k++) {
+        const a = (k * Math.PI) / 4 + 0.39;
+        const p = applyH(H, b.x + layout.r * Math.cos(a), b.y + layout.r * Math.sin(a));
+        const v = sampleGray(g, w, h, p.x, p.y);
+        if (v === null) return -1;
+        ring.push(v);
+        const q = applyH(H, b.x + 3.0 * Math.cos(a), b.y + 3.0 * Math.sin(a));
+        const u = sampleGray(g, w, h, q.x, q.y);
+        if (u !== null) paper.push(u);
+      }
+      paper.sort((x, y) => x - y);
+      const pl = Math.max(40, paper.length ? paper[paper.length >> 1] : 255);
+      for (const v of ring) { sum += Math.max(0, 1 - v / pl); n++; }
+    }
+    return n ? sum / n : -1;
+  }
+
+  // Candidatos a marca de esquina: manchas negras macizas y cuadradas, completas (sin tocar el borde).
+  function markerCandidates(comps, w, h) {
+    const L = Math.max(w, h);
+    return comps.filter((c) => {
+      const bw = c.maxx - c.minx + 1, bh = c.maxy - c.miny + 1;
+      if (Math.max(bw, bh) < 0.012 * L || Math.max(bw, bh) > 0.2 * L) return false;
+      const ratio = bw / bh;
+      if (ratio < 0.15 || ratio > 6.5) return false; // cuadrados y barras
+      if (c.area / (bw * bh) < 0.4) return false;
+      return c.minx > 0 && c.miny > 0 && c.maxx < w - 1 && c.maxy < h - 1; // una marca cortada tiene el centro mal
+    }).sort((a, b) => b.area - a.area).slice(0, 14);
+  }
+
+  const dist = (a, b) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
+
+  // Forma de una mancha por su elongación: cuadrado (~1) o barra (~4). Sirve aunque esté girada.
+  const SQUARE_MAX = 1.5, BAR_MIN = 2.2;
+  const shapeOf = (c) => (c.elong <= SQUARE_MAX ? 'sq' : c.elong >= BAR_MIN ? 'bar' : '?');
+
+  // Devuelve { H, rotated, version, layout, fit } o { error }.
+  // Familias de marcas: V1/V2 = 4 cuadrados (la orientación sale de la barra del encabezado);
+  // V3 = cuadrados a la izquierda y barras a la derecha (la orientación sale de las formas).
+  function findSheet(g, w, h, comps, layoutFor, fixed) {
+    const base = layoutFor(1);
+    let versionError = null;
+    const cands = markerCandidates(comps, w, h);
+    if (cands.length < 4) {
+      return { error: 'No se encontraron las 4 marcas negras de las esquinas. Sacá la foto con la hoja completa, bien iluminada y sin tapar las esquinas.' };
+    }
+    const templateBars = fixed && fixed.version >= 3 ? fixed : layoutFor(3);
+    let best = null, shapeOk = false, formsOk = false;
+    const n = cands.length;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (let k = j + 1; k < n; k++) for (let l = k + 1; l < n; l++) {
+      const sub = [cands[i], cands[j], cands[k], cands[l]];
+      const areas = sub.map((c) => c.area);
+      if (Math.max(...areas) / Math.min(...areas) > 3.5) continue;
+      const pick = (score) => sub.reduce((bst, c) => (score(c) < score(bst) ? c : bst));
+      const m = { tl: pick((c) => c.cx + c.cy), br: pick((c) => -(c.cx + c.cy)), tr: pick((c) => -(c.cx - c.cy)), bl: pick((c) => c.cx - c.cy) };
+      if (new Set([m.tl, m.tr, m.bl, m.br]).size < 4) continue;
+      const wt = dist(m.tl, m.tr), wb = dist(m.bl, m.br), hl = dist(m.tl, m.bl), hr = dist(m.tr, m.br);
+      const aspect = ((wt + wb) / 2) / ((hl + hr) / 2); // la hoja real: ~0,65 a 0,67
+      if (aspect < 0.5 || aspect > 0.9) continue;
+      if (wt / wb < 0.6 || wt / wb > 1.67 || hl / hr < 0.6 || hl / hr > 1.67) continue;
+      // Tamaño: una marca mide ~8 mm (la barra tiene la misma superficie) y hay ~125 mm entre marcas.
+      // Las burbujas rellenas (4,4 mm) y las manchas chicas no cumplen esa proporción.
+      const avgW = (wt + wb) / 2;
+      if (sub.some((c) => { const r = Math.sqrt(c.area) / avgW; return r < 0.04 || r > 0.1; })) continue;
+      shapeOk = true;
+
+      const shapes = { tl: shapeOf(m.tl), tr: shapeOf(m.tr), bl: shapeOf(m.bl), br: shapeOf(m.br) };
+      let family = null, rotated = false;
+      if (shapes.tl === 'sq' && shapes.tr === 'sq' && shapes.bl === 'sq' && shapes.br === 'sq') family = 'squares';
+      else if (shapes.tl === 'sq' && shapes.bl === 'sq' && shapes.tr === 'bar' && shapes.br === 'bar') family = 'bars';
+      else if (shapes.tl === 'bar' && shapes.bl === 'bar' && shapes.tr === 'sq' && shapes.br === 'sq') { family = 'bars'; rotated = true; } // hoja dada vuelta
+      if (!family) continue;
+      formsOk = true;
+
+      let Hc, tpl;
+      if (family === 'bars') {
+        // Los cuadrados son las esquinas izquierdas de la hoja; si aparecen a la derecha, la foto está dada vuelta.
+        const mm = rotated ? { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl } : m;
+        Hc = buildH(templateBars, mm);
+        tpl = templateBars;
+      } else {
+        // Orientación con la barra negra del encabezado: se compara contra la hoja dada vuelta 180°
+        // en lugar de exigir un negro absoluto (las impresoras y la luz varían).
+        const H0 = buildH(base, m);
+        const H180 = buildH(base, { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl });
+        if (!H0 || !H180) continue;
+        const d0 = barDarkness(g, w, h, H0), d180 = barDarkness(g, w, h, H180);
+        if (Math.max(d0, d180) < 0.2 || Math.abs(d0 - d180) < 0.15) continue;
+        Hc = d180 > d0 ? H180 : H0;
+        rotated = d180 > d0;
+        tpl = base;
+      }
+      if (!Hc) continue;
+
+      const cx = (m.tl.cx + m.tr.cx + m.bl.cx + m.br.cx) / 4, cy = (m.tl.cy + m.tr.cy + m.bl.cy + m.br.cy) / 4;
+      const centered = Math.hypot(cx - w / 2, cy - h / 2) / Math.hypot(w / 2, h / 2);
+      // Versión de la hoja con esta geometría y qué tan bien encajan los aros de las burbujas.
+      let version, layout;
+      if (fixed) { layout = fixed; version = fixed.version; } else {
+        const det = detectVersion(g, w, h, Hc, tpl.versionCode, tpl.latestVersion, family);
+        if (det.error) { versionError = det.error; continue; }
+        version = det.version; layout = layoutFor(version);
+      }
+      const fit = ringScore(g, w, h, Hc, layout);
+      if (fit < 0) continue;
+      const cand = { H: Hc, rotated, version, layout, fit, centered };
+      // Gana la combinación cuyos aros encajan mejor; si quedan parejas, la más centrada.
+      if (!best || cand.fit > best.fit + 0.02 || (cand.fit > best.fit - 0.02 && cand.centered < best.centered)) best = cand;
+    }
+    if (best) return best;
+    if (versionError) return { error: versionError };
+    if (!shapeOk) return { error: 'La hoja parece estar girada o muy inclinada. Sacá la foto con la hoja en vertical.' };
+    if (!formsOk) return { error: 'Las marcas de las esquinas no tienen la forma esperada. Revisá que sea la hoja correcta y que esté completa en la foto.' };
+    return { error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
+  }
+
   // ---------- API ----------
   // `layoutSource`: función (versión) => layout, o un layout fijo (se omite la detección de versión).
   // Devuelve { ok:true, H, version, layout, scores:{ mod:[i], ans:[q][opción] } } o { ok:false, error }.
@@ -263,41 +396,12 @@
     const win = Math.max(15, Math.round(Math.max(w, h) / 12)) | 1;
     const bin = binarize(g, w, h, win, 0.8);
     const comps = components(bin, w, h);
-    const m = findMarkers(comps, w, h);
-    if (!m) {
-      return { ok: false, error: 'No se encontraron las 4 marcas negras de las esquinas. Sacá la foto con la hoja completa, bien iluminada y sin tapar las esquinas.' };
-    }
-    const wd = Math.hypot(m.tr.cx - m.tl.cx, m.tr.cy - m.tl.cy);
-    const ht = Math.hypot(m.bl.cx - m.tl.cx, m.bl.cy - m.tl.cy);
-    const aspect = wd / ht; // esperado ~ 184/271 = 0.68
-    if (aspect < 0.45 || aspect > 0.95) {
-      return { ok: false, error: 'La hoja parece estar girada o muy inclinada. Sacá la foto con la hoja en vertical.' };
-    }
-
-    // Orientación: la barra negra del encabezado tiene que quedar arriba. Se compara contra la
-    // hoja dada vuelta 180° en lugar de exigir un negro absoluto (las impresoras y la luz varían).
-    // Las marcas de las esquinas son iguales en todas las versiones.
-    const H0 = buildH(base, m);
-    const m2 = { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl };
-    const H180 = buildH(base, m2);
-    if (!H0 || !H180) return { ok: false, error: 'No se pudo calcular la posición de la hoja.' };
-    const d0 = barDarkness(g, w, h, H0);
-    const d180 = barDarkness(g, w, h, H180);
-    let H = H0;
-    let rotated = false;
-    if (d180 > d0) { H = H180; rotated = true; }
-    if (Math.max(d0, d180) < 0.2 || Math.abs(d0 - d180) < 0.15) {
-      return { ok: false, error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
-    }
-
-    let layout = fixed;
-    let version = fixed ? fixed.version : 1;
-    if (!fixed) {
-      const det = detectVersion(g, w, h, H, base.versionCode, base.latestVersion);
-      if (det.error) return { ok: false, error: det.error };
-      version = det.version;
-      layout = layoutFor(version);
-    }
+    // Se busca cuál de las combinaciones de 4 marcas es realmente la hoja. Puede haber más marcas en la
+    // foto (la hoja vecina de una página A4 sin cortar, manchas negras): se prueban las combinaciones
+    // posibles y gana la que tiene la forma de la hoja y la barra negra del encabezado en su lugar.
+    const found = findSheet(g, w, h, comps, layoutFor, fixed);
+    if (found.error) return { ok: false, error: found.error };
+    const { H, rotated, version, layout } = found;
 
     const scores = {
       mod: new Array(layout.modalidades.length).fill(0),
@@ -315,37 +419,72 @@
   }
 
   // Convierte los puntajes de burbuja en respuestas.
-  // A cada puntaje se le descuenta el "nivel base" de la propia foto (la mediana de todas las
-  // burbujas, casi todas vacías): así la luz, el papel y la impresora no cambian el resultado y
-  // se pueden detectar trazos finos como una cruz. `threshold`: cuánto más oscura que el fondo
-  // tiene que estar una burbuja para contar como marcada. Las que quedan apenas por debajo
-  // (hay "algo" pero no alcanza) se señalan como dudosas para revisar a mano.
+  // A cada puntaje se le descuenta el "nivel base" de su zona de la foto (lo que mide una burbuja
+  // vacía por la luz, el papel y la impresora): así se detectan hasta trazos finos como una cruz.
+  // El nivel base se calcula SOLO con las burbujas vacías: se separan en dos grupos (claras y
+  // oscuras) y se toma un valor bajo del grupo de claras. Así no se rompe cuando el alumno
+  // marca más de la mitad de las burbujas (con la mediana de todas, pasaba eso).
+  // `groups`: lista de [primera, última+1] pregunta de cada columna de la hoja; cada columna tiene
+  // su propio nivel base porque la luz puede cambiar de un lado al otro de la hoja.
+  // `threshold`: cuánto más oscura que el fondo tiene que estar una burbuja para contar como
+  // marcada. Las que quedan apenas por debajo se señalan como dudosas para revisar a mano.
   const DEFAULT_THRESHOLD = 0.1;
+  const MIN_CLUSTER_GAP = 0.15; // diferencia mínima entre burbujas vacías y marcadas
+  const BASE_QUANTILE = 0.3;
+  const WINDOW_BEFORE = 4, WINDOW_AFTER = 4; // filas vecinas que se usan para el nivel base
 
-  function median(arr) {
-    const a = arr.slice().sort((x, y) => x - y);
-    return a.length ? a[a.length >> 1] : 0;
+  function quantile(sortedAsc, q) {
+    if (!sortedAsc.length) return 0;
+    return sortedAsc[Math.min(sortedAsc.length - 1, Math.floor(q * sortedAsc.length))];
   }
 
-  function interpret(scan, threshold) {
-    const thr = threshold == null ? DEFAULT_THRESHOLD : threshold;
-    const all = [].concat(...scan.scores.ans, scan.scores.mod);
-    const base = median(all);
-    const adj = (v) => Math.max(0, v - base);
-    const lo = thr * 0.5;
-    const dubious = (v) => adj(v) >= lo && adj(v) < thr;
-    const pickMarked = (arr) => arr.map((v, i) => (adj(v) >= thr ? i : -1)).filter((i) => i >= 0);
+  // Nivel de una burbuja vacía a partir de todos los puntajes de una zona.
+  function emptyLevel(values) {
+    const v = values.slice().sort((x, y) => x - y);
+    if (!v.length) return 0;
+    let lo = v[0], hi = v[v.length - 1];
+    if (hi - lo < MIN_CLUSTER_GAP) return quantile(v, BASE_QUANTILE); // sin marcas claras
+    for (let it = 0; it < 30; it++) {
+      const mid = (lo + hi) / 2;
+      const low = v.filter((x) => x <= mid), high = v.filter((x) => x > mid);
+      if (!low.length || !high.length) break;
+      const nlo = low.reduce((a, c) => a + c, 0) / low.length, nhi = high.reduce((a, c) => a + c, 0) / high.length;
+      if (Math.abs(nlo - lo) < 1e-6 && Math.abs(nhi - hi) < 1e-6) break;
+      lo = nlo; hi = nhi;
+    }
+    return quantile(v.filter((x) => x <= (lo + hi) / 2), BASE_QUANTILE);
+  }
 
-    const modMarked = pickMarked(scan.scores.mod);
+  function interpret(scan, threshold, groups) {
+    const thr = threshold == null ? DEFAULT_THRESHOLD : threshold;
+    const ans = scan.scores.ans;
+    const grp = groups && groups.length ? groups : [[0, ans.length]];
+    // El nivel base de cada pregunta se calcula con las filas cercanas de su misma columna
+    // (la luz de una foto suele cambiar de arriba hacia abajo y de un lado al otro).
+    const baseOfQ = new Array(ans.length).fill(0);
+    for (const [q0, q1] of grp) {
+      for (let q = q0; q < Math.min(q1, ans.length); q++) {
+        const from = Math.max(q0, q - WINDOW_BEFORE), to = Math.min(q1, q + WINDOW_AFTER + 1);
+        baseOfQ[q] = emptyLevel([].concat(...ans.slice(from, to)));
+      }
+    }
+    // Modalidad: se compara con el nivel base de la primera pregunta (queda justo arriba).
+    const modBase = ans.length ? baseOfQ[0] : 0;
+    const adj = (v, base) => Math.max(0, v - base);
+    const lo = thr * 0.7; // por debajo de esto es ruido de la foto, no una marca tenue
+    const dubiousV = (v, base) => adj(v, base) >= lo && adj(v, base) < thr;
+    const markedIdx = (arr, base) => arr.map((v, i) => (adj(v, base) >= thr ? i : -1)).filter((i) => i >= 0);
+
+    const modMarked = markedIdx(scan.scores.mod, modBase);
     const modalidad = modMarked.length === 1 ? modMarked[0] : null;
-    const answers = scan.scores.ans.map(pickMarked);
-    const flags = scan.scores.ans.map((arr, q) => ({
+    const answers = ans.map((arr, q) => markedIdx(arr, baseOfQ[q]));
+    const flags = ans.map((arr, q) => ({
       blank: answers[q].length === 0,
-      dubious: arr.some(dubious),
+      dubious: arr.some((v) => dubiousV(v, baseOfQ[q])),
     }));
     return {
       modalidad,
-      modalidadProblem: scan.scores.mod.length > 0 && (modMarked.length !== 1 || scan.scores.mod.some(dubious)),
+      modalidadProblem: scan.scores.mod.length > 0 && (modMarked.length !== 1 || scan.scores.mod.some((v) => dubiousV(v, modBase))),
       answers,
       flags,
     };
