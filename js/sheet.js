@@ -19,6 +19,17 @@
     return lines;
   }
 
+  // Símbolos de la banda de ejemplos (en mm).
+  function symbol({ kind, x, y, r }) {
+    const ring = `<circle cx="${x}" cy="${y}" r="${r}" fill="${kind === 'filled' ? '#000' : 'none'}" stroke="#000" stroke-width="0.35"/>`;
+    const k = r * 0.6;
+    if (kind === 'tick') return ring + `<path d="M${x - r * 0.55} ${y + r * 0.05} L${x - r * 0.1} ${y + r * 0.5} L${x + r * 0.7} ${y - r * 0.6}" fill="none" stroke="#000" stroke-width="0.45"/>`;
+    if (kind === 'cross') return ring + `<path d="M${x - k} ${y - k} L${x + k} ${y + k} M${x + k} ${y - k} L${x - k} ${y + k}" stroke="#000" stroke-width="0.45"/>`;
+    if (kind === 'dot') return ring + `<circle cx="${x}" cy="${y}" r="${r * 0.2}" fill="#000"/>`;
+    if (kind === 'half') return ring + `<path d="M${x} ${y - r} A${r} ${r} 0 0 0 ${x} ${y + r} Z" fill="#000"/>`;
+    return ring;
+  }
+
   function sheetSVG(L) {
     const o = [];
     // Si el texto es más largo que el espacio disponible, se comprime para que no pise nada.
@@ -84,6 +95,15 @@
     // Burbujas
     for (const bb of L.bubbles) {
       o.push(`<circle cx="${bb.x}" cy="${bb.y}" r="${L.r}" fill="none" stroke="#000" stroke-width="0.35"/>`);
+    }
+
+    // Banda de ejemplos (v4)
+    if (L.examples) {
+      const ex = L.examples;
+      o.push(`<line x1="${ex.line.x1}" y1="${ex.line.y}" x2="${ex.line.x2}" y2="${ex.line.y}" stroke="#000" stroke-width="0.2" stroke-dasharray="1 1"/>`);
+      o.push(`<line x1="${ex.divider.x}" y1="${ex.divider.y1}" x2="${ex.divider.x}" y2="${ex.divider.y2}" stroke="#000" stroke-width="0.2"/>`);
+      for (const tx of ex.texts) text(tx.x, tx.y, tx.s, tx.size, tx.bold ? 'font-weight="bold"' : '', tx.maxW);
+      for (const sy of ex.symbols) o.push(symbol(sy));
     }
 
     // Pie

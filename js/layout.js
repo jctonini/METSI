@@ -7,6 +7,8 @@
 //    esas hojas (no se vuelve a imprimir). tests/fixtures/layout-v1.json fija sus posiciones.
 //  - v2: más espacio para escribir el nombre, campo de fecha, leyendas al pie y código de versión.
 //
+//  - v4: igual que la v3 más una banda de ejemplos al pie (cómo marcar bien y mal una burbuja). La banda ocupa
+//    lugar, así que entran menos preguntas (30 en vez de 38 con 5 opciones); la geometría de la v3 queda intacta.
 //  - v3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha), así cada
 //    esquina se identifica sola y la orientación de la hoja se deduce de las formas.
 //
@@ -30,7 +32,7 @@
   const LETTERS = 'ABCDEF';
   const X0 = 16, X1 = 132, Y_MAX = 190;
   const ROW_PITCH = 5.5, OPT_PITCH = 7;
-  const LATEST_VERSION = 3;
+  const LATEST_VERSION = 4;
 
   // Código de versión: cuadrados de 3 mm centrados en (x0 + i * pitch, y). Bit i = 1 si está impreso.
   const VERSION_CODE = { x0: 19.5, y: 203, size: 3, pitch: 5, bits: 3 };
@@ -63,6 +65,29 @@
   ];
   GEO[3] = Object.assign({}, GEO[2], { bar: null, markers: MARKERS_V3, shapes: SHAPES_V3 });
 
+  // v4: la banda de ejemplos ocupa de 173,5 a 190 mm; las burbujas llegan hasta 170 mm.
+  GEO[4] = Object.assign({}, GEO[3], { yMax: 170, examples: true });
+
+  // Banda de ejemplos (v4): a la izquierda la forma correcta (círculo pintado por completo) y a la derecha las
+  // formas incorrectas. `symbols` los dibuja sheet.js; los ejemplos nunca están dentro de la grilla de respuestas.
+  function exampleBand() {
+    return {
+      line: { x1: 16, x2: 132, y: 173.5 },
+      divider: { x: 74, y1: 176, y2: 189 },
+      texts: [
+        { x: 20, y: 177.6, s: 'CORRECTO', size: 2.6, bold: true },
+        { x: 33, y: 183.9, s: 'Pintá todo el círculo', size: 2.4, maxW: 38 },
+        { x: 78, y: 177.6, s: 'INCORRECTO', size: 2.6, bold: true },
+        { x: 78, y: 188.4, s: 'tilde · cruz · punto · medio relleno', size: 2.2, maxW: 52 },
+      ],
+      symbols: [
+        { kind: 'filled', x: 26, y: 183, r: 2.2 },
+        { kind: 'tick', x: 82, y: 183, r: 2.2 }, { kind: 'cross', x: 89, y: 183, r: 2.2 },
+        { kind: 'dot', x: 96, y: 183, r: 2.2 }, { kind: 'half', x: 103, y: 183, r: 2.2 },
+      ],
+    };
+  }
+
   const DEFAULT_TEXTS = {
     subtitle: '',
     nameLabel: 'Nombre y apellido:',
@@ -87,7 +112,7 @@
     const modRows = Math.max(1, Math.ceil(numModalidades / 2));
     const labelY = g.modY0 + (modRows - 1) * 6 + 11;
     const firstRowY = labelY + 13;
-    return { modRows, labelY, headerY: labelY + 6.5, firstRowY, maxRows: Math.floor((Y_MAX - firstRowY) / ROW_PITCH) + 1 };
+    return { modRows, labelY, headerY: labelY + 6.5, firstRowY, maxRows: Math.floor(((g.yMax || Y_MAX) - firstRowY) / ROW_PITCH) + 1 };
   }
 
   // Cuántas columnas de preguntas entran (0 = ninguna combinación sirve).
@@ -182,6 +207,7 @@
       markerShapes: g.shapes || MARKERS.map((m) => ({ x: m.x, y: m.y, w: MARKER_SIZE, h: MARKER_SIZE })),
       texts, logoRect: LOGO_RECT, r: BUBBLE_R, numQuestions, numOptions, regDigits, modalidades, maxQuestions: maxQ,
       fields, mod, ans, bubbles, letters: LETTERS.slice(0, numOptions), versionBits, versionCode: VERSION_CODE, date,
+      examples: g.examples ? exampleBand() : null,
     };
   }
 
