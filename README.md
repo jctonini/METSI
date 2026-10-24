@@ -39,13 +39,17 @@ La hoja lleva una versión impresa al pie ("V2") y un código de 3 cuadraditos q
 
 - **V1** (sin código; cuatro cuadrados): las primeras hojas impresas. Solo se **leen**; la app ya no las genera. Su geometría está congelada y una prueba (`tests/fixtures/layout-v1.json`) evita que cambie por error.
 - **V2**: más espacio para escribir el nombre, campo de fecha, leyendas al pie y código de versión.
-- **V3** (la que genera la app hoy): igual que la V2, pero las **marcas de las esquinas tienen forma propia**: cuadrados a la izquierda y barras a la derecha (misma superficie negra). Así cada esquina se identifica sola, la orientación de la hoja (al derecho o dada vuelta) se deduce de las formas, y una mancha o la marca de otra hoja no se confunde con una esquina.
+- **V3**: igual que la V2, pero las **marcas de las esquinas tienen forma propia**: cuadrados a la izquierda y barras a la derecha (misma superficie negra). Así cada esquina se identifica sola, la orientación de la hoja (al derecho o dada vuelta) se deduce de las formas, y una mancha o la marca de otra hoja no se confunde con una esquina.
+
+- **V4** (la que genera la app hoy): igual que la V3 más una **banda de ejemplos al pie**, separada de la grilla, que muestra la forma correcta de marcar (círculo pintado por completo, con birome) y las incorrectas (tilde, cruz, punto y medio relleno). Reemplaza a la línea "Rellená el círculo por completo con birome" de las versiones anteriores (en la pestaña Hoja, "Instrucciones del pie" solo se imprime si escribís un texto propio). La banda ocupa lugar: entran menos preguntas.
+
+Las versiones V1, V2 y V3 **no se pueden cambiar** (una prueba por versión fija sus posiciones), así que las hojas ya impresas se siguen leyendo igual.
 
 Si una foto trae una versión más nueva que la que conoce la app, avisa que hay que actualizarla en vez de leerla mal. Se pueden mezclar hojas V1 y V2 en una misma tanda.
 
 ## Capacidad de la hoja A5
 
-Hasta ~38 preguntas con 5 opciones, o ~57 con 4 opciones (según cuántas modalidades haya). La app avisa si te pasás.
+Hoja V4: hasta **32 preguntas con 5 opciones**, o **48 con 4 opciones** (con dos modalidades; menos si hay más filas de modalidades). La app avisa si te pasás. Las hojas V3 ya impresas admiten hasta 38 y 57.
 
 ## Sincronización con Google Drive
 
@@ -71,7 +75,7 @@ Sin esa configuración la app funciona igual, pero los resultados quedan solo en
 - Hoja completa, con las 4 marcas negras de las esquinas visibles.
 - Luz pareja, sin sombras fuertes. Hoja apoyada en una mesa y lo más plana posible.
 - Si imprimiste dos hojas por A4 y no las cortaste, se puede fotografiar igual: la app elige la hoja que está completa en la foto (la otra puede verse cortada o a un costado). Conviene que la hoja a corregir quede entera y lo más centrada posible.
-- Los alumnos deben rellenar el círculo con **birome** (no lápiz). Las cruces y marcas parciales se leen; las muy tenues quedan señaladas como dudosas.
+- Los alumnos deben rellenar el círculo con **birome** (no lápiz). Las cruces y marcas parciales se leen. Un punto suelto cuenta como respuesta si mide al menos ~1 mm; entre ~0,8 mm queda señalado como dudoso y un puntito menor se ignora. La tinta se mide en un círculo de 1,2 mm alrededor del centro de cada burbuja.
 
 ## Desarrollo
 

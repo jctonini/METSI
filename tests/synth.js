@@ -75,6 +75,22 @@ function renderPhoto(layout, marks, opts) {
     }
   }
 
+  // Banda de ejemplos (V4): círculos de muestra, uno pintado por completo y los demás con marcas incorrectas.
+  if (layout.examples) {
+    for (const sy of layout.examples.symbols) {
+      const R2 = sy.r;
+      paint(sy.x - R2 - 1, sy.y - R2 - 1, sy.x + R2 + 1, sy.y + R2 + 1, (sx, sy2) => {
+        const d = Math.hypot(sx - sy.x, sy2 - sy.y);
+        if (sy.kind === 'filled') return d < R2 + 0.17;
+        if (d > R2 - 0.17 && d < R2 + 0.17) return true;
+        if (sy.kind === 'dot') return d < R2 * 0.2;
+        if (sy.kind === 'half') return d < R2 && sx < sy.x;
+        if (sy.kind === 'cross') return Math.abs(Math.abs(sx - sy.x) - Math.abs(sy2 - sy.y)) < 0.25 && d < R2 * 0.85;
+        return false;
+      });
+    }
+  }
+
   // Código de versión (cuadraditos al pie), si la hoja lo lleva.
   for (const bit of layout.versionBits || []) {
     if (bit.on) paint(bit.x - bit.size / 2, bit.y - bit.size / 2, bit.x + bit.size / 2, bit.y + bit.size / 2, () => true);
@@ -104,6 +120,8 @@ function renderPhoto(layout, marks, opts) {
         const dx = sx - cx, dy = sy - cy;
         return (Math.abs(dx - dy) < 0.22 || Math.abs(dx + dy) < 0.22) && Math.abs(dx) < R + 0.2;
       });
+    } else if (m.kind === 'dot') {
+      paint(cx - R, cy - R, cx + R, cy + R, (sx, sy) => Math.hypot(sx - cx, sy - cy) < m.r);
     } else if (m.kind === 'light') {
       paint(cx - R, cy - R, cx + R, cy + R, (sx, sy) => Math.hypot(sx - cx, sy - cy) < 0.5);
     } else {

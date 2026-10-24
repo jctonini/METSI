@@ -103,10 +103,10 @@ test('csv escapa separadores y comillas', () => {
 });
 
 // ---------- layout ----------
-test('layout: sin burbujas superpuestas ni fuera de la hoja', () => {
+test('layout: sin burbujas superpuestas ni fuera de la hoja (V3: capacidad 38/57)', () => {
   const mods8 = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
   for (const [q, opts, mods] of [[10, 4, ['a', 'b']], [20, 5, ['a', 'b', 'c']], [38, 5, ['a', 'b']], [57, 4, ['a', 'b']], [16, 6, mods8]]) {
-    const L = buildLayout({ numQuestions: q, numOptions: opts, regDigits: 9, modalidades: mods });
+    const L = buildLayout({ numQuestions: q, numOptions: opts, regDigits: 9, modalidades: mods }, 3);
     assert.equal(L.numQuestions, q, `capacidad insuficiente para ${q}x${opts}`);
     assert.equal(L.bubbles.filter((b) => b.kind === 'ans').length, q * opts);
     for (const b of L.bubbles) {
@@ -124,7 +124,22 @@ test('layout: sin burbujas superpuestas ni fuera de la hoja', () => {
 test('layout: la capacidad se limita y avisa', () => {
   const L = buildLayout({ numQuestions: 500, numOptions: 5, modalidades: ['a', 'b'] });
   assert.equal(L.numQuestions, L.maxQuestions);
-  assert.ok(L.maxQuestions >= 36);
+  assert.equal(L.version, 4);
+  assert.equal(L.maxQuestions, 32);
+  assert.equal(buildLayout({ numQuestions: 500, numOptions: 5, modalidades: ['a', 'b'] }, 3).maxQuestions, 38);
+});
+test('V4: la banda de ejemplos no se pisa con las burbujas ni con el pie', () => {
+  for (const cfg of [{ numQuestions: 32, numOptions: 5, modalidades: ['a', 'b'] }, { numQuestions: 48, numOptions: 4, modalidades: ['a', 'b'] }, { numQuestions: 20, numOptions: 5, modalidades: ['a', 'b', 'c'] }]) {
+    const L = buildLayout({ regDigits: 7, ...cfg }, 4);
+    assert.equal(L.numQuestions, cfg.numQuestions, 'debe entrar la capacidad anunciada');
+    const lastBottom = Math.max(...L.bubbles.map((b) => b.y + L.r));
+    assert.ok(lastBottom < L.examples.line.y, `las burbujas (hasta ${lastBottom}) no pueden pasar la línea de la banda (${L.examples.line.y})`);
+    const bandTop = L.examples.line.y, bandBottom = Math.max(...L.examples.texts.map((x) => x.y), ...L.examples.symbols.map((x) => x.y + x.r));
+    assert.ok(bandBottom < 195, 'la banda debe terminar antes de la leyenda del pie');
+    assert.ok(L.examples.symbols.every((x) => x.x - x.r >= 16 && x.x + x.r <= 132 && x.y - x.r > bandTop));
+  }
+  assert.deepEqual(buildLayout({ numQuestions: 10, numOptions: 4, modalidades: ['a'] }, 4).examples.symbols.map((x) => x.kind), ['filled', 'tick', 'cross', 'dot', 'half']);
+  assert.equal(buildLayout({ numQuestions: 10, numOptions: 4, modalidades: ['a'] }, 3).examples, null);
 });
 test('layout: los campos manuscritos no pisan burbujas', () => {
   const L = buildLayout({ numQuestions: 20, numOptions: 5, regDigits: 9, modalidades: ['a', 'b'] });
@@ -141,7 +156,7 @@ const MODALIDADES = ['Presencial', 'Virtual', 'Híbrida'];
 
 function makeExam(cfg, seed, opts) {
   opts = opts || {};
-  const L = buildLayout(cfg, opts.version || 3);
+  const L = buildLayout(cfg, opts.version || 4);
   const layoutFor = (v) => buildLayout(cfg, v);
   const rand = rng(seed);
   const modalidad = Math.floor(rand() * L.modalidades.length);
@@ -228,11 +243,23 @@ test('v1 congelada: las posiciones coinciden con las de las hojas ya impresas', 
     assert.equal(JSON.stringify(got), JSON.stringify(f), 'cambió la v1 (' + k + ')');
   }
 });
+for (const v of [2, 3]) {
+  test(`V${v} congelada: las posiciones coinciden con las de las hojas ya impresas`, () => {
+    const fx = require(`./fixtures/layout-v${v}.json`);
+    for (const [k, f] of Object.entries(fx)) {
+      const L = buildLayout(f.cfg, v);
+      const got = { cfg: f.cfg, numQuestions: L.numQuestions, maxQuestions: L.maxQuestions, markers: L.markers, markerShapes: L.markerShapes, orientationBar: L.orientationBar,
+        fields: L.fields, mod: { labelY: L.mod.labelY, items: L.mod.items }, ans: L.ans, bubbles: L.bubbles, versionBits: L.versionBits, date: L.date, header: L.header };
+      assert.equal(JSON.stringify(got), JSON.stringify(f), `cambió la V${v} (${k})`);
+    }
+  });
+}
 test('v1 y v2: códigos de versión y espacio para el nombre', () => {
   const v1 = buildLayout(CFG20, 1), v2 = buildLayout(CFG20, 2);
   assert.deepEqual(v1.versionBits.map((b) => b.on), [false, false, false]);
   assert.deepEqual(v2.versionBits.map((b) => b.on), [true, false, false]);
   assert.deepEqual(buildLayout(CFG20, 3).versionBits.map((b) => b.on), [false, true, false]);
+  assert.deepEqual(buildLayout(CFG20, 4).versionBits.map((b) => b.on), [true, true, false]);
   const space = (L) => L.header.nameLineY - (L.header.subtitleY + 1);
   assert.ok(space(v2) - space(v1) >= 4.5, 'la v2 debe dar al menos ~5 mm más para escribir el nombre');
   // Con 2 modalidades (el caso real) la capacidad no baja; con más filas de modalidades baja como mucho una fila.
@@ -241,7 +268,7 @@ test('v1 y v2: códigos de versión y espacio para el nombre', () => {
   assert.ok(v2.maxQuestions >= v1.maxQuestions - 2);
 });
 test('lee hojas v1 (ya impresas) y v2 y detecta cada versión', () => {
-  for (const version of [1, 2, 3]) {
+  for (const version of [1, 2, 3, 4]) {
     for (let s = 1; s <= 4; s++) {
       const exam = makeExam(CFG20, 300 + s, { version });
       const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, jitter: 70 }), exam.layoutFor);
@@ -261,10 +288,10 @@ test('hoja v1 dada vuelta 180° también se lee', () => {
 });
 test('una versión futura se rechaza con un aviso, sin leer mal', () => {
   const exam = makeExam(CFG10, 331);
-  exam.L.versionBits[0].on = true; exam.L.versionBits[1].on = true; // valor 3 => V4
+  exam.L.versionBits[0].on = false; exam.L.versionBits[1].on = false; exam.L.versionBits[2].on = true; // valor 4 => V5
   const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 6 }), exam.layoutFor);
   assert.equal(r.ok, false);
-  assert.match(r.error, /más nuevo.*V4/);
+  assert.match(r.error, /más nuevo.*V5/);
 });
 test('señales de versión contradictorias se rechazan', () => {
   const exam = makeExam(CFG10, 332, { version: 2 });
@@ -272,6 +299,18 @@ test('señales de versión contradictorias se rechazan', () => {
   const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 7 }), exam.layoutFor);
   assert.equal(r.ok, false);
   assert.match(r.error, /formato/);
+});
+test('V4: sin la línea "Rellená el círculo…" (la banda la reemplaza) pero conserva "con birome"', () => {
+  const { sheetSVG } = require('../js/sheet.js');
+  const v4 = sheetSVG(buildLayout(CFG10, 4));
+  assert.equal(v4.includes('Rellená el círculo por completo con birome'), false);
+  assert.ok(v4.includes('con birome'), 'la indicación de birome tiene que seguir en el ejemplo correcto');
+  assert.ok(v4.includes('CORRECTO') && v4.includes('INCORRECTO') && v4.includes('prevalecen aquellas marcadas'));
+  // si el docente escribe una instrucción propia, se imprime
+  const custom = sheetSVG(buildLayout({ ...CFG10, sheet: { instructions: 'Usá birome azul' } }, 4));
+  assert.ok(custom.includes('Usá birome azul'));
+  // las hojas ya impresas (V3) conservan su línea
+  assert.ok(sheetSVG(buildLayout(CFG10, 3)).includes('Rellená el círculo por completo con birome'));
 });
 test('hoja: la v2 imprime leyendas, fecha y versión; la v1 no', () => {
   const { sheetSVG } = require('../js/sheet.js');
@@ -314,7 +353,7 @@ test('hoja con más de la mitad de las burbujas marcadas (nivel base robusto)', 
 
 test('hoja vecina sin cortar (2 por A4): se lee la hoja correcta', () => {
   for (const [neighbor, scale, shiftX] of [[148, 0.8, 0], [-148, 0.8, 0], [148, 0.65, 0], [-148, 0.7, 0], [148, 0.7, -170], [-148, 0.7, 170], [148, 0.6, -230]]) {
-    for (const version of [1, 2, 3]) {
+    for (const version of [1, 2, 3, 4]) {
       const exam = makeExam(CFG20, 400 + version, { version });
       const img = renderPhoto(exam.L, exam.marks, { seed: 31, neighbor, scale, shiftX, jitter: 60 });
       const scan = scanImage(img, exam.layoutFor);
@@ -380,6 +419,29 @@ test('V3: una mancha negra cuadrada suelta no se confunde con una esquina', () =
   assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
 });
 
+test('un punto cuenta como respuesta si es lo bastante grande (y un puntito suelto no)', () => {
+  const L = buildLayout(CFG20, 3);
+  const radii = [0.2, 0.3, 0.5, 0.6, 0.8, 1.0, 1.5]; // radios en mm (diámetro = el doble)
+  const marks = radii.map((r, q) => { const b = L.bubbles.find((x) => x.kind === 'ans' && x.q === q && x.opt === 1); return { x: b.x, y: b.y, kind: 'dot', r }; });
+  for (const seed of [1, 2, 3]) {
+    const scan = scanImage(renderPhoto(L, marks, { seed, jitter: 60, paper: 190, lighting: 0.3 }), (v) => buildLayout(CFG20, v));
+    assert.ok(scan.ok, scan.error);
+    const r = interpret(scan, undefined, groupsOf(scan.layout));
+    const counts = radii.map((_, q) => r.answers[q].includes(1));
+    assert.deepEqual(counts.slice(0, 2), [false, false], 'los puntitos de 0,4 y 0,6 mm no deben contar');
+    assert.deepEqual(counts.slice(4), [true, true, true], 'los puntos de 1,6 mm o más deben contar');
+  }
+});
+test('las cruces finas se leen aunque la foto tenga las burbujas vacías más oscuras (borrosa)', () => {
+  // Foto de peor calidad: papel más oscuro y mucho ruido; las cruces finas tienen que seguir contando.
+  for (let s = 1; s <= 3; s++) {
+    const exam = makeExam(CFG20, 600 + s, { kind: 'thincross' });
+    const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, paper: 140, lighting: 0.35, noise: 30, jitter: 100 }), exam.layoutFor);
+    assert.ok(scan.ok, scan.error);
+    assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+  }
+});
+
 test('pregunta en blanco y marca tenue se señalan', () => {
   const exam = makeExam(CFG20, 31);
   // Borra todas las marcas de la pregunta 3 y deja una tenue en la pregunta 4.
@@ -388,7 +450,7 @@ test('pregunta en blanco y marca tenue se señalan', () => {
     return !(b.kind === 'ans' && (b.q === 3 || b.q === 4));
   });
   const b4 = exam.L.bubbles.find((x) => x.kind === 'ans' && x.q === 4 && x.opt === 1);
-  exam.marks.push({ x: b4.x, y: b4.y, kind: 'light' });
+  exam.marks.push({ x: b4.x, y: b4.y, kind: 'dot', r: 0.4 }); // punto de 0,8 mm
   const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 3 }), exam.layoutFor);
   assert.ok(scan.ok, scan.error);
   const r = interpret(scan);

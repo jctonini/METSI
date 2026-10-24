@@ -145,7 +145,10 @@
     return a * (1 - fy) + b * fy;
   }
 
-  const INNER_RINGS = [[0, 1], [0.6, 6], [1.2, 10], [1.7, 14]]; // [radio mm, puntos]
+  // Zona donde se mide la tinta: un círculo de 1,2 mm de radio alrededor del centro. Más afuera, el borde impreso del
+  // círculo se "derrama" en la medida cuando la foto es borrosa y tapa a los trazos finos (como una cruz, que pasa
+  // justo por el centro).
+  const INNER_RINGS = [[0, 1], [0.5, 6], [1.0, 10], [1.2, 10]]; // [radio mm, puntos]
   const PAPER_RADIUS = 3.0;
   const PAPER_POINTS = 12;
 
@@ -428,7 +431,7 @@
   // su propio nivel base porque la luz puede cambiar de un lado al otro de la hoja.
   // `threshold`: cuánto más oscura que el fondo tiene que estar una burbuja para contar como
   // marcada. Las que quedan apenas por debajo se señalan como dudosas para revisar a mano.
-  const DEFAULT_THRESHOLD = 0.1;
+  const DEFAULT_THRESHOLD = 0.085; // centro del rango que lee bien las fotos reales de prueba (0,065-0,155; 0,045-0,105 degradadas)
   const MIN_CLUSTER_GAP = 0.15; // diferencia mínima entre burbujas vacías y marcadas
   const BASE_QUANTILE = 0.3;
   const WINDOW_BEFORE = 4, WINDOW_AFTER = 4; // filas vecinas que se usan para el nivel base

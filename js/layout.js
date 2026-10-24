@@ -7,6 +7,8 @@
 //    esas hojas (no se vuelve a imprimir). tests/fixtures/layout-v1.json fija sus posiciones.
 //  - v2: más espacio para escribir el nombre, campo de fecha, leyendas al pie y código de versión.
 //
+//  - v4: igual que la v3 más una banda de ejemplos al pie (cómo marcar bien y mal una burbuja). La banda ocupa
+//    lugar, así que entran menos preguntas (30 en vez de 38 con 5 opciones); la geometría de la v3 queda intacta.
 //  - v3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha), así cada
 //    esquina se identifica sola y la orientación de la hoja se deduce de las formas.
 //
@@ -30,7 +32,7 @@
   const LETTERS = 'ABCDEF';
   const X0 = 16, X1 = 132, Y_MAX = 190;
   const ROW_PITCH = 5.5, OPT_PITCH = 7;
-  const LATEST_VERSION = 3;
+  const LATEST_VERSION = 4;
 
   // Código de versión: cuadrados de 3 mm centrados en (x0 + i * pitch, y). Bit i = 1 si está impreso.
   const VERSION_CODE = { x0: 19.5, y: 203, size: 3, pitch: 5, bits: 3 };
@@ -63,6 +65,32 @@
   ];
   GEO[3] = Object.assign({}, GEO[2], { bar: null, markers: MARKERS_V3, shapes: SHAPES_V3 });
 
+  // v4: la banda de ejemplos ocupa de 179 a 195 mm; las burbujas llegan hasta 173,5 mm. Sin la línea de instrucción
+  // (la banda la reemplaza) queda ese lugar libre.
+  GEO[4] = Object.assign({}, GEO[3], { yMax: 173.5, examples: true });
+
+  // Banda de ejemplos (v4): a la izquierda la forma correcta (círculo pintado por completo) y a la derecha las
+  // formas incorrectas. `symbols` los dibuja sheet.js; los ejemplos nunca están dentro de la grilla de respuestas.
+  function exampleBand() {
+    // Cada mitad (16-74 y 74-132 mm) tiene su centro (45 y 103 mm): el título va centrado y los ejemplos alineados.
+    return {
+      line: { x1: 16, x2: 132, y: 179 },
+      divider: { x: 74, y1: 181.5, y2: 194.5 },
+      texts: [
+        { x: 45, y: 183.1, s: 'CORRECTO', size: 2.6, bold: true, anchor: 'middle' },
+        { x: 34, y: 188.2, s: 'Pintá todo el círculo', size: 2.4, maxW: 28 },
+        { x: 34, y: 191.2, s: 'con birome', size: 2.4, maxW: 28 },
+        { x: 103, y: 183.1, s: 'INCORRECTO', size: 2.6, bold: true, anchor: 'middle' },
+        { x: 103, y: 193.9, s: 'tilde · cruz · punto · medio relleno', size: 2.2, maxW: 52, anchor: 'middle' },
+      ],
+      symbols: [
+        { kind: 'filled', x: 29, y: 188.5, r: 2.2 },
+        { kind: 'tick', x: 92.5, y: 188.5, r: 2.2 }, { kind: 'cross', x: 99.5, y: 188.5, r: 2.2 },
+        { kind: 'dot', x: 106.5, y: 188.5, r: 2.2 }, { kind: 'half', x: 113.5, y: 188.5, r: 2.2 },
+      ],
+    };
+  }
+
   const DEFAULT_TEXTS = {
     subtitle: '',
     nameLabel: 'Nombre y apellido:',
@@ -87,7 +115,7 @@
     const modRows = Math.max(1, Math.ceil(numModalidades / 2));
     const labelY = g.modY0 + (modRows - 1) * 6 + 11;
     const firstRowY = labelY + 13;
-    return { modRows, labelY, headerY: labelY + 6.5, firstRowY, maxRows: Math.floor((Y_MAX - firstRowY) / ROW_PITCH) + 1 };
+    return { modRows, labelY, headerY: labelY + 6.5, firstRowY, maxRows: Math.floor(((g.yMax || Y_MAX) - firstRowY) / ROW_PITCH) + 1 };
   }
 
   // Cuántas columnas de preguntas entran (0 = ninguna combinación sirve).
@@ -166,7 +194,7 @@
     const texts = {};
     for (const k of Object.keys(DEFAULT_TEXTS)) {
       const v = typeof custom[k] === 'string' ? custom[k].trim() : '';
-      texts[k] = v || (k === 'subtitle' || k === 'logo' ? '' : DEFAULT_TEXTS[k]);
+      texts[k] = v || (k === 'subtitle' || k === 'logo' || (k === 'instructions' && version >= 4) ? '' : DEFAULT_TEXTS[k]);
     }
     texts.title = (cfg.title || '').trim() || 'Hoja de respuestas';
 
@@ -182,6 +210,7 @@
       markerShapes: g.shapes || MARKERS.map((m) => ({ x: m.x, y: m.y, w: MARKER_SIZE, h: MARKER_SIZE })),
       texts, logoRect: LOGO_RECT, r: BUBBLE_R, numQuestions, numOptions, regDigits, modalidades, maxQuestions: maxQ,
       fields, mod, ans, bubbles, letters: LETTERS.slice(0, numOptions), versionBits, versionCode: VERSION_CODE, date,
+      examples: g.examples ? exampleBand() : null,
     };
   }
 
