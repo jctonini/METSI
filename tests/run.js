@@ -125,17 +125,17 @@ test('layout: la capacidad se limita y avisa', () => {
   const L = buildLayout({ numQuestions: 500, numOptions: 5, modalidades: ['a', 'b'] });
   assert.equal(L.numQuestions, L.maxQuestions);
   assert.equal(L.version, 4);
-  assert.equal(L.maxQuestions, 30);
+  assert.equal(L.maxQuestions, 32);
   assert.equal(buildLayout({ numQuestions: 500, numOptions: 5, modalidades: ['a', 'b'] }, 3).maxQuestions, 38);
 });
 test('V4: la banda de ejemplos no se pisa con las burbujas ni con el pie', () => {
-  for (const cfg of [{ numQuestions: 30, numOptions: 5, modalidades: ['a', 'b'] }, { numQuestions: 45, numOptions: 4, modalidades: ['a', 'b'] }, { numQuestions: 20, numOptions: 5, modalidades: ['a', 'b', 'c'] }]) {
+  for (const cfg of [{ numQuestions: 32, numOptions: 5, modalidades: ['a', 'b'] }, { numQuestions: 48, numOptions: 4, modalidades: ['a', 'b'] }, { numQuestions: 20, numOptions: 5, modalidades: ['a', 'b', 'c'] }]) {
     const L = buildLayout({ regDigits: 7, ...cfg }, 4);
     assert.equal(L.numQuestions, cfg.numQuestions, 'debe entrar la capacidad anunciada');
     const lastBottom = Math.max(...L.bubbles.map((b) => b.y + L.r));
     assert.ok(lastBottom < L.examples.line.y, `las burbujas (hasta ${lastBottom}) no pueden pasar la línea de la banda (${L.examples.line.y})`);
     const bandTop = L.examples.line.y, bandBottom = Math.max(...L.examples.texts.map((x) => x.y), ...L.examples.symbols.map((x) => x.y + x.r));
-    assert.ok(bandBottom < 192, 'la banda debe terminar antes de la instrucción del pie');
+    assert.ok(bandBottom < 195, 'la banda debe terminar antes de la leyenda del pie');
     assert.ok(L.examples.symbols.every((x) => x.x - x.r >= 16 && x.x + x.r <= 132 && x.y - x.r > bandTop));
   }
   assert.deepEqual(buildLayout({ numQuestions: 10, numOptions: 4, modalidades: ['a'] }, 4).examples.symbols.map((x) => x.kind), ['filled', 'tick', 'cross', 'dot', 'half']);
@@ -299,6 +299,18 @@ test('señales de versión contradictorias se rechazan', () => {
   const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 7 }), exam.layoutFor);
   assert.equal(r.ok, false);
   assert.match(r.error, /formato/);
+});
+test('V4: sin la línea "Rellená el círculo…" (la banda la reemplaza) pero conserva "con birome"', () => {
+  const { sheetSVG } = require('../js/sheet.js');
+  const v4 = sheetSVG(buildLayout(CFG10, 4));
+  assert.equal(v4.includes('Rellená el círculo por completo con birome'), false);
+  assert.ok(v4.includes('con birome'), 'la indicación de birome tiene que seguir en el ejemplo correcto');
+  assert.ok(v4.includes('CORRECTO') && v4.includes('INCORRECTO') && v4.includes('prevalecen aquellas marcadas'));
+  // si el docente escribe una instrucción propia, se imprime
+  const custom = sheetSVG(buildLayout({ ...CFG10, sheet: { instructions: 'Usá birome azul' } }, 4));
+  assert.ok(custom.includes('Usá birome azul'));
+  // las hojas ya impresas (V3) conservan su línea
+  assert.ok(sheetSVG(buildLayout(CFG10, 3)).includes('Rellená el círculo por completo con birome'));
 });
 test('hoja: la v2 imprime leyendas, fecha y versión; la v1 no', () => {
   const { sheetSVG } = require('../js/sheet.js');

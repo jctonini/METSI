@@ -113,7 +113,7 @@
     $('cfg-thr').value = String(c.threshold);
     for (const [id, k] of SHEET_FIELDS) {
       $(id).value = c.sheet[k] || '';
-      $(id).placeholder = DEFAULT_TEXTS[k] || '';
+      $(id).placeholder = k === 'instructions' ? '(vacío: la hoja V4 no lleva este texto, la banda de ejemplos lo reemplaza)' : (DEFAULT_TEXTS[k] || '');
     }
     $('sh-logo-prev').hidden = !c.sheet.logo;
     $('sh-logo-prev').src = c.sheet.logo || '';

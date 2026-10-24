@@ -102,15 +102,16 @@
       const ex = L.examples;
       o.push(`<line x1="${ex.line.x1}" y1="${ex.line.y}" x2="${ex.line.x2}" y2="${ex.line.y}" stroke="#000" stroke-width="0.2" stroke-dasharray="1 1"/>`);
       o.push(`<line x1="${ex.divider.x}" y1="${ex.divider.y1}" x2="${ex.divider.x}" y2="${ex.divider.y2}" stroke="#000" stroke-width="0.2"/>`);
-      for (const tx of ex.texts) text(tx.x, tx.y, tx.s, tx.size, tx.bold ? 'font-weight="bold"' : '', tx.maxW);
+      for (const tx of ex.texts) text(tx.x, tx.y, tx.s, tx.size, [tx.bold ? 'font-weight="bold"' : '', tx.anchor ? `text-anchor="${tx.anchor}"` : ''].join(' '), tx.maxW);
       for (const sy of ex.symbols) o.push(symbol(sy));
     }
 
     // Pie
     const cx = L.page.w / 2;
     if (v2) {
-      text(cx, 195.2, T.instructions, 2.4, 'text-anchor="middle"', 112);
-      wrap(T.legal, 2.2, 112, 2).forEach((ln, i) => text(cx, 198.3 + i * 2.6, ln, 2.2, 'text-anchor="middle"', 112));
+      // En la v4 la banda de ejemplos reemplaza a la instrucción; solo se imprime si el docente escribió un texto propio.
+      if (T.instructions) text(cx, 195.2, T.instructions, 2.4, 'text-anchor="middle"', 112);
+      wrap(T.legal, 2.2, 112, 2).forEach((ln, i) => text(cx, (T.instructions ? 198.3 : 198.8) + i * 2.6, ln, 2.2, 'text-anchor="middle"', 112));
       // Código de versión (cuadraditos) y el número en texto
       for (const bit of L.versionBits) {
         if (bit.on) o.push(`<rect x="${bit.x - bit.size / 2}" y="${bit.y - bit.size / 2}" width="${bit.size}" height="${bit.size}"/>`);

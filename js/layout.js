@@ -65,25 +65,28 @@
   ];
   GEO[3] = Object.assign({}, GEO[2], { bar: null, markers: MARKERS_V3, shapes: SHAPES_V3 });
 
-  // v4: la banda de ejemplos ocupa de 173,5 a 190 mm; las burbujas llegan hasta 170 mm.
-  GEO[4] = Object.assign({}, GEO[3], { yMax: 170, examples: true });
+  // v4: la banda de ejemplos ocupa de 179 a 195 mm; las burbujas llegan hasta 173,5 mm. Sin la línea de instrucción
+  // (la banda la reemplaza) queda ese lugar libre.
+  GEO[4] = Object.assign({}, GEO[3], { yMax: 173.5, examples: true });
 
   // Banda de ejemplos (v4): a la izquierda la forma correcta (círculo pintado por completo) y a la derecha las
   // formas incorrectas. `symbols` los dibuja sheet.js; los ejemplos nunca están dentro de la grilla de respuestas.
   function exampleBand() {
+    // Cada mitad (16-74 y 74-132 mm) tiene su centro (45 y 103 mm): el título va centrado y los ejemplos alineados.
     return {
-      line: { x1: 16, x2: 132, y: 173.5 },
-      divider: { x: 74, y1: 176, y2: 189 },
+      line: { x1: 16, x2: 132, y: 179 },
+      divider: { x: 74, y1: 181.5, y2: 194.5 },
       texts: [
-        { x: 20, y: 177.6, s: 'CORRECTO', size: 2.6, bold: true },
-        { x: 33, y: 183.9, s: 'Pintá todo el círculo', size: 2.4, maxW: 38 },
-        { x: 78, y: 177.6, s: 'INCORRECTO', size: 2.6, bold: true },
-        { x: 78, y: 188.4, s: 'tilde · cruz · punto · medio relleno', size: 2.2, maxW: 52 },
+        { x: 45, y: 183.1, s: 'CORRECTO', size: 2.6, bold: true, anchor: 'middle' },
+        { x: 34, y: 188.2, s: 'Pintá todo el círculo', size: 2.4, maxW: 28 },
+        { x: 34, y: 191.2, s: 'con birome', size: 2.4, maxW: 28 },
+        { x: 103, y: 183.1, s: 'INCORRECTO', size: 2.6, bold: true, anchor: 'middle' },
+        { x: 103, y: 193.9, s: 'tilde · cruz · punto · medio relleno', size: 2.2, maxW: 52, anchor: 'middle' },
       ],
       symbols: [
-        { kind: 'filled', x: 26, y: 183, r: 2.2 },
-        { kind: 'tick', x: 82, y: 183, r: 2.2 }, { kind: 'cross', x: 89, y: 183, r: 2.2 },
-        { kind: 'dot', x: 96, y: 183, r: 2.2 }, { kind: 'half', x: 103, y: 183, r: 2.2 },
+        { kind: 'filled', x: 29, y: 188.5, r: 2.2 },
+        { kind: 'tick', x: 92.5, y: 188.5, r: 2.2 }, { kind: 'cross', x: 99.5, y: 188.5, r: 2.2 },
+        { kind: 'dot', x: 106.5, y: 188.5, r: 2.2 }, { kind: 'half', x: 113.5, y: 188.5, r: 2.2 },
       ],
     };
   }
@@ -191,7 +194,7 @@
     const texts = {};
     for (const k of Object.keys(DEFAULT_TEXTS)) {
       const v = typeof custom[k] === 'string' ? custom[k].trim() : '';
-      texts[k] = v || (k === 'subtitle' || k === 'logo' ? '' : DEFAULT_TEXTS[k]);
+      texts[k] = v || (k === 'subtitle' || k === 'logo' || (k === 'instructions' && version >= 4) ? '' : DEFAULT_TEXTS[k]);
     }
     texts.title = (cfg.title || '').trim() || 'Hoja de respuestas';
 
