@@ -251,6 +251,100 @@
     return solveHomography(src, dst);
   }
 
+  // ¿Los aros impresos de las burbujas caen donde corresponde con esta geometría? Promedio de lo oscuro que
+  // es el papel sobre el borde de cada burbuja. Con 4 marcas equivocadas el cuadro de burbujas se corre y baja.
+  function ringScore(g, w, h, H, layout) {
+    let sum = 0, n = 0;
+    for (const b of layout.bubbles) {
+      const ring = [], paper = [];
+      for (let k = 0; k < 8; k++) {
+        const a = (k * Math.PI) / 4 + 0.39;
+        const p = applyH(H, b.x + layout.r * Math.cos(a), b.y + layout.r * Math.sin(a));
+        const v = sampleGray(g, w, h, p.x, p.y);
+        if (v === null) return -1;
+        ring.push(v);
+        const q = applyH(H, b.x + 3.0 * Math.cos(a), b.y + 3.0 * Math.sin(a));
+        const u = sampleGray(g, w, h, q.x, q.y);
+        if (u !== null) paper.push(u);
+      }
+      paper.sort((x, y) => x - y);
+      const pl = Math.max(40, paper.length ? paper[paper.length >> 1] : 255);
+      for (const v of ring) { sum += Math.max(0, 1 - v / pl); n++; }
+    }
+    return n ? sum / n : -1;
+  }
+
+  // Candidatos a marca de esquina: manchas negras macizas y cuadradas, completas (sin tocar el borde).
+  function markerCandidates(comps, w, h) {
+    const L = Math.max(w, h);
+    return comps.filter((c) => {
+      const bw = c.maxx - c.minx + 1, bh = c.maxy - c.miny + 1;
+      if (bw < 0.012 * L || bh < 0.012 * L || bw > 0.15 * L || bh > 0.15 * L) return false;
+      const ratio = bw / bh;
+      if (ratio < 0.5 || ratio > 2) return false;
+      if (c.area / (bw * bh) < 0.5) return false;
+      return c.minx > 0 && c.miny > 0 && c.maxx < w - 1 && c.maxy < h - 1; // una marca cortada tiene el centro mal
+    }).sort((a, b) => b.area - a.area).slice(0, 14);
+  }
+
+  const dist = (a, b) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
+
+  // Devuelve { H, rotated } o { error }.
+  function findSheet(g, w, h, comps, layoutFor, fixed) {
+    const base = layoutFor(1);
+    let versionError = null;
+    const cands = markerCandidates(comps, w, h);
+    if (cands.length < 4) {
+      return { error: 'No se encontraron las 4 marcas negras de las esquinas. Sacá la foto con la hoja completa, bien iluminada y sin tapar las esquinas.' };
+    }
+    let best = null, shapeOk = false;
+    const n = cands.length;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (let k = j + 1; k < n; k++) for (let l = k + 1; l < n; l++) {
+      const sub = [cands[i], cands[j], cands[k], cands[l]];
+      const areas = sub.map((c) => c.area);
+      if (Math.max(...areas) / Math.min(...areas) > 3.5) continue;
+      const pick = (score) => sub.reduce((bst, c) => (score(c) < score(bst) ? c : bst));
+      const m = { tl: pick((c) => c.cx + c.cy), br: pick((c) => -(c.cx + c.cy)), tr: pick((c) => -(c.cx - c.cy)), bl: pick((c) => c.cx - c.cy) };
+      if (new Set([m.tl, m.tr, m.bl, m.br]).size < 4) continue;
+      const wt = dist(m.tl, m.tr), wb = dist(m.bl, m.br), hl = dist(m.tl, m.bl), hr = dist(m.tr, m.br);
+      const aspect = ((wt + wb) / 2) / ((hl + hr) / 2); // la hoja real: 128 / 190 = 0.67
+      if (aspect < 0.5 || aspect > 0.9) continue;
+      if (wt / wb < 0.6 || wt / wb > 1.67 || hl / hr < 0.6 || hl / hr > 1.67) continue;
+      // Tamaño: una marca mide 8 mm y hay 128 mm entre marcas (proporción 0,0625). Las burbujas
+      // rellenas (4,4 mm) y las manchas chicas no cumplen esa proporción con el ancho de la hoja.
+      const avgW = (wt + wb) / 2;
+      if (sub.some((c) => { const r = Math.sqrt(c.area) / avgW; return r < 0.04 || r > 0.1; })) continue;
+      shapeOk = true;
+      // Orientación: la barra negra del encabezado tiene que quedar arriba. Se compara contra la hoja
+      // dada vuelta 180° en lugar de exigir un negro absoluto (las impresoras y la luz varían).
+      const H0 = buildH(base, m);
+      const H180 = buildH(base, { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl });
+      if (!H0 || !H180) continue;
+      const d0 = barDarkness(g, w, h, H0), d180 = barDarkness(g, w, h, H180);
+      const top = Math.max(d0, d180), gap = Math.abs(d0 - d180);
+      if (top < 0.2 || gap < 0.15) continue;
+      const cx = (m.tl.cx + m.tr.cx + m.bl.cx + m.br.cx) / 4, cy = (m.tl.cy + m.tr.cy + m.bl.cy + m.br.cy) / 4;
+      const centered = Math.hypot(cx - w / 2, cy - h / 2) / Math.hypot(w / 2, h / 2);
+      const Hc = d180 > d0 ? H180 : H0;
+      // Versión de la hoja con esta geometría y qué tan bien encajan los aros de las burbujas.
+      let version, layout;
+      if (fixed) { layout = fixed; version = fixed.version; } else {
+        const det = detectVersion(g, w, h, Hc, base.versionCode, base.latestVersion);
+        if (det.error) { versionError = det.error; continue; }
+        version = det.version; layout = layoutFor(version);
+      }
+      const fit = ringScore(g, w, h, Hc, layout);
+      if (fit < 0) continue;
+      const cand = { H: Hc, rotated: d180 > d0, version, layout, fit, centered };
+      // Gana la combinación cuyos aros encajan mejor; si quedan parejas, la más centrada.
+      if (!best || cand.fit > best.fit + 0.02 || (cand.fit > best.fit - 0.02 && cand.centered < best.centered)) best = cand;
+    }
+    if (best) return best;
+    if (versionError) return { error: versionError };
+    if (!shapeOk) return { error: 'La hoja parece estar girada o muy inclinada. Sacá la foto con la hoja en vertical.' };
+    return { error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
+  }
+
   // ---------- API ----------
   // `layoutSource`: función (versión) => layout, o un layout fijo (se omite la detección de versión).
   // Devuelve { ok:true, H, version, layout, scores:{ mod:[i], ans:[q][opción] } } o { ok:false, error }.
@@ -263,41 +357,12 @@
     const win = Math.max(15, Math.round(Math.max(w, h) / 12)) | 1;
     const bin = binarize(g, w, h, win, 0.8);
     const comps = components(bin, w, h);
-    const m = findMarkers(comps, w, h);
-    if (!m) {
-      return { ok: false, error: 'No se encontraron las 4 marcas negras de las esquinas. Sacá la foto con la hoja completa, bien iluminada y sin tapar las esquinas.' };
-    }
-    const wd = Math.hypot(m.tr.cx - m.tl.cx, m.tr.cy - m.tl.cy);
-    const ht = Math.hypot(m.bl.cx - m.tl.cx, m.bl.cy - m.tl.cy);
-    const aspect = wd / ht; // esperado ~ 184/271 = 0.68
-    if (aspect < 0.45 || aspect > 0.95) {
-      return { ok: false, error: 'La hoja parece estar girada o muy inclinada. Sacá la foto con la hoja en vertical.' };
-    }
-
-    // Orientación: la barra negra del encabezado tiene que quedar arriba. Se compara contra la
-    // hoja dada vuelta 180° en lugar de exigir un negro absoluto (las impresoras y la luz varían).
-    // Las marcas de las esquinas son iguales en todas las versiones.
-    const H0 = buildH(base, m);
-    const m2 = { tl: m.br, tr: m.bl, bl: m.tr, br: m.tl };
-    const H180 = buildH(base, m2);
-    if (!H0 || !H180) return { ok: false, error: 'No se pudo calcular la posición de la hoja.' };
-    const d0 = barDarkness(g, w, h, H0);
-    const d180 = barDarkness(g, w, h, H180);
-    let H = H0;
-    let rotated = false;
-    if (d180 > d0) { H = H180; rotated = true; }
-    if (Math.max(d0, d180) < 0.2 || Math.abs(d0 - d180) < 0.15) {
-      return { ok: false, error: 'No se reconoce la orientación de la hoja. Revisá que sea la hoja correcta y que esté completa en la foto.' };
-    }
-
-    let layout = fixed;
-    let version = fixed ? fixed.version : 1;
-    if (!fixed) {
-      const det = detectVersion(g, w, h, H, base.versionCode, base.latestVersion);
-      if (det.error) return { ok: false, error: det.error };
-      version = det.version;
-      layout = layoutFor(version);
-    }
+    // Se busca cuál de las combinaciones de 4 marcas es realmente la hoja. Puede haber más marcas en la
+    // foto (la hoja vecina de una página A4 sin cortar, manchas negras): se prueban las combinaciones
+    // posibles y gana la que tiene la forma de la hoja y la barra negra del encabezado en su lugar.
+    const found = findSheet(g, w, h, comps, layoutFor, fixed);
+    if (found.error) return { ok: false, error: found.error };
+    const { H, rotated, version, layout } = found;
 
     const scores = {
       mod: new Array(layout.modalidades.length).fill(0),

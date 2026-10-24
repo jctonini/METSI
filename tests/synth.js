@@ -30,6 +30,11 @@ function renderPhoto(layout, marks, opts) {
   ];
   if (rot180) corners = [corners[3], corners[2], corners[1], corners[0]];
   const sheetCorners = [{ x: 0, y: 0 }, { x: p.w, y: 0 }, { x: 0, y: p.h }, { x: p.w, y: p.h }];
+  if (opts.scale) {
+    const cx = corners.reduce((a, c) => a + c.x, 0) / 4, cy = corners.reduce((a, c) => a + c.y, 0) / 4;
+    corners = corners.map((c) => ({ x: cx + (c.x - cx) * opts.scale, y: cy + (c.y - cy) * opts.scale }));
+  }
+  if (opts.shiftX) corners = corners.map((c) => ({ x: c.x + opts.shiftX, y: c.y }));
   const T = solveHomography(sheetCorners, corners); // hoja -> foto
   const Tinv = solveHomography(corners, sheetCorners); // foto -> hoja
 
@@ -55,6 +60,20 @@ function renderPhoto(layout, marks, opts) {
   for (const c of layout.markers) paint(c.x - ms, c.y - ms, c.x + ms, c.y + ms, () => true);
   const b = layout.orientationBar;
   paint(b.x - b.w / 2, b.y - b.h / 2, b.x + b.w / 2, b.y + b.h / 2, () => true);
+
+  // Hoja vecina de la misma página A4 sin cortar: opts.neighbor = +148 (a la derecha) o -148 (a la izquierda).
+  if (opts.neighbor) {
+    const dx = opts.neighbor;
+    for (const c of layout.markers) paint(c.x + dx - ms, c.y - ms, c.x + dx + ms, c.y + ms, () => true);
+    paint(b.x + dx - b.w / 2, b.y - b.h / 2, b.x + dx + b.w / 2, b.y + b.h / 2, () => true);
+    for (const bit of layout.versionBits || []) if (bit.on) paint(bit.x + dx - bit.size / 2, bit.y - bit.size / 2, bit.x + dx + bit.size / 2, bit.y + bit.size / 2, () => true);
+    for (const bb of layout.bubbles) {
+      paint(bb.x + dx - layout.r - 1, bb.y - layout.r - 1, bb.x + dx + layout.r + 1, bb.y + layout.r + 1, (sx, sy) => {
+        const d = Math.hypot(sx - bb.x - dx, sy - bb.y);
+        return d > layout.r - 0.17 && d < layout.r + 0.17;
+      });
+    }
+  }
 
   // Código de versión (cuadraditos al pie), si la hoja lo lleva.
   for (const bit of layout.versionBits || []) {

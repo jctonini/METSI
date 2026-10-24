@@ -310,6 +310,26 @@ test('hoja con más de la mitad de las burbujas marcadas (nivel base robusto)', 
   }
 });
 
+test('hoja vecina sin cortar (2 por A4): se lee la hoja correcta', () => {
+  for (const [neighbor, scale, shiftX] of [[148, 0.8, 0], [-148, 0.8, 0], [148, 0.65, 0], [-148, 0.7, 0], [148, 0.7, -170], [-148, 0.7, 170], [148, 0.6, -230]]) {
+    for (const version of [1, 2]) {
+      const exam = makeExam(CFG20, 400 + version, { version });
+      const img = renderPhoto(exam.L, exam.marks, { seed: 31, neighbor, scale, shiftX, jitter: 60 });
+      const scan = scanImage(img, exam.layoutFor);
+      assert.ok(scan.ok, `vecina ${neighbor}, escala ${scale}, corrida ${shiftX}, V${version}: ${scan.error}`);
+      assert.equal(scan.version, version);
+      assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+    }
+  }
+});
+test('manchas negras chicas y hoja vecina no confunden las esquinas', () => {
+  const exam = makeExam(CFG10, 410);
+  const img = renderPhoto(exam.L, exam.marks, { seed: 33, neighbor: 148, scale: 0.8, ink: [{ x: 60, y: 188, w: 4, h: 4 }, { x: 120, y: 120, w: 4, h: 4 }] });
+  const scan = scanImage(img, exam.layoutFor);
+  assert.ok(scan.ok, scan.error);
+  assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+});
+
 test('pregunta en blanco y marca tenue se señalan', () => {
   const exam = makeExam(CFG20, 31);
   // Borra todas las marcas de la pregunta 3 y deja una tenue en la pregunta 4.
