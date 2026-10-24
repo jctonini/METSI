@@ -431,7 +431,7 @@
   // su propio nivel base porque la luz puede cambiar de un lado al otro de la hoja.
   // `threshold`: cuánto más oscura que el fondo tiene que estar una burbuja para contar como
   // marcada. Las que quedan apenas por debajo se señalan como dudosas para revisar a mano.
-  const DEFAULT_THRESHOLD = 0.08;
+  const DEFAULT_THRESHOLD = 0.085; // centro del rango que lee bien las fotos reales de prueba (0,065-0,155; 0,045-0,105 degradadas)
   const MIN_CLUSTER_GAP = 0.15; // diferencia mínima entre burbujas vacías y marcadas
   const BASE_QUANTILE = 0.3;
   const WINDOW_BEFORE = 4, WINDOW_AFTER = 4; // filas vecinas que se usan para el nivel base

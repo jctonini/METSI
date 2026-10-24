@@ -23,7 +23,7 @@
   const defaults = () => ({
     examId: newId(),
     examCreatedAt: Date.now(),
-    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 0.33, threshold: 0.08, thrVersion: 3,
+    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 0.33, threshold: 0.085, thrVersion: 3,
       sheet: { subtitle: '', nameLabel: '', regLabel: '', modLabel: '', instructions: '', legal: '', logo: '' } },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
@@ -41,7 +41,7 @@
       const old = Number(st.cfg.threshold);
       if (st.cfg.thrVersion !== 2) st.cfg.threshold = old <= 0.2 ? 0.06 : old >= 0.35 ? 0.2 : 0.1; // escala vieja -> escala 2
       const t = Number(st.cfg.threshold);
-      st.cfg.threshold = t <= 0.07 ? 0.05 : t >= 0.15 ? 0.16 : 0.08; // escala 2 -> escala 3 (se mide más cerca del centro)
+      st.cfg.threshold = t <= 0.07 ? 0.05 : t >= 0.15 ? 0.16 : 0.085; // escala 2 -> escala 3 (se mide más cerca del centro)
       st.cfg.thrVersion = 3;
     }
     return st;
