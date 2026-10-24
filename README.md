@@ -18,6 +18,13 @@ Se usa desde el navegador del celular o de la PC. Los resultados se sincronizan 
 
 La app **no decide quién aprueba**: solo calcula el puntaje. El criterio de aprobación se aplica después sobre la planilla.
 
+## Casos a revisar (para mejorar la lectura)
+
+- En cada hoja hay un botón **🚩 Marcar a revisar** (con una nota opcional) y una **🚩 por pregunta**, para avisar que la app leyó algo mal. Una foto que la app no pudo leer también se puede marcar.
+- La app guarda lo que leyó **por su cuenta**; si después corregís una respuesta a mano, queda marcada con **✎**. Esas diferencias son lo más útil para calibrar.
+- En **Resultados → Casos a revisar** aparece la lista, y se puede **descargar en JSON**. Con Drive conectado, se guardan solos en `METSI Corrector / <examen> / a-revisar`: un `casos.json` (puntajes de cada burbuja, geometría, tus correcciones y notas) y la **foto de cada hoja con el nombre, el registro y la fecha tapados**. Los casos no incluyen nombres ni registros.
+- Una foto que la app no pudo leer no se puede tapar (no se sabe dónde está el nombre), así que **solo se sube si vos lo pedís** con "Enviar esta foto a análisis" y confirmás el aviso.
+
 ## Puntaje
 
 - Cada pregunta tiene un puntaje propio, que se **reparte en partes iguales entre sus respuestas correctas**.
@@ -81,6 +88,7 @@ node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas, CSV, co
 - `js/scoring.js`: cálculo de puntajes.
 - `js/csv.js`: exportación.
 - `js/merge.js`: combina los datos de dos dispositivos.
+- `js/review.js`: casos a revisar (banderas, correcciones a mano) y su exportación.
 - `js/identity.js`: reglas de identificación y duplicados, y detección del mismo archivo.
 - `js/similar.js`: parecido de letra entre fotos (misma hoja fotografiada dos veces).
 - `js/drive.js`: cliente de la API de Google Drive.

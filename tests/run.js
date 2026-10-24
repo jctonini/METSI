@@ -551,6 +551,47 @@ test('letra: sin tinta no se puede comparar (null)', () => {
   assert.equal(SIM.compare(empty, empty).score, null);
 });
 
+// ---------- casos a revisar ----------
+const REV = require('../js/review.js');
+const rsheet = (extra) => ({ id: 's1', fileName: 'a.jpg', failed: false, version: 3, answers: [[0], [1, 2], []], autoAnswers: [[0], [1, 2], []], modalidad: 1, autoModalidad: 1,
+  scan: { H: [1, 0, 0, 0, 1, 0, 0, 0, 1], scores: { mod: [0.1, 0.5], ans: [[0.5]] } }, nombre: 'Ana', registro: '99', crops: { reg: 'x', name: 'y' }, ...extra });
+test('revisión: una hoja sin banderas ni correcciones no es un caso', () => {
+  assert.equal(REV.needsReview(rsheet()), false);
+  assert.equal(REV.buildCases([rsheet()], { letters: 'ABCDE' }).length, 0);
+});
+test('revisión: detecta las respuestas corregidas a mano', () => {
+  const s = rsheet({ answers: [[0], [1], [3]] });
+  assert.deepEqual(REV.editedQuestions(s).map((e) => e.q), [1, 2]);
+  assert.equal(REV.needsReview(s), true);
+});
+test('revisión: la bandera de hoja y de pregunta marcan el caso', () => {
+  assert.equal(REV.needsReview(rsheet({ review: { flag: true, note: '', q: {} } })), true);
+  const s = rsheet({ review: { flag: false, note: '', q: { 4: true, 2: false } } });
+  assert.deepEqual(REV.flaggedQuestions(s), [4]);
+  assert.equal(REV.needsReview(s), true);
+});
+test('revisión: la modalidad corregida también cuenta', () => {
+  assert.equal(REV.needsReview(rsheet({ modalidad: 0 })), true);
+});
+test('revisión: los casos NO incluyen nombre, registro ni recortes de la foto', () => {
+  const cases = REV.buildCases([rsheet({ answers: [[0], [1], [3]], review: { flag: true, note: 'la 3 no la leyó', q: { 2: true } } })], { letters: 'ABCDE' });
+  assert.equal(cases.length, 1);
+  const txt = JSON.stringify(cases);
+  assert.ok(!/Ana|99|crops|nombre|registro/.test(txt.replace(/"fileName":"[^"]*"/, '')), 'datos personales en el caso: ' + txt);
+  assert.deepEqual(cases[0].edited, [{ q: 2, auto: 'BC', final: 'B' }, { q: 3, auto: '', final: 'D' }]);
+  assert.deepEqual(cases[0].flaggedQuestions, [3]);
+  assert.equal(cases[0].note, 'la 3 no la leyó');
+  assert.ok(cases[0].scores && cases[0].H);
+});
+test('revisión: las hojas con error de lectura entran solo si se marcan', () => {
+  const failed = { id: 'f', failed: true, error: 'No se encontraron las 4 marcas', fileName: 'b.jpg', answers: [] };
+  assert.equal(REV.needsReview(failed), false);
+  failed.review = { flag: true, note: '', q: {} };
+  const c = REV.buildCases([failed], { letters: 'ABCDE' });
+  assert.equal(c.length, 1);
+  assert.match(c[0].error, /4 marcas/);
+});
+
 // ---------- Drive (simulado) y combinación de estados ----------
 const { createDrive } = require('../js/drive.js');
 const { mergeStates } = require('../js/merge.js');
@@ -580,6 +621,15 @@ atest('drive: crea carpetas, sube y lee archivos (texto y binario)', async () =>
   assert.equal(exams[0].examId, 'e1');
   await d.renameFolder(folder, 'Otro nombre');
   assert.equal((await d.listExams(root))[0].name, 'Otro nombre');
+});
+
+atest('drive: la subcarpeta se crea una sola vez', async () => {
+  const mock = createMockDrive();
+  const d = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' });
+  const root = await d.ensureRootFolder();
+  const a = await d.ensureSubfolder(root, 'a-revisar');
+  assert.equal(await d.ensureSubfolder(root, 'a-revisar'), a);
+  assert.equal([...mock.files.values()].filter((f) => f.name === 'a-revisar').length, 1);
 });
 
 atest('drive: sin credenciales devuelve 401 con status', async () => {

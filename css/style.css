@@ -71,6 +71,13 @@ th { color: var(--muted); font-weight: 600; }
 #results-table, #item-stats { overflow-x: auto; }
 
 #print-area { display: none; }
+.flagbtn.on { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); font-weight: 600; }
+.f-note { margin: 6px 0; }
+.qflag { border: 0; background: none; padding: 0 4px; font-size: .95rem; opacity: .28; cursor: pointer; }
+.qflag.on, .qflag:hover { opacity: 1; }
+.ans-row.flagged { background: var(--warn-bg); border-radius: 8px; }
+.edited { color: var(--accent); font-size: .85rem; margin-left: 4px; }
+#review-panel ul { margin: 6px 0; padding-left: 20px; }
 dialog { max-width: min(560px, 94vw); width: 100%; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); padding: 18px; }
 dialog::backdrop { background: rgba(0, 0, 0, .5); }
 dialog h3 { margin: 0 0 8px; }

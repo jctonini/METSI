@@ -74,6 +74,12 @@
         return createFolder(name, rootId, { kind: 'metsi-exam', examId });
       },
 
+      // Subcarpeta con nombre fijo dentro de otra carpeta (se crea una sola vez).
+      async ensureSubfolder(parentId, name) {
+        const found = await list(`'${parentId}' in parents and mimeType='${FOLDER}' and name='${q(name)}' and trashed=false`);
+        return found.length ? found[0].id : createFolder(name, parentId, { kind: 'metsi-sub' });
+      },
+
       async renameFolder(folderId, name) {
         await call(`${API}/${folderId}?fields=id`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
       },

@@ -10,6 +10,7 @@
   const { mergeStates } = MetsiMerge;
   const Identity = MetsiIdentity;
   const Similar = MetsiSimilar;
+  const Review = MetsiReview;
 
   const $ = (id) => document.getElementById(id);
   const STORAGE_KEY = 'metsi.corrector.v1';
@@ -383,6 +384,81 @@
     for (const o of state.sheets) if (o.ack && o.ack.includes(sheet.id)) { o.ack = o.ack.filter((x) => x !== sheet.id); o.updatedAt = Date.now(); }
   }
 
+  // ---------- casos a revisar ----------
+  function reviewCtx() {
+    const c = state.cfg;
+    return {
+      letters: LETTERS, appVersion: window.METSI_VERSION || null,
+      // Datos del examen que ayudan a analizar (sin nombres de alumnos).
+      exam: { numQuestions: c.numQuestions, numOptions: c.numOptions, threshold: c.threshold, penalty: c.penalty, key: state.key },
+    };
+  }
+  const buildCases = () => Review.buildCases(state.sheets, reviewCtx());
+
+  function renderReviewPanel() {
+    const box = $('review-panel');
+    if (!box) return;
+    const cases = buildCases();
+    if (!cases.length) { box.innerHTML = '<p class="muted">Ninguna hoja marcada a revisar. Usá <b>🚩</b> en una hoja o en una pregunta cuando la app lea algo mal: queda guardado para analizarlo y mejorar la lectura. Las respuestas que corrijas a mano también quedan registradas (✎).</p>'; return; }
+    const rows = cases.map((c) => {
+      const n = state.sheets.findIndex((x) => x.id === c.id) + 1;
+      const bits = [];
+      if (c.failed) bits.push('no se pudo leer');
+      if (c.flaggedQuestions.length) bits.push('preguntas marcadas: ' + c.flaggedQuestions.join(', '));
+      if (c.edited.length) bits.push('corregidas a mano: ' + c.edited.map((e) => `${e.q} (${e.auto || '—'} → ${e.final || '—'})`).join(', '));
+      if (c.note) bits.push('nota: ' + escapeHtml(c.note));
+      return `<li><b>Hoja ${n}</b> · ${bits.join(' · ') || 'marcada'}</li>`;
+    }).join('');
+    box.innerHTML = `<p><b>${cases.length}</b> caso(s) para analizar. Si Drive está conectado, se guardan solos en <code>METSI Corrector / &lt;examen&gt; / a-revisar</code>, con la foto de la hoja <b>con el nombre, el registro y la fecha tapados</b>.</p><ul>${rows}</ul>`;
+  }
+
+  $('dl-cases').addEventListener('click', () => {
+    const data = Review.wrap(buildCases(), reviewCtx());
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+    a.download = 'casos-a-revisar.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+
+  // Copia de la foto para análisis: se tapan nombre, registro y fecha (salvo que sea una foto ilegible y el docente haya elegido mandarla tal cual).
+  async function maskedFull(sheet, blob) {
+    const bmp = await createImageBitmap(blob);
+    const c = document.createElement('canvas');
+    c.width = bmp.width; c.height = bmp.height;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(bmp, 0, 0);
+    if (sheet.scan && sheet.fullScale) {
+      const L = buildLayout(state.cfg, sheet.version || 1);
+      const H = sheet.scan.H.map((v, i) => (i < 6 ? v * sheet.fullScale : v));
+      const rects = [displayRects(L).name, L.fields.reg];
+      if (L.version >= 2) rects.push({ x: L.date.x - 3, y: L.date.y - 4, w: 132 - L.date.x + 3, h: 8 });
+      ctx.fillStyle = '#000';
+      for (const r of rects) {
+        const pts = [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]].map(([x, y]) => applyH(H, x, y));
+        ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.fill();
+      }
+    }
+    return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.88));
+  }
+
+  // Sube a la carpeta "a-revisar" del examen el archivo de casos y las fotos (tapadas) de las hojas marcadas.
+  async function syncCases(folderId) {
+    const wanted = state.sheets.filter((s) => Review.needsReview(s));
+    if (!wanted.length) return;
+    const sub = await drive.ensureSubfolder(folderId, 'a-revisar');
+    for (const sh of wanted) {
+      const mem = memory.get(sh.id);
+      const rv = Review.ensure(sh);
+      if (rv.imageFile || !mem || !mem.full) continue;
+      if (sh.failed && !rv.sendImage) continue; // una foto ilegible solo se sube si el docente lo pidió
+      const name = `original-${sh.id}.jpg`;
+      await drive.upsertFile(sub, name, 'image/jpeg', await maskedFull(sh, mem.full), { examId: state.examId, sheetId: sh.id });
+      rv.imageFile = name;
+    }
+    await drive.upsertFile(sub, 'casos.json', 'application/json', JSON.stringify(Review.wrap(buildCases(), reviewCtx()), null, 1), { examId: state.examId });
+  }
+
   // Todo lo que impide exportar: hojas sin nombre ni registro y repetidos sin resolver.
   const exportBlockers = () => Identity.analyze(state.sheets);
   const isBlocked = (b) => b.missing.length > 0 || b.hard.length > 0;
@@ -420,8 +496,10 @@
       if (ans === 'skip') return 'skipped';
     }
 
+    let full = null; // foto reducida (1600 px) para poder mandarla a análisis si hace falta
     const failSheet = (error) => {
-      state.sheets.push({ id, fileName: file.name, failed: true, error, answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now });
+      if (full) memory.set(id, { full });
+      state.sheets.push({ id, fileName: file.name, failed: true, error, answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now, appVersion: window.METSI_VERSION || null });
       return 'failed';
     };
     try {
@@ -433,6 +511,7 @@
       const ctx = c.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(bmp, 0, 0, c.width, c.height);
       const img = ctx.getImageData(0, 0, c.width, c.height);
+      full = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.88));
       // La app detecta sola la versión de la hoja (V1: las primeras impresas; V2: formato actual).
       const scan = scanImage(img, (v) => buildLayout(state.cfg, v));
       if (!scan.ok) return failSheet(scan.error);
@@ -456,6 +535,9 @@
       const sheet = {
         id, fileName: file.name, fileHash, failed: false, version: scan.version, nombre: '', registro: '', modalidad: r.modalidad,
         answers: r.answers, createdAt: now, updatedAt: now, photoId: null,
+        // Lo que leyó la app por su cuenta, para saber después qué corrigió el docente a mano.
+        autoAnswers: r.answers.map((a) => a.slice()), autoModalidad: r.modalidad,
+        appVersion: window.METSI_VERSION || null, fullScale: 1 / tk, review: { flag: false, note: '', q: {} },
         crops: { name: crop(rects.name), reg: crop(rects.reg) },
         // Firma de la letra: sirve para avisar si se fotografió dos veces el mismo papel.
         sig: Similar.signature((rect, ppm) => cropRegion(img, scan.H, rect, ppm), L),
@@ -488,7 +570,7 @@
         });
         if (ans === 'discard') return 'discarded';
       }
-      memory.set(id, { thumb: t });
+      memory.set(id, { thumb: t, full });
       state.sheets.push(sheet);
       return 'added';
     } catch (err) {
@@ -563,12 +645,40 @@
       del.addEventListener('click', () => {
         removeSheet(sheet.id); save(); renderCards();
       });
+      const rv = Review.ensure(sheet);
+      const flagBtn = document.createElement('button');
+      flagBtn.type = 'button';
+      flagBtn.className = 'small flagbtn' + (rv.flag ? ' on' : '');
+      flagBtn.textContent = rv.flag ? '🚩 A revisar' : '⚑ Marcar a revisar';
+      flagBtn.title = 'Marcá esta hoja para que se analice cómo la leyó la app';
+      flagBtn.addEventListener('click', () => { rv.flag = !rv.flag; touch(sheet); renderCards(); });
+      head.appendChild(flagBtn);
       head.appendChild(del);
       card.appendChild(head);
+      if (rv.flag) {
+        const note = document.createElement('textarea');
+        note.className = 'f-note'; note.rows = 2; note.maxLength = 500;
+        note.placeholder = 'Qué pasó (opcional): por ejemplo "la 12 no la leyó" o "rechazó la foto"';
+        note.value = rv.note || '';
+        note.addEventListener('change', () => { rv.note = note.value.trim(); touch(sheet); });
+        card.appendChild(note);
+      }
       if (sheet.failed) {
         const p = document.createElement('p');
         p.className = 'error'; p.textContent = sheet.error;
         card.appendChild(p);
+        if (memory.get(sheet.id) && memory.get(sheet.id).full) {
+          const send = document.createElement('button');
+          send.type = 'button'; send.className = 'small';
+          send.textContent = rv.sendImage ? '✔ La foto se enviará a análisis' : 'Enviar esta foto a análisis';
+          send.disabled = !!rv.sendImage;
+          send.title = 'Sube la foto a tu Drive (carpeta a-revisar) sin tapar nada';
+          send.addEventListener('click', () => {
+            if (!confirm('Esta foto no se pudo leer, así que no se pueden tapar el nombre ni el registro. Se va a subir a tu Drive (carpeta a-revisar) tal cual. ¿Seguir?')) return;
+            rv.flag = true; rv.sendImage = true; touch(sheet); renderCards();
+          });
+          card.appendChild(send);
+        }
         return;
       }
       const r = flagsFor(sheet);
@@ -600,7 +710,9 @@
       for (let q = 0; q < L.numQuestions; q++) {
         const row = document.createElement('div');
         const f = r && r.flags[q];
-        row.className = 'ans-row' + (f && f.dubious ? ' dubious' : '') + (sheet.answers[q].length === 0 ? ' blank' : '');
+        const edited = !!sheet.autoAnswers && Review.editedQuestions({ answers: [sheet.answers[q]], autoAnswers: [sheet.autoAnswers[q] || []] }).length > 0;
+        const flaggedQ = !!(rv.q && rv.q[q]);
+        row.className = 'ans-row' + (f && f.dubious ? ' dubious' : '') + (sheet.answers[q].length === 0 ? ' blank' : '') + (flaggedQ ? ' flagged' : '');
         row.innerHTML = `<span class="qnum">${q + 1}</span>`;
         for (let o = 0; o < L.numOptions; o++) {
           const chip = document.createElement('button');
@@ -618,6 +730,16 @@
         const pt = document.createElement('span');
         pt.className = 'qpts'; pt.textContent = `${fmt(pq.earned)}/${fmt(pq.max)}`;
         row.appendChild(pt);
+        if (edited) {
+          const ed = document.createElement('span');
+          ed.className = 'edited'; ed.textContent = '✎'; ed.title = 'Corregida a mano (la app había leído otra cosa)';
+          row.appendChild(ed);
+        }
+        const fl = document.createElement('button');
+        fl.type = 'button'; fl.className = 'qflag' + (flaggedQ ? ' on' : '');
+        fl.textContent = '🚩'; fl.title = flaggedQ ? 'Quitar la bandera de esta pregunta' : 'Marcar esta pregunta a revisar (la app no la leyó bien)';
+        fl.addEventListener('click', () => { rv.q[q] = !flaggedQ; if (rv.q[q]) rv.flag = true; touch(sheet); renderCards(); });
+        row.appendChild(fl);
         rows.appendChild(row);
       }
       card.appendChild(rows);
@@ -683,6 +805,7 @@
   function renderResults() {
     const an = Identity.analyze(state.sheets);
     renderBanner($('results-blockers'), an);
+    renderReviewPanel();
     $('dl-csv').disabled = $('copy-tsv').disabled = isBlocked(an);
     const { L, rows, regCount } = tableData();
     const t = $('results-table');
@@ -881,6 +1004,7 @@
         sh.photoId = await drive.upsertFile(folderId, `hoja-${sh.id}.jpg`, 'image/jpeg', blob, { examId: state.examId, sheetId: sh.id });
       }
 
+      await syncCases(folderId);
       state.lastSync = Date.now();
       state.driveFolderName = folderName();
       await drive.upsertFile(folderId, 'datos.json', 'application/json', JSON.stringify(dataPayload()), { examId: state.examId });
