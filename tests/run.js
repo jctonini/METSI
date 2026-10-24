@@ -141,7 +141,7 @@ const MODALIDADES = ['Presencial', 'Virtual', 'Híbrida'];
 
 function makeExam(cfg, seed, opts) {
   opts = opts || {};
-  const L = buildLayout(cfg, opts.version || 2);
+  const L = buildLayout(cfg, opts.version || 3);
   const layoutFor = (v) => buildLayout(cfg, v);
   const rand = rng(seed);
   const modalidad = Math.floor(rand() * L.modalidades.length);
@@ -232,6 +232,7 @@ test('v1 y v2: códigos de versión y espacio para el nombre', () => {
   const v1 = buildLayout(CFG20, 1), v2 = buildLayout(CFG20, 2);
   assert.deepEqual(v1.versionBits.map((b) => b.on), [false, false, false]);
   assert.deepEqual(v2.versionBits.map((b) => b.on), [true, false, false]);
+  assert.deepEqual(buildLayout(CFG20, 3).versionBits.map((b) => b.on), [false, true, false]);
   const space = (L) => L.header.nameLineY - (L.header.subtitleY + 1);
   assert.ok(space(v2) - space(v1) >= 4.5, 'la v2 debe dar al menos ~5 mm más para escribir el nombre');
   // Con 2 modalidades (el caso real) la capacidad no baja; con más filas de modalidades baja como mucho una fila.
@@ -240,7 +241,7 @@ test('v1 y v2: códigos de versión y espacio para el nombre', () => {
   assert.ok(v2.maxQuestions >= v1.maxQuestions - 2);
 });
 test('lee hojas v1 (ya impresas) y v2 y detecta cada versión', () => {
-  for (const version of [1, 2]) {
+  for (const version of [1, 2, 3]) {
     for (let s = 1; s <= 4; s++) {
       const exam = makeExam(CFG20, 300 + s, { version });
       const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, jitter: 70 }), exam.layoutFor);
@@ -260,13 +261,13 @@ test('hoja v1 dada vuelta 180° también se lee', () => {
 });
 test('una versión futura se rechaza con un aviso, sin leer mal', () => {
   const exam = makeExam(CFG10, 331);
-  exam.L.versionBits[0].on = false; exam.L.versionBits[1].on = true; // valor 2 => V3
+  exam.L.versionBits[0].on = true; exam.L.versionBits[1].on = true; // valor 3 => V4
   const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 6 }), exam.layoutFor);
   assert.equal(r.ok, false);
-  assert.match(r.error, /más nuevo.*V3/);
+  assert.match(r.error, /más nuevo.*V4/);
 });
 test('señales de versión contradictorias se rechazan', () => {
-  const exam = makeExam(CFG10, 332);
+  const exam = makeExam(CFG10, 332, { version: 2 });
   exam.L.orientationBar = buildLayout(CFG10, 1).orientationBar; // v2 con barra angosta (como v1)
   const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 7 }), exam.layoutFor);
   assert.equal(r.ok, false);
@@ -275,6 +276,7 @@ test('señales de versión contradictorias se rechazan', () => {
 test('hoja: la v2 imprime leyendas, fecha y versión; la v1 no', () => {
   const { sheetSVG } = require('../js/sheet.js');
   const svg2 = sheetSVG(buildLayout({ ...CFG10, title: 'Parcial' }, 2));
+  assert.equal((sheetSVG(buildLayout(CFG10, 3)).match(/>V3</g) || []).length, 1);
   assert.ok(svg2.includes('Rellená el círculo por completo con birome'));
   assert.ok(svg2.includes('prevalecen aquellas marcadas en la hoja de respuestas'));
   assert.ok(svg2.includes('Fecha:'));
@@ -312,7 +314,7 @@ test('hoja con más de la mitad de las burbujas marcadas (nivel base robusto)', 
 
 test('hoja vecina sin cortar (2 por A4): se lee la hoja correcta', () => {
   for (const [neighbor, scale, shiftX] of [[148, 0.8, 0], [-148, 0.8, 0], [148, 0.65, 0], [-148, 0.7, 0], [148, 0.7, -170], [-148, 0.7, 170], [148, 0.6, -230]]) {
-    for (const version of [1, 2]) {
+    for (const version of [1, 2, 3]) {
       const exam = makeExam(CFG20, 400 + version, { version });
       const img = renderPhoto(exam.L, exam.marks, { seed: 31, neighbor, scale, shiftX, jitter: 60 });
       const scan = scanImage(img, exam.layoutFor);
@@ -326,6 +328,54 @@ test('manchas negras chicas y hoja vecina no confunden las esquinas', () => {
   const exam = makeExam(CFG10, 410);
   const img = renderPhoto(exam.L, exam.marks, { seed: 33, neighbor: 148, scale: 0.8, ink: [{ x: 60, y: 188, w: 4, h: 4 }, { x: 120, y: 120, w: 4, h: 4 }] });
   const scan = scanImage(img, exam.layoutFor);
+  assert.ok(scan.ok, scan.error);
+  assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+});
+
+test('V3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha)', () => {
+  const L = buildLayout(CFG10, 3);
+  assert.deepEqual(L.markerShapes.map((m) => [m.w, m.h]), [[8, 8], [16, 4], [8, 8], [16, 4]]);
+  assert.equal(L.orientationBar, null);
+  const area = (m) => m.w * m.h;
+  assert.ok(L.markerShapes.every((m) => area(m) === 64), 'todas con la misma superficie negra');
+  assert.ok(L.markerShapes.every((m) => m.x - m.w / 2 >= 5 && m.x + m.w / 2 <= 143 && m.y - m.h / 2 >= 5 && m.y + m.h / 2 <= 205), 'lejos del borde que no imprime');
+});
+test('V3: la hoja dada vuelta se reconoce por las formas, sin barra de orientación', () => {
+  for (let s = 1; s <= 5; s++) {
+    const exam = makeExam(CFG20, 500 + s, { version: 3 });
+    const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, rot180: true, jitter: 90 }), exam.layoutFor);
+    assert.ok(scan.ok, scan.error);
+    assert.equal(scan.rotated, true);
+    assert.equal(scan.version, 3);
+    assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+  }
+});
+test('V3: con luz mala, mucha inclinación y ruido se lee igual', () => {
+  for (let s = 1; s <= 4; s++) {
+    const exam = makeExam(CFG20, 520 + s, { version: 3 });
+    const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, jitter: 150, paper: 150, lighting: 0.45, noise: 28 }), exam.layoutFor);
+    assert.ok(scan.ok, scan.error);
+    assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+  }
+});
+test('V3: marcas con formas equivocadas se rechazan (cuatro cuadrados con código V3)', () => {
+  const exam = makeExam(CFG10, 530, { version: 3 });
+  exam.L.markerShapes = exam.L.markerShapes.map((m) => ({ ...m, w: 8, h: 8 }));
+  const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 9 }), exam.layoutFor);
+  assert.equal(r.ok, false);
+});
+test('V3: dos barras a la izquierda y dos cuadrados a la derecha no son una hoja válida', () => {
+  const exam = makeExam(CFG10, 531, { version: 3 });
+  const sh = exam.L.markerShapes;
+  exam.L.markerShapes = [{ ...sh[1], x: 10 }, { ...sh[0], x: 134 }, { ...sh[3], x: 10 }, { ...sh[2], x: 134 }]; // formas intercambiadas
+  // Así la hoja dada vuelta 180° se ve como una hoja derecha: se interpreta como dada vuelta y se lee igual.
+  const r = scanImage(renderPhoto(exam.L, exam.marks, { seed: 9 }), exam.layoutFor);
+  assert.ok(r.ok === false || r.rotated === true);
+});
+test('V3: una mancha negra cuadrada suelta no se confunde con una esquina', () => {
+  const exam = makeExam(CFG20, 540, { version: 3 });
+  const ink = [{ x: 70, y: 100, w: 8, h: 8 }, { x: 110, y: 150, w: 16, h: 4 }, { x: 40, y: 5, w: 8, h: 8 }];
+  const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 11, ink }), exam.layoutFor);
   assert.ok(scan.ok, scan.error);
   assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
 });

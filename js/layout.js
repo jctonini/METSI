@@ -7,6 +7,9 @@
 //    esas hojas (no se vuelve a imprimir). tests/fixtures/layout-v1.json fija sus posiciones.
 //  - v2: más espacio para escribir el nombre, campo de fecha, leyendas al pie y código de versión.
 //
+//  - v3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha), así cada
+//    esquina se identifica sola y la orientación de la hoja se deduce de las formas.
+//
 // El código de versión son 3 cuadraditos negros al pie (bits del número de versión menos 1).
 // La v1 no tiene ninguno, así que "sin cuadraditos" equivale a v1.
 (function (root, factory) {
@@ -27,7 +30,7 @@
   const LETTERS = 'ABCDEF';
   const X0 = 16, X1 = 132, Y_MAX = 190;
   const ROW_PITCH = 5.5, OPT_PITCH = 7;
-  const LATEST_VERSION = 2;
+  const LATEST_VERSION = 3;
 
   // Código de versión: cuadrados de 3 mm centrados en (x0 + i * pitch, y). Bit i = 1 si está impreso.
   const VERSION_CODE = { x0: 19.5, y: 203, size: 3, pitch: 5, bits: 3 };
@@ -50,6 +53,15 @@
       modLabelY: 60, modY0: 67,
     },
   };
+
+  // v3: a la izquierda cuadrados de 8 x 8 mm; a la derecha barras de 16 x 4 mm (la misma superficie negra).
+  // Las barras quedan a 6 mm del borde para que no las recorte el margen de la impresora.
+  const MARKERS_V3 = [{ x: 10, y: 10 }, { x: 134, y: 10 }, { x: 10, y: 200 }, { x: 134, y: 200 }];
+  const SHAPES_V3 = [
+    { x: 10, y: 10, w: 8, h: 8 }, { x: 134, y: 10, w: 16, h: 4 },
+    { x: 10, y: 200, w: 8, h: 8 }, { x: 134, y: 200, w: 16, h: 4 },
+  ];
+  GEO[3] = Object.assign({}, GEO[2], { bar: null, markers: MARKERS_V3, shapes: SHAPES_V3 });
 
   const DEFAULT_TEXTS = {
     subtitle: '',
@@ -166,7 +178,8 @@
     const date = { x: 88, y: g.modLabelY, daySlash: 107.5, monthSlash: 116.5 };
 
     return {
-      version, latestVersion: LATEST_VERSION, page: PAGE, markers: MARKERS, markerSize: MARKER_SIZE, orientationBar: g.bar, header: g.header,
+      version, latestVersion: LATEST_VERSION, page: PAGE, markers: g.markers || MARKERS, markerSize: MARKER_SIZE, orientationBar: g.bar, header: g.header,
+      markerShapes: g.shapes || MARKERS.map((m) => ({ x: m.x, y: m.y, w: MARKER_SIZE, h: MARKER_SIZE })),
       texts, logoRect: LOGO_RECT, r: BUBBLE_R, numQuestions, numOptions, regDigits, modalidades, maxQuestions: maxQ,
       fields, mod, ans, bubbles, letters: LETTERS.slice(0, numOptions), versionBits, versionCode: VERSION_CODE, date,
     };

@@ -56,16 +56,16 @@ function renderPhoto(layout, marks, opts) {
   }
 
   // Marcas de esquina y barra de orientación.
-  const ms = layout.markerSize / 2;
-  for (const c of layout.markers) paint(c.x - ms, c.y - ms, c.x + ms, c.y + ms, () => true);
-  const b = layout.orientationBar;
-  paint(b.x - b.w / 2, b.y - b.h / 2, b.x + b.w / 2, b.y + b.h / 2, () => true);
+  const shapes = layout.markerShapes;
+  for (const m of shapes) paint(m.x - m.w / 2, m.y - m.h / 2, m.x + m.w / 2, m.y + m.h / 2, () => true);
+  const b = layout.orientationBar; // la V3 no lleva barra
+  if (b) paint(b.x - b.w / 2, b.y - b.h / 2, b.x + b.w / 2, b.y + b.h / 2, () => true);
 
   // Hoja vecina de la misma página A4 sin cortar: opts.neighbor = +148 (a la derecha) o -148 (a la izquierda).
   if (opts.neighbor) {
     const dx = opts.neighbor;
-    for (const c of layout.markers) paint(c.x + dx - ms, c.y - ms, c.x + dx + ms, c.y + ms, () => true);
-    paint(b.x + dx - b.w / 2, b.y - b.h / 2, b.x + dx + b.w / 2, b.y + b.h / 2, () => true);
+    for (const m of shapes) paint(m.x + dx - m.w / 2, m.y - m.h / 2, m.x + dx + m.w / 2, m.y + m.h / 2, () => true);
+    if (b) paint(b.x + dx - b.w / 2, b.y - b.h / 2, b.x + dx + b.w / 2, b.y + b.h / 2, () => true);
     for (const bit of layout.versionBits || []) if (bit.on) paint(bit.x + dx - bit.size / 2, bit.y - bit.size / 2, bit.x + dx + bit.size / 2, bit.y + bit.size / 2, () => true);
     for (const bb of layout.bubbles) {
       paint(bb.x + dx - layout.r - 1, bb.y - layout.r - 1, bb.x + dx + layout.r + 1, bb.y + layout.r + 1, (sx, sy) => {

@@ -35,10 +35,9 @@
     o.push(`<rect width="${L.page.w}" height="${L.page.h}" fill="#fff"/>`);
 
     // Marcas de esquina y barra de orientación
-    const s = L.markerSize;
-    for (const m of L.markers) o.push(`<rect x="${m.x - s / 2}" y="${m.y - s / 2}" width="${s}" height="${s}"/>`);
-    const b = L.orientationBar;
-    o.push(`<rect x="${b.x - b.w / 2}" y="${b.y - b.h / 2}" width="${b.w}" height="${b.h}"/>`);
+    for (const m of L.markerShapes) o.push(`<rect x="${m.x - m.w / 2}" y="${m.y - m.h / 2}" width="${m.w}" height="${m.h}"/>`);
+    const b = L.orientationBar; // la v3 no lleva barra: la orientación sale de la forma de las marcas
+    if (b) o.push(`<rect x="${b.x - b.w / 2}" y="${b.y - b.h / 2}" width="${b.w}" height="${b.h}"/>`);
 
     // Encabezado: nombre y registro se escriben a mano
     const lr = L.logoRect;
