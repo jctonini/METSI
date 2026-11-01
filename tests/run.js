@@ -713,6 +713,199 @@ atest('drive: sin credenciales devuelve 401 con status', async () => {
   await assert.rejects(() => d.ensureRootFolder(), (e) => e.status === 401);
 });
 
+// ---------- calibración con casos reales (tools/calibrar.js) ----------
+const Calibrar = require('../tools/calibrar.js');
+const { LETTERS: ABC } = require('../js/layout.js');
+const casoDe = (exam, scan, extra) => ({ id: 'x', version: 4, scores: scan.scores, flaggedQuestions: [], edited: [], ...extra });
+const examenDe = (cfg) => ({ numQuestions: cfg.numQuestions, numOptions: cfg.numOptions, threshold: 0.085 });
+
+test('calibración: una hoja bien leída no da errores y la corrección a mano se respeta', () => {
+  const exam = makeExam(CFG10, 21);
+  const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 9 }), exam.layoutFor);
+  assert.ok(scan.ok, scan.error);
+  const verdad = exam.answers[0].map((i) => ABC[i]).join('');
+  const hojas = [{ file: 'f.json', id: 'x', exam: examenDe(CFG10), caso: casoDe(exam, scan, { edited: [{ q: 1, auto: 'Z', final: verdad }] }) }];
+  assert.equal(Calibrar.evaluate(hojas, 0.085, 0.085).wrong, 0);
+  // si el docente "corrigió" a otra letra, la lectura actual figura como error en esa pregunta
+  const otra = ABC[(exam.answers[0][0] + 1) % CFG10.numOptions];
+  hojas[0].caso.edited = [{ q: 1, auto: verdad, final: otra }];
+  const r = Calibrar.evaluate(hojas, 0.085, 0.085);
+  assert.equal(r.wrong, 1);
+  assert.equal(r.detail[0].q, 1);
+});
+test('calibración: las preguntas marcadas con bandera y las hojas ilegibles no cuentan', () => {
+  const exam = makeExam(CFG10, 22);
+  const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: 10 }), exam.layoutFor);
+  const hojas = [{ file: 'f.json', id: 'x', exam: examenDe(CFG10), caso: casoDe(exam, scan, { flaggedQuestions: [1, 2, 3] }) }];
+  assert.equal(Calibrar.evaluate(hojas, 0.085, 0.085).total, CFG10.numQuestions - 3);
+  const tmp = require('os').tmpdir() + '/metsi-casos-' + process.pid + '.json';
+  require('fs').writeFileSync(tmp, JSON.stringify({ examen: examenDe(CFG10), casos: [{ id: 'a', failed: true }, casoDe(exam, scan)] }));
+  assert.equal(Calibrar.loadCases([tmp]).length, 1);
+  require('fs').unlinkSync(tmp);
+});
+test('calibración: el barrido de umbrales incluye el umbral por defecto sin errores en fotos sintéticas', () => {
+  const hojas = [23, 24, 25].map((sd) => {
+    const exam = makeExam(CFG10, sd);
+    const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: sd }), exam.layoutFor);
+    return { file: 'f.json', id: String(sd), exam: examenDe(CFG10), caso: casoDe(exam, scan, { edited: exam.answers.map((a, q) => ({ q: q + 1, auto: '', final: a.map((i) => ABC[i]).join('') })) }) };
+  });
+  const filas = Calibrar.sweep(hojas, 0.06, 0.12, 0.01, 0.085);
+  assert.equal(filas.find((f) => f.threshold === 0.08 || f.threshold === 0.09).wrong, 0);
+});
+// Casos reales aportados por el docente (tests/fixtures/real/*.json): la lectura actual debe coincidir con lo que corrigió.
+{
+  const reales = Calibrar.loadCases(Calibrar.listFiles([Calibrar.DEFAULT_DIR]));
+  if (reales.length) {
+    test('calibración: la lectura coincide con las respuestas corregidas en los casos reales (' + reales.length + ' hojas)', () => {
+      const r = Calibrar.evaluate(reales, 0.085, 0.085);
+      assert.equal(r.wrong, 0, 'preguntas mal leídas: ' + JSON.stringify(r.detail.slice(0, 5)));
+    });
+  } else console.log('  --  calibración con casos reales omitida (tests/fixtures/real/ está vacía)');
+}
+
+// ---------- reintentos y renovación de sesión ----------
+const { withRetry, isRetryable } = require('../js/retry.js');
+const { createTokenManager } = require('../js/auth.js');
+const httpErr = (status) => Object.assign(new Error('http ' + status), { status });
+const netErr = () => Object.assign(new Error('red'), { network: true });
+
+atest('reintentos: se reintenta con espera creciente y termina bien', async () => {
+  const waits = []; let calls = 0;
+  const r = await withRetry(async () => { if (++calls < 4) throw netErr(); return 'ok'; }, { sleep: async (ms) => waits.push(ms) });
+  assert.equal(r, 'ok');
+  assert.deepEqual(waits, [1000, 2000, 4000]);
+});
+atest('reintentos: la espera tiene un tope y los intentos son limitados', async () => {
+  const waits = []; let calls = 0;
+  await assert.rejects(() => withRetry(async () => { calls++; throw httpErr(503); }, { retries: 5, maxMs: 3000, sleep: async (ms) => waits.push(ms) }), (e) => e.status === 503);
+  assert.equal(calls, 6);
+  assert.deepEqual(waits, [1000, 2000, 3000, 3000, 3000]);
+});
+atest('reintentos: errores que no se arreglan repitiendo (401, 403, 404) no se reintentan', async () => {
+  for (const st of [400, 401, 403, 404]) {
+    let calls = 0;
+    await assert.rejects(() => withRetry(async () => { calls++; throw httpErr(st); }, { sleep: async () => {} }));
+    assert.equal(calls, 1, 'status ' + st);
+  }
+});
+test('reintentos: cuáles errores son reintentables', () => {
+  assert.equal(isRetryable(netErr()), true);
+  for (const st of [408, 429, 500, 502, 503, 504]) assert.equal(isRetryable(httpErr(st)), true, String(st));
+  assert.equal(isRetryable(httpErr(404)), false);
+  assert.equal(isRetryable(new Error('sin status')), false);
+});
+
+atest('drive: un corte de red pasajero no pierde la operación', async () => {
+  const mock = createMockDrive();
+  let fails = 2;
+  const flaky = (u, o) => (fails-- > 0 ? Promise.reject(new TypeError('Failed to fetch')) : mock.fetch(u, o));
+  const waits = [];
+  const d = createDrive({ fetch: flaky, getToken: async () => 'tok', sleep: async (ms) => waits.push(ms) });
+  const root = await d.ensureRootFolder();
+  assert.ok(root);
+  assert.deepEqual(waits, [1000, 2000]);
+});
+atest('drive: un error 503 se reintenta y luego se recupera', async () => {
+  const mock = createMockDrive();
+  let fails = 1;
+  const f = async (u, o) => (fails-- > 0 ? new Response('{}', { status: 503 }) : mock.fetch(u, o));
+  const d = createDrive({ fetch: f, getToken: async () => 'tok', sleep: async () => {} });
+  const root = await d.ensureRootFolder();
+  await d.upsertFile(root, 'datos.json', 'application/json', '{"a":1}');
+  assert.deepEqual(await d.readJson(root, 'datos.json'), { a: 1 });
+});
+atest('drive: si el corte sigue, falla con network=true después de los intentos', async () => {
+  let calls = 0;
+  const d = createDrive({ fetch: () => { calls++; return Promise.reject(new TypeError('Failed to fetch')); }, getToken: async () => 'tok', sleep: async () => {}, retries: 3 });
+  await assert.rejects(() => d.ensureRootFolder(), (e) => e.network === true);
+  assert.equal(calls, 4);
+});
+atest('drive: un 401 pide un token nuevo y reintenta una sola vez', async () => {
+  const mock = createMockDrive();
+  let current = 'viejo', refreshes = 0;
+  const f = async (u, o) => (o.headers.Authorization === 'Bearer viejo' ? new Response('{}', { status: 401 }) : mock.fetch(u, o));
+  const d = createDrive({ fetch: f, getToken: async () => current, refreshToken: async () => { refreshes++; current = 'nuevo'; return current; }, sleep: async () => {} });
+  assert.ok(await d.ensureRootFolder());
+  assert.equal(refreshes, 1);
+});
+atest('drive: si el 401 persiste tras renovar el token, falla sin repetir sin fin', async () => {
+  let calls = 0, refreshes = 0;
+  const f = async () => { calls++; return new Response('{}', { status: 401 }); };
+  const d = createDrive({ fetch: f, getToken: async () => 'x', refreshToken: async () => { refreshes++; return 'y'; }, sleep: async () => {} });
+  await assert.rejects(() => d.ensureRootFolder(), (e) => e.status === 401);
+  assert.equal(calls, 2);
+  assert.equal(refreshes, 1);
+});
+
+// Reloj y temporizadores falsos para probar la renovación sin esperar.
+function fakeClock() {
+  let t = 0, seq = 0; const timers = new Map();
+  return {
+    now: () => t,
+    setTimer: (f, ms) => { timers.set(++seq, { at: t + ms, f }); return seq; },
+    clearTimer: (id) => timers.delete(id),
+    async advance(ms) {
+      const end = t + ms;
+      for (;;) {
+        const due = [...timers.entries()].filter(([, v]) => v.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
+        if (!due) break;
+        timers.delete(due[0]); t = due[1].at; due[1].f();
+        await new Promise((r) => setImmediate(r));
+      }
+      t = end;
+    },
+    pending: () => timers.size,
+  };
+}
+atest('sesión: el token se guarda y se reutiliza hasta vencer', async () => {
+  const clk = fakeClock(); let calls = 0;
+  const m = createTokenManager({ ...clk, request: async () => ({ access_token: 't' + ++calls, expires_in: 3600 }), renewBeforeMs: 0 });
+  assert.equal(await m.get(), 't1');
+  assert.equal(await m.get(), 't1');
+  assert.equal(calls, 1);
+  assert.equal(m.status(), 'ok');
+});
+atest('sesión: pedidos simultáneos comparten un solo pedido de token', async () => {
+  const clk = fakeClock(); let calls = 0;
+  const m = createTokenManager({ ...clk, request: async () => { calls++; return { access_token: 't', expires_in: 3600 }; } });
+  const all = await Promise.all([m.get(), m.get(), m.get()]);
+  assert.deepEqual(all, ['t', 't', 't']);
+  assert.equal(calls, 1);
+});
+atest('sesión: se renueva sola 5 minutos antes de vencer', async () => {
+  const clk = fakeClock(); let calls = 0;
+  const m = createTokenManager({ ...clk, request: async () => ({ access_token: 't' + ++calls, expires_in: 3600 }) });
+  await m.get();
+  await clk.advance(3600000 - 300000 - 1000);
+  assert.equal(calls, 1);
+  await clk.advance(1500);
+  assert.equal(calls, 2);
+  assert.equal(await m.get(), 't2');
+  assert.equal(m.status(), 'ok');
+});
+atest('sesión: si no se puede renovar sin interacción pasa a needs-login y luego se recupera', async () => {
+  const clk = fakeClock(); let calls = 0; let popupBlocked = false; const changes = [];
+  const m = createTokenManager({ ...clk, onChange: (s) => changes.push(s),
+    request: async () => { calls++; if (popupBlocked) throw new Error('popup_failed_to_open'); return { access_token: 't' + calls, expires_in: 3600 }; } });
+  await m.get();
+  popupBlocked = true;
+  await clk.advance(3600000);
+  assert.equal(m.status(), 'needs-login');
+  await assert.rejects(() => m.get(), /popup/);
+  popupBlocked = false;
+  assert.equal(await m.get(), 't4');
+  assert.equal(m.status(), 'ok');
+  assert.deepEqual(changes, ['ok', 'needs-login', 'ok']);
+});
+atest('sesión: invalidate descarta el token y el siguiente get pide uno nuevo', async () => {
+  const clk = fakeClock(); let calls = 0;
+  const m = createTokenManager({ ...clk, request: async () => ({ access_token: 't' + ++calls, expires_in: 3600 }) });
+  await m.get();
+  m.invalidate();
+  assert.equal(m.has(), false);
+  assert.equal(await m.get(), 't2');
+});
+
 const sh = (id, t, extra) => ({ id, createdAt: t, updatedAt: t, answers: [[0]], registro: '', ...extra });
 test('merge: une hojas de ambos lados, ordenadas por creación', () => {
   const m = mergeStates({ sheets: [sh('a', 1), sh('c', 3)], deleted: {} }, { sheets: [sh('b', 2)], deleted: {} });

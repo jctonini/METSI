@@ -72,10 +72,21 @@ Sin esa configuración la app funciona igual, pero los resultados quedan solo en
 
 ## Cómo sacar buenas fotos
 
+Hay una guía corta para imprimir junto al examen en [`docs/guia-de-uso.md`](docs/guia-de-uso.md).
+
 - Hoja completa, con las 4 marcas negras de las esquinas visibles.
 - Luz pareja, sin sombras fuertes. Hoja apoyada en una mesa y lo más plana posible.
 - Si imprimiste dos hojas por A4 y no las cortaste, se puede fotografiar igual: la app elige la hoja que está completa en la foto (la otra puede verse cortada o a un costado). Conviene que la hoja a corregir quede entera y lo más centrada posible.
 - Los alumnos deben rellenar el círculo con **birome** (no lápiz). Las cruces y marcas parciales se leen. Un punto suelto cuenta como respuesta si mide al menos ~1 mm; entre ~0,8 mm queda señalado como dudoso y un puntito menor se ignora. La tinta se mide en un círculo de 1,2 mm alrededor del centro de cada burbuja.
+
+## Calibrar la lectura con casos reales
+
+Las pruebas usan fotos sintéticas. Para ajustar la lectura con hojas reales:
+
+1. En **Resultados → Casos a revisar** tocá **Descargar casos (JSON)** (o bajá `casos.json` de la carpeta `a-revisar` del examen en Drive). No trae nombres ni registros: solo los puntajes de cada burbuja y tus correcciones.
+2. Copiá ese archivo a `tests/fixtures/real/` (podés sumar varios). Corregí a mano las respuestas mal leídas antes de descargarlo: esa es la respuesta correcta que se usa. Las preguntas con 🚩 que no corregiste se omiten.
+3. `node tools/calibrar.js` muestra cuántas preguntas lee mal hoy la app y cuántas leería mal con cada umbral de sensibilidad, para elegir el valor por defecto con datos reales.
+4. `node tests/run.js` incluye esos casos: falla si la lectura deja de coincidir con tus correcciones.
 
 ## Desarrollo
 
@@ -83,7 +94,7 @@ Los archivos de la app se cargan con un número de versión (`?v=…`, visible a
 
 ```
 node tools/version.js  # actualiza el número de versión de los archivos
-node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas, CSV, combinación de datos y Drive simulado
+node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas y casos reales, CSV, combinación de datos, reintentos y Drive simulado
 ```
 
 - `js/layout.js`: geometría de la hoja (compartida por el generador y el lector).
@@ -95,6 +106,15 @@ node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas, CSV, co
 - `js/review.js`: casos a revisar (banderas, correcciones a mano) y su exportación.
 - `js/identity.js`: reglas de identificación y duplicados, y detección del mismo archivo.
 - `js/similar.js`: parecido de letra entre fotos (misma hoja fotografiada dos veces).
-- `js/drive.js`: cliente de la API de Google Drive.
+- `js/drive.js`: cliente de la API de Google Drive (reintenta cortes de red y errores 408, 429 y 5xx; ante un 401 pide un token nuevo).
+- `js/retry.js`: reintentos con espera creciente.
+- `js/auth.js`: token de Google (se reutiliza, se renueva solo antes de vencer y avisa cuando hace falta volver a iniciar sesión).
+- `js/photostore.js`: copia local (IndexedDB) de las fotos que todavía no se subieron a Drive.
 - `tools/version.js`: calcula y aplica el número de versión.
-- `js/app.js`, `index.html`, `css/style.css`: interfaz.
+- Interfaz (`index.html`, `css/style.css` y los `js/app*.js`, que comparten lo común por `window.MetsiApp`):
+  - `js/app-core.js`: estado, almacenamiento local y utilidades compartidas.
+  - `js/app-exam.js`: pestañas «Examen» y «Hoja».
+  - `js/app-scan.js`: pestaña «Corregir» (fotos, lectura, duplicados, casos a revisar).
+  - `js/app-results.js`: pestaña «Resultados» y exportación a CSV.
+  - `js/app-drive.js`: pestaña «Drive» y sincronización.
+  - `js/app.js`: pestañas y arranque.

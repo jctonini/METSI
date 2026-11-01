@@ -11,20 +11,40 @@
   const ROOT_NAME = 'METSI Corrector';
   const q = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
-  // deps: { fetch, getToken }  (getToken devuelve una promesa con el access token)
+  const { withRetry } = typeof require === 'function' ? require('./retry.js') : self.MetsiRetry;
+
+  // deps: { fetch, getToken, refreshToken?, sleep?, retries?, baseMs?, onRetry? }
+  //  - getToken devuelve una promesa con el access token.
+  //  - refreshToken (opcional) pide un token nuevo: se usa una vez si Drive responde 401 (token vencido).
+  //  - Los cortes de red y las respuestas 408/429/5xx se reintentan con espera creciente (ver js/retry.js).
   function createDrive(deps) {
-    async function call(url, opts) {
-      const token = await deps.getToken();
-      const res = await deps.fetch(url, Object.assign({}, opts, {
+    function send(url, opts, token) {
+      return deps.fetch(url, Object.assign({}, opts, {
         headers: Object.assign({ Authorization: 'Bearer ' + token }, (opts && opts.headers) || {}),
-      }));
-      if (!res.ok) {
-        const err = new Error('Drive respondió ' + res.status);
-        err.status = res.status;
-        try { err.detail = await res.text(); } catch (e) { /* sin detalle */ }
+      })).catch((cause) => {
+        const err = new Error('Sin conexión con Drive');
+        err.network = true;
+        err.cause = cause;
         throw err;
-      }
-      return res;
+      });
+    }
+
+    async function call(url, opts) {
+      let refreshed = false;
+      return withRetry(async () => {
+        let res = await send(url, opts, await deps.getToken());
+        if (res.status === 401 && deps.refreshToken && !refreshed) {
+          refreshed = true;
+          res = await send(url, opts, await deps.refreshToken());
+        }
+        if (!res.ok) {
+          const err = new Error('Drive respondió ' + res.status);
+          err.status = res.status;
+          try { err.detail = await res.text(); } catch (e) { /* sin detalle */ }
+          throw err;
+        }
+        return res;
+      }, { retries: deps.retries, baseMs: deps.baseMs, sleep: deps.sleep, onRetry: deps.onRetry });
     }
 
     async function list(query, fields) {
