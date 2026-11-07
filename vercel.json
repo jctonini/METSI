@@ -1,0 +1,11 @@
+{
+  "cleanUrls": true,
+  "outputDirectory": "public",
+  "buildCommand": "",
+  "functions": {
+    "api/app.js": { "includeFiles": "{index.html,js/**,css/**,docs/**}" }
+  },
+  "rewrites": [
+    { "source": "/((?!login$|login\\.js$|api/).*)", "destination": "/api/app?path=$1" }
+  ]
+}

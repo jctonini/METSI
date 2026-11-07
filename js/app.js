@@ -13,6 +13,7 @@
     if (name === 'sheet') App.renderSheet();
     if (name === 'scan') App.renderCards();
     if (name === 'results') App.renderResults();
+    if (name === 'users' && App.renderUsers) App.renderUsers();
     if (name === 'drive') $('drive-client').value = clientId();
   }
 

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>METSI · Ingresar</title>
+  <link rel="stylesheet" href="/login.css">
+</head>
+<body>
+  <form id="login" autocomplete="on">
+    <h1>METSI · Corrector de multiple choice</h1>
+    <label>Email <input id="email" type="email" autocomplete="username" required></label>
+    <label>Contraseña <input id="password" type="password" autocomplete="current-password" required></label>
+    <button id="go" type="submit" disabled>Cargando…</button>
+    <p id="msg" role="alert"></p>
+    <p class="muted">¿No tenés usuario? Pedíselo al administrador.</p>
+  </form>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="/login.js"></script>
+</body>
+</html>
