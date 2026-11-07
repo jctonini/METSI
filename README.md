@@ -88,13 +88,37 @@ Las pruebas usan fotos sintéticas. Para ajustar la lectura con hojas reales:
 3. `node tools/calibrar.js` muestra cuántas preguntas lee mal hoy la app y cuántas leería mal con cada umbral de sensibilidad, para elegir el valor por defecto con datos reales.
 4. `node tests/run.js` incluye esos casos: falla si la lectura deja de coincidir con tus correcciones.
 
+## Acceso con usuario y contraseña (Supabase + Vercel)
+
+La app publicada en Vercel pide **email y contraseña**. Sin sesión no se sirve ningún archivo de la app (`index.html`, `js/`, `css/`): lo valida una función de Vercel (`api/app.js`), no la pantalla. Solo `/login` es público. El repositorio de GitHub sigue siendo público: el código se puede leer allí, pero no usar la app publicada.
+
+- **Roles**: `admin` (gestiona usuarios desde la pestaña **👥 Usuarios**) y `docente`. El rol vive en `app_metadata.role` de Supabase, que el usuario no puede modificar. Las acciones de administración (`api/users.js`) se validan en el servidor.
+- **Baja de usuarios**: al desactivar o borrar a alguien, su sesión actual sigue valiendo hasta una hora (lo que dura el token); después no puede entrar.
+- **Los datos de los exámenes** siguen yendo al Google Drive de quien sincroniza (ver arriba). Supabase solo controla quién entra.
+
+### Configuración (una sola vez)
+
+1. En **supabase.com** creá un proyecto. En **Authentication → Providers → Email** desactivá "Allow new users to sign up" (así nadie se registra solo) y, si querés, "Confirm email".
+2. Creá tu usuario en **Authentication → Users → Add user** (con "Auto Confirm User") y hacelo admin en el **SQL Editor**:
+   ```sql
+   update auth.users set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}' where email = 'tu@email.com';
+   ```
+3. En **vercel.com → Add New → Project**, importá este repositorio. Dejá el preset en "Other" y no cambies el resto (`vercel.json` ya define la salida).
+4. En **Settings → Environment Variables** del proyecto cargá (todas con alcance Production y Preview):
+   - `SUPABASE_URL`: Project Settings → API → Project URL.
+   - `SUPABASE_ANON_KEY`: la clave `anon` / publishable.
+   - `SUPABASE_SERVICE_ROLE_KEY`: la clave `service_role` / secret. **Es secreta: solo va en Vercel, nunca en el código ni en el navegador.**
+   - `SUPABASE_JWT_SECRET` (solo si tu proyecto de Supabase usa el secreto JWT antiguo HS256; si usa claves asimétricas, no la cargues).
+5. Hacé un nuevo deploy, entrá a la URL de Vercel, ingresá con tu usuario y creá los docentes desde **👥 Usuarios**.
+
 ## Desarrollo
 
 Los archivos de la app se cargan con un número de versión (`?v=…`, visible arriba en la app) para que el navegador no use copias viejas. **Después de cambiar código o estilos, correr `node tools/version.js`**; una prueba avisa si se olvidó.
 
 ```
 node tools/version.js  # actualiza el número de versión de los archivos
-node tests/run.js      # pruebas: puntaje, lectura de fotos sintéticas y casos reales, CSV, combinación de datos, reintentos y Drive simulado
+npm install            # una vez: dependencias de las funciones de Vercel (login y usuarios)
+node tests/run.js      # pruebas (acceso y roles incluidos): puntaje, lectura de fotos sintéticas y casos reales, CSV, combinación de datos, reintentos y Drive simulado
 ```
 
 - `js/layout.js`: geometría de la hoja (compartida por el generador y el lector).

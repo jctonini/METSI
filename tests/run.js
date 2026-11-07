@@ -944,6 +944,13 @@ test('merge: configuración y clave de la versión más nueva', () => {
 })();
 
 function finish() {
+// ---------- acceso (login y usuarios) ----------
+// Necesita `npm install` (jose y supabase-js); corre en un proceso aparte porque sus pruebas son asincrónicas.
+test('acceso: sesión obligatoria, roles y administración de usuarios (tests/access.js)', () => {
+  const r = require('node:child_process').spawnSync(process.execPath, [require('node:path').join(__dirname, 'access.js')], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+});
+
 console.log(`\n${passed} pasaron, ${failed} fallaron`);
 process.exit(failed ? 1 : 0);
 }

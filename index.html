@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>METSI · Corrector de multiple choice</title>
-  <link rel="stylesheet" href="css/style.css?v=79e41c1c">
+  <link rel="stylesheet" href="css/style.css?v=1b7616a7">
 </head>
 <body>
   <header class="top">
@@ -15,7 +15,12 @@
       <button data-tab="scan">3. Corregir</button>
       <button data-tab="results">4. Resultados</button>
       <button data-tab="drive">☁ Drive</button>
+      <button data-tab="users" id="tab-users-btn" hidden>👥 Usuarios</button>
     </nav>
+    <div id="acct-bar" class="syncbar" hidden>
+      <span id="acct-email" class="muted"></span>
+      <button id="acct-logout" type="button">Salir</button>
+    </div>
     <div id="syncbar" class="syncbar" hidden>
       <span id="sync-status" class="muted"></span>
       <button id="sync-btn" type="button">☁ Sincronizar</button>
@@ -148,6 +153,20 @@
       <p class="hint">Para el siguiente parcial, empezá un examen nuevo: se conserva la configuración y se vacían las hojas. El examen anterior queda guardado en Drive.</p>
       <button id="new-exam" type="button">Empezar un examen nuevo</button>
     </section>
+
+    <!-- USUARIOS (solo admin) -->
+    <section id="tab-users" class="tab">
+      <h2>Usuarios</h2>
+      <p class="hint">Quién puede entrar a la app. Los <b>docentes</b> corrigen exámenes; el <b>admin</b> además gestiona usuarios. Un usuario desactivado o borrado puede seguir adentro hasta una hora, hasta que vence su sesión.</p>
+      <div class="actions">
+        <label>Email <input id="user-email" type="email" autocomplete="off"></label>
+        <label>Contraseña inicial (mín. 8) <input id="user-pass" type="text" autocomplete="off"></label>
+        <label>Rol <select id="user-role"><option value="docente">Docente</option><option value="admin">Admin</option></select></label>
+        <button id="user-add" class="primary" type="button">Crear usuario</button>
+      </div>
+      <p id="users-status" class="status" role="status"></p>
+      <table><thead><tr><th>Email</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="users-body"></tbody></table>
+    </section>
   </main>
 
   <dialog id="dlg">
@@ -158,26 +177,28 @@
   <div id="print-area"></div>
   <style id="page-style"></style>
 
-  <script src="js/version.js?v=79e41c1c"></script>
-  <script src="js/config.js?v=79e41c1c"></script>
-  <script src="js/layout.js?v=79e41c1c"></script>
-  <script src="js/scoring.js?v=79e41c1c"></script>
-  <script src="js/csv.js?v=79e41c1c"></script>
-  <script src="js/sheet.js?v=79e41c1c"></script>
-  <script src="js/scanner.js?v=79e41c1c"></script>
-  <script src="js/merge.js?v=79e41c1c"></script>
-  <script src="js/review.js?v=79e41c1c"></script>
-  <script src="js/identity.js?v=79e41c1c"></script>
-  <script src="js/similar.js?v=79e41c1c"></script>
-  <script src="js/photostore.js?v=79e41c1c"></script>
-  <script src="js/retry.js?v=79e41c1c"></script>
-  <script src="js/auth.js?v=79e41c1c"></script>
-  <script src="js/drive.js?v=79e41c1c"></script>
-  <script src="js/app-core.js?v=79e41c1c"></script>
-  <script src="js/app-exam.js?v=79e41c1c"></script>
-  <script src="js/app-scan.js?v=79e41c1c"></script>
-  <script src="js/app-results.js?v=79e41c1c"></script>
-  <script src="js/app-drive.js?v=79e41c1c"></script>
-  <script src="js/app.js?v=79e41c1c"></script>
+  <script src="js/version.js?v=1b7616a7"></script>
+  <script src="js/config.js?v=1b7616a7"></script>
+  <script src="js/layout.js?v=1b7616a7"></script>
+  <script src="js/scoring.js?v=1b7616a7"></script>
+  <script src="js/csv.js?v=1b7616a7"></script>
+  <script src="js/sheet.js?v=1b7616a7"></script>
+  <script src="js/scanner.js?v=1b7616a7"></script>
+  <script src="js/merge.js?v=1b7616a7"></script>
+  <script src="js/review.js?v=1b7616a7"></script>
+  <script src="js/identity.js?v=1b7616a7"></script>
+  <script src="js/similar.js?v=1b7616a7"></script>
+  <script src="js/photostore.js?v=1b7616a7"></script>
+  <script src="js/retry.js?v=1b7616a7"></script>
+  <script src="js/auth.js?v=1b7616a7"></script>
+  <script src="js/drive.js?v=1b7616a7"></script>
+  <script src="js/app-core.js?v=1b7616a7"></script>
+  <script src="js/app-exam.js?v=1b7616a7"></script>
+  <script src="js/app-scan.js?v=1b7616a7"></script>
+  <script src="js/app-results.js?v=1b7616a7"></script>
+  <script src="js/app-drive.js?v=1b7616a7"></script>
+  <script src="js/account.js?v=1b7616a7"></script>
+  <script src="js/app-users.js?v=1b7616a7"></script>
+  <script src="js/app.js?v=1b7616a7"></script>
 </body>
 </html>
