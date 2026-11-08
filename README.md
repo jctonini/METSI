@@ -5,7 +5,7 @@ App web para corregir exámenes multiple choice en papel a partir de una foto de
 - Lee las **respuestas marcadas** y la **modalidad de cursada**, y calcula el puntaje (con puntaje parcial y penalización configurable).
 - Propone el **número de registro** leyendo los casilleros a mano alzada, sin enviar nada a servicios externos; vos lo confirmás o lo corregís.
 - Avisa de **repetidos** (mismo alumno cargado dos veces, misma foto) y no deja exportar hojas sin identificar.
-- Los resultados se sincronizan con **Google Drive** para verlos desde cualquier dispositivo, y el acceso es con **usuario y contraseña**.
+- Los resultados se sincronizan con **Google Drive** para verlos desde cualquier dispositivo, y en la copia publicada en Vercel el acceso es con **usuario y contraseña**.
 
 La app **no decide quién aprueba**: solo calcula el puntaje. El criterio de aprobación se aplica después sobre la planilla.
 
@@ -109,11 +109,13 @@ La hoja lleva una versión impresa al pie (por ejemplo «V4») y un código de 3
 
 ## Puesta en marcha
 
-Configuración que se hace **una sola vez**, en este orden: primero el acceso (Vercel + Supabase) y después, si querés sincronizar, Google Drive. Sin Drive la app funciona igual, pero los resultados quedan solo en el dispositivo donde se cargaron (descargá el CSV para conservarlos).
+La app se puede publicar en **Vercel** (con login) y en **GitHub Pages** (estática, sin login). La configuración se hace **una sola vez**, en este orden: primero el acceso (Vercel + Supabase, solo si usás Vercel) y después, si querés sincronizar, Google Drive. Sin Drive la app funciona igual, pero los resultados quedan solo en el dispositivo donde se cargaron (descargá el CSV para conservarlos).
 
 ### Acceso con usuario y contraseña (Supabase + Vercel)
 
-La app publicada en Vercel pide **email y contraseña**. Sin sesión no se sirve ningún archivo de la app (`index.html`, `js/`, `css/`): lo valida una función de Vercel (`api/app.js`), no la pantalla. Solo `/login` es público. El repositorio de GitHub sigue siendo público: el código se puede leer allí, pero no usar la app publicada.
+La app publicada en Vercel pide **email y contraseña**. Sin sesión no se sirve ningún archivo de la app (`index.html`, `js/`, `css/`): lo valida una función de Vercel (`api/app.js`), no la pantalla. Solo `/login` es público. El repositorio de GitHub sigue siendo público: el código se puede leer allí, pero no usar la app publicada en Vercel.
+
+> **GitHub Pages no tiene este control.** Pages sirve archivos estáticos y no ejecuta `api/`: ahí la comprobación de sesión no encuentra `/api/config` y la app abre y funciona sin login (ni pestaña **Usuarios**). Quien conozca esa dirección puede usarla.
 
 - **Roles:** `admin` (gestiona usuarios desde la pestaña **👥 Usuarios**) y `docente`. El rol vive en `app_metadata.role` de Supabase, que el usuario no puede modificar. Las acciones de administración (`api/users.js`) se validan en el servidor.
 - **Baja de usuarios:** al desactivar o borrar a alguien, su sesión actual sigue valiendo hasta una hora (lo que dura el token); después no puede entrar.
@@ -136,8 +138,8 @@ Pasos:
 
 ### Google Drive (sincronización)
 
-1. Necesitás la app publicada en una dirección **https** (la de Vercel): el inicio de sesión de Google no funciona abriendo `index.html` desde el disco.
-2. En <https://console.cloud.google.com> creá un proyecto, habilitá **Google Drive API**, configurá la pantalla de consentimiento (tipo Externo, agregándote como usuario de prueba) y creá un **ID de cliente OAuth** de tipo *Aplicación web*, con la dirección de la app como *origen de JavaScript autorizado*.
+1. Necesitás la app publicada en una dirección **https** (Vercel o GitHub Pages): el inicio de sesión de Google no funciona abriendo `index.html` desde el disco.
+2. En <https://console.cloud.google.com> creá un proyecto, habilitá **Google Drive API**, configurá la pantalla de consentimiento (tipo Externo, agregándote como usuario de prueba) y creá un **ID de cliente OAuth** de tipo *Aplicación web*, con la dirección de la app como *origen de JavaScript autorizado* (agregá **cada** dirección donde la publiques: la de Vercel y la de GitHub Pages).
 3. En la app, pestaña **Drive**, pegá el ID de cliente y tocá **Conectar con Google**. Repetilo en cada dispositivo (el ID se guarda en ese navegador). También se puede dejar fijo en `js/config.js`.
 
 ### Elegir fotos desde Drive (opcional)
