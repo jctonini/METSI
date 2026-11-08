@@ -255,5 +255,21 @@
     App.showTab('scan');
   });
 
+  // «Elegir fotos desde Drive»: el selector de Google habilita las fotos marcadas y se bajan de a una al procesarlas.
+  $('pick-drive').addEventListener('click', async () => {
+    const cfg = { apiKey: window.METSI_GOOGLE_API_KEY, appId: window.METSI_GOOGLE_APP_ID };
+    const missing = MetsiPicker.missingConfig(cfg);
+    if (!clientId()) { alert('Primero conectá Google Drive en la pestaña Drive.'); App.showTab('drive'); return; }
+    if (missing.length) { alert('Falta configurar ' + missing.join(' y ') + ' en js/config.js (ver README, sección «Elegir fotos desde Drive»).'); return; }
+    try {
+      const picked = await MetsiPicker.pickImages(cfg, await getToken());
+      if (!picked.length) return;
+      await App.processFiles(picked.map((p) => ({
+        name: p.name,
+        load: async () => new File([await drive.downloadBlob(p.id)], p.name, { type: p.mimeType }),
+      })), 'Bajando y procesando');
+    } catch (e) { alert('No se pudo abrir Drive: ' + (e.message || e)); }
+  });
+
   Object.assign(App, { drive, hasToken, setStatus, updateSyncBar, fetchPhoto, loadGis, syncNow });
 })();
