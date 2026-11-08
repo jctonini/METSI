@@ -6,6 +6,7 @@
   const Identity = MetsiIdentity;
   const Similar = MetsiSimilar;
   const Review = MetsiReview;
+  const selection = MetsiSelection.createSelection();
   const { $, state, memory, Photos, save, touch, removeSheet, scoreOf, clientId, layout, fmt, escapeHtml, newId, MAX_SIDE, THUMB_SIDE } = App;
 
   // ---------- 3. corregir ----------
@@ -378,7 +379,37 @@
     }
   }
 
+  // Barra de selección: Seleccionar todo, contador y Quitar seleccionadas.
+  function renderBulkBar() {
+    const bar = $('bulk-bar');
+    const all = state.sheets.map((x) => x.id);
+    selection.prune(all);
+    bar.hidden = all.length === 0;
+    const n = selection.size();
+    const allBox = $('sel-all');
+    allBox.checked = selection.allSelected(all);
+    allBox.indeterminate = n > 0 && !allBox.checked;
+    $('sel-count').textContent = n ? `${n} de ${all.length} seleccionada(s)` : `${all.length} hoja(s)`;
+    $('sel-remove').disabled = n === 0;
+    $('sel-remove').textContent = n ? `Quitar seleccionadas (${n})` : 'Quitar seleccionadas';
+  }
+  $('sel-all').addEventListener('change', () => {
+    selection.toggleAll(state.sheets.map((x) => x.id));
+    renderCards();
+  });
+  $('sel-remove').addEventListener('click', () => {
+    const ids = selection.ids();
+    if (!ids.length) return;
+    if (!confirm(`Se van a quitar ${ids.length} hoja(s) de este examen. ¿Seguir?`)) return;
+    ids.forEach((id) => removeSheet(id));
+    selection.clear();
+    save();
+    renderCards();
+    App.renderResults();
+  });
+
   function renderCards() {
+    renderBulkBar();
     const box = $('cards');
     box.innerHTML = '';
     const L = layout();
@@ -393,7 +424,16 @@
       box.appendChild(card);
       const head = document.createElement('div');
       head.className = 'card-head';
-      head.innerHTML = `<b>Hoja ${idx + 1}</b> <span class="muted">${sheet.failed ? '' : 'formato V' + (sheet.version || 1) + ' · '}${escapeHtml(sheet.fileName || '')}</span>`;
+      const pick = document.createElement('label');
+      pick.className = 'sel'; pick.title = 'Seleccionar esta hoja';
+      const pickBox = document.createElement('input');
+      pickBox.type = 'checkbox'; pickBox.checked = selection.has(sheet.id);
+      pickBox.addEventListener('change', () => { selection.toggle(sheet.id, pickBox.checked); renderBulkBar(); });
+      pick.appendChild(pickBox);
+      head.appendChild(pick);
+      const title = document.createElement('span');
+      title.innerHTML = `<b>Hoja ${idx + 1}</b> <span class="muted">${sheet.failed ? '' : 'formato V' + (sheet.version || 1) + ' · '}${escapeHtml(sheet.fileName || '')}</span>`;
+      head.appendChild(title);
       const del = document.createElement('button');
       del.className = 'danger small'; del.textContent = 'Quitar';
       del.addEventListener('click', () => {
