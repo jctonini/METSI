@@ -59,11 +59,15 @@
     } catch (e) { /* sin almacenamiento: se usa el estado por defecto */ }
     return defaults();
   }
+  const saver = MetsiStorage.createSaver({
+    setItem: (text) => localStorage.setItem(STORAGE_KEY, text),
+    onChange: (ok) => { const el = $('storage-warn'); if (el) el.hidden = ok; },
+  });
   function save() {
     // Si cambió la configuración o la clave, se marca como modificada (para la sincronización).
     const h = JSON.stringify([state.cfg, state.key]);
     if (h !== state.cfgHash) { state.cfgHash = h; state.cfgUpdatedAt = Date.now(); }
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignorado */ }
+    saver.write(JSON.stringify(state)); // si falla (almacenamiento lleno), muestra un aviso
     if (App.updateSyncBar) App.updateSyncBar();
   }
   const touch = (sheet) => { sheet.updatedAt = Date.now(); save(); };

@@ -25,9 +25,9 @@
   const isIdentified = (sheet) => !!(normName(sheet.nombre) || normReg(sheet.registro));
 
   // Tipo de coincidencia entre dos hojas, o null si no hay.
-  function pairKind(a, b) {
-    const ra = normReg(a.registro), rb = normReg(b.registro);
-    const na = normName(a.nombre), nb = normName(b.nombre);
+  const pairKind = (a, b) => kindOf(normReg(a.registro), normName(a.nombre), normReg(b.registro), normName(b.nombre));
+  // Igual que pairKind pero con registro y nombre ya normalizados (analyze los normaliza una sola vez por hoja).
+  function kindOf(ra, na, rb, nb) {
     if (ra && rb) {
       if (ra === rb) {
         if (na && nb) return na === nb ? 'same-data' : 'same-reg-diff-name';
@@ -44,11 +44,12 @@
 
   function analyze(sheets) {
     const list = sheets.filter((s) => !s.failed);
-    const missing = list.filter((s) => !isIdentified(s));
+    const norm = list.map((s) => ({ r: normReg(s.registro), n: normName(s.nombre) }));
+    const missing = list.filter((s, i) => !(norm[i].n || norm[i].r));
     const hard = [], soft = [];
     for (let i = 0; i < list.length; i++) {
       for (let j = i + 1; j < list.length; j++) {
-        const kind = pairKind(list[i], list[j]);
+        const kind = kindOf(norm[i].r, norm[i].n, norm[j].r, norm[j].n);
         if (!kind) continue;
         if (isHard(kind)) { if (!acked(list[i], list[j])) hard.push({ a: list[i], b: list[j], kind }); }
         else soft.push({ a: list[i], b: list[j], kind });
@@ -58,11 +59,12 @@
   }
 
   // Conflictos (sin resolver) que involucran a una hoja concreta.
-  const conflictsFor = (sheet, sheets) => analyze(sheets).hard
+  // `an` (opcional) es un análisis ya calculado de las mismas hojas; evita repetirlo.
+  const conflictsFor = (sheet, sheets, an) => (an || analyze(sheets)).hard
     .filter((c) => c.a.id === sheet.id || c.b.id === sheet.id)
     .map((c) => ({ other: c.a.id === sheet.id ? c.b : c.a, kind: c.kind }));
 
-  const softFor = (sheet, sheets) => analyze(sheets).soft
+  const softFor = (sheet, sheets, an) => (an || analyze(sheets)).soft
     .filter((c) => c.a.id === sheet.id || c.b.id === sheet.id)
     .map((c) => ({ other: c.a.id === sheet.id ? c.b : c.a, kind: c.kind }));
 

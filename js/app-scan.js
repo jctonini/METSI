@@ -12,11 +12,22 @@
   $('file').addEventListener('change', async (e) => {
     const files = [...e.target.files];
     e.target.value = '';
+    await processFiles(files);
+  });
+
+  // Procesa una lista de fotos (de la galería o bajadas de Drive), de a una, y muestra el resumen.
+  // Cada elemento es un File o { name, load() } (load baja la foto recién cuando le toca, así no se juntan todas en memoria).
+  async function processFiles(files, label) {
     const tally = { added: 0, skipped: 0, discarded: 0, failed: 0 };
+    const notDownloaded = [];
     for (let i = 0; i < files.length; i++) {
-      $('status').textContent = `Procesando ${i + 1} de ${files.length}…`;
+      $('status').textContent = `${label || 'Procesando'} ${i + 1} de ${files.length}…`;
       await new Promise((r) => setTimeout(r, 20)); // deja que se actualice la pantalla
-      tally[await processFile(files[i])]++;
+      let file = files[i];
+      if (typeof file.load === 'function') {
+        try { file = await file.load(); } catch (err) { notDownloaded.push(file.name); tally.failed++; continue; }
+      }
+      tally[await processFile(file)]++;
     }
     const parts = [];
     if (tally.added) parts.push(`${tally.added} cargada(s)`);
@@ -24,10 +35,11 @@
     if (tally.discarded) parts.push(`${tally.discarded} descartada(s) por parecerse a otra hoja`);
     if (tally.failed) parts.push(`${tally.failed} con error de lectura`);
     $('status').textContent = files.length ? 'Listo: ' + parts.join(', ') + '.' : '';
+    if (notDownloaded.length) $('status').textContent += ` No se pudo bajar de Drive: ${notDownloaded.join(', ')}. Volvé a elegirlas.`;
     save();
     renderCards();
     if (files.length && clientId() && !App.hasToken()) App.setStatus('Tocá “Sincronizar” para subir estas hojas a Drive.', 'warn-text');
-  });
+  }
 
   async function loadBitmap(file) {
     if (window.createImageBitmap) {
@@ -520,7 +532,7 @@
         w.className = 'warn-text'; w.textContent = '⛔ Falta el nombre o el registro: cargá al menos uno para poder exportar.';
         card.insertBefore(w, rows);
       }
-      for (const c of Identity.softFor(sheet, state.sheets)) {
+      for (const c of Identity.softFor(sheet, state.sheets, an)) {
         const w = document.createElement('p');
         w.className = 'muted'; w.textContent = `ℹ Mismo nombre que la Hoja ${sheetNumber(c.other)}, con otro registro (${c.other.registro}). Puede ser un homónimo.`;
         card.insertBefore(w, rows);
@@ -534,5 +546,5 @@
     if (!state.sheets.length) box.innerHTML = '<p class="muted">Todavía no cargaste ninguna hoja.</p>';
   }
 
-  Object.assign(App, { renderCards, renderBanner, renderReviewPanel, isBlocked, exportBlockers, loadBitmap, syncCases });
+  Object.assign(App, { processFiles, renderCards, renderBanner, renderReviewPanel, isBlocked, exportBlockers, loadBitmap, syncCases });
 })();

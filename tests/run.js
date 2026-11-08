@@ -563,6 +563,53 @@ test('identidad: conflictos de una hoja concreta', () => {
   assert.deepEqual(ID.conflictsFor(all[0], all).map((c) => c.other.id), ['b']);
   assert.equal(ID.conflictsFor(all[2], all).length, 0);
 });
+test('identidad: conflictsFor/softFor con un análisis ya calculado dan lo mismo', () => {
+  const all = [hoja('a', 'Ana', '55'), hoja('b', 'Ana G', '55'), hoja('c', 'Luis', '9'), hoja('d', 'Luis', '10')];
+  const an = ID.analyze(all);
+  for (const sh of all) {
+    assert.deepEqual(ID.conflictsFor(sh, all, an).map((c) => c.other.id), ID.conflictsFor(sh, all).map((c) => c.other.id));
+    assert.deepEqual(ID.softFor(sh, all, an).map((c) => c.other.id), ID.softFor(sh, all).map((c) => c.other.id));
+  }
+  assert.deepEqual(ID.softFor(all[2], all, an).map((c) => c.other.id), ['d']);
+});
+test('identidad: analizar 80 hojas es rápido (un redibujo no debe trabarse)', () => {
+  const all = Array.from({ length: 80 }, (_, i) => hoja('h' + i, 'Alumno Número ' + i + ' Pérez', String(1000000 + i)));
+  const t = Date.now();
+  for (let i = 0; i < 20; i++) ID.analyze(all);
+  assert.ok((Date.now() - t) / 20 < 50, 'cada análisis debería tardar menos de 50 ms');
+});
+test('guardado local: avisa al fallar por cuota y deja de avisar cuando vuelve a funcionar', () => {
+  const { createSaver } = require('../js/storage.js');
+  let full = true; const events = [];
+  const s = createSaver({ setItem: () => { if (full) { const e = new Error('cuota'); e.name = 'QuotaExceededError'; throw e; } }, onChange: (ok, err) => events.push([ok, err && err.name]) });
+  assert.equal(s.write('x'), false);
+  assert.equal(s.write('x'), false); // sigue fallando: no repite el aviso
+  full = false;
+  assert.equal(s.write('x'), true);
+  assert.equal(s.write('x'), true);
+  assert.deepEqual(events, [[false, 'QuotaExceededError'], [true, null]]);
+});
+test('selector de Drive: deja solo imágenes sin repetir y avisa qué falta configurar', () => {
+  const P = require('../js/picker.js');
+  const docs = [
+    { id: 'a', name: 'hoja1.jpg', mimeType: 'image/jpeg' }, { id: 'a', name: 'hoja1.jpg', mimeType: 'image/jpeg' },
+    { id: 'b', name: 'doc', mimeType: 'application/pdf' }, { id: 'c', mimeType: 'image/png' }, { name: 'sin id', mimeType: 'image/png' },
+  ];
+  assert.deepEqual(P.imagesFrom(docs), [{ id: 'a', name: 'hoja1.jpg', mimeType: 'image/jpeg' }, { id: 'c', name: 'c', mimeType: 'image/png' }]);
+  assert.deepEqual(P.imagesFrom(null), []);
+  assert.deepEqual(P.missingConfig({ apiKey: '', appId: ' ' }), ['METSI_GOOGLE_API_KEY', 'METSI_GOOGLE_APP_ID']);
+  assert.deepEqual(P.missingConfig({ apiKey: 'k', appId: '1' }), []);
+});
+test('selector de Drive: una foto elegida se baja de Drive con reintentos', async () => {
+  const { createDrive } = require('../js/drive.js');
+  const { createMockDrive } = require('./mockdrive.js');
+  const mock = createMockDrive();
+  const d = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' });
+  const root = await d.ensureRootFolder();
+  const id = await d.upsertFile(root, 'foto.jpg', 'image/jpeg', Buffer.from([1, 2, 3, 4]), {});
+  const back = Buffer.from(await (await d.downloadBlob(id)).arrayBuffer());
+  assert.deepEqual([...back], [1, 2, 3, 4]);
+});
 test('identidad: hash de archivo igual para bytes iguales, distinto si cambia uno', () => {
   const a = new Uint8Array([1, 2, 3, 4, 5, 250]), b = new Uint8Array([1, 2, 3, 4, 5, 250]), c = new Uint8Array([1, 2, 3, 4, 6, 250]);
   assert.equal(ID.hashBytes(a), ID.hashBytes(b));

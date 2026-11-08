@@ -70,6 +70,20 @@ Si se edita lo mismo en dos dispositivos, para cada hoja gana el cambio más rec
 
 Sin esa configuración la app funciona igual, pero los resultados quedan solo en el dispositivo donde se cargaron (descargá el CSV para conservarlos).
 
+### Elegir fotos desde Drive
+
+Si sacás las fotos con el celular y las subís a una carpeta de Drive, en **Corregir** tocá **☁ Elegir fotos desde Drive**: se abre el selector de Google, entrás a la carpeta y marcás las fotos (**Ctrl+A** marca todas las de la carpeta). La app solo recibe permiso sobre las fotos que marcaste (sigue usando `drive.file`, no ve el resto de tu Drive) y las baja de a una, con los mismos reintentos que la sincronización.
+
+Elegir la carpeta en sí no alcanza: Google no da acceso a lo que tiene adentro, por eso hay que abrirla y marcar las fotos.
+
+**Configuración (una sola vez)**, en el mismo proyecto de Google Cloud de la sección anterior:
+1. Habilitá **Google Picker API**.
+2. En *Credenciales* creá una **clave de API** y restringila a la Picker API y a la dirección de la app.
+3. Copiá el **número de proyecto** (Project number).
+4. Pegalos en `js/config.js` como `METSI_GOOGLE_API_KEY` y `METSI_GOOGLE_APP_ID`. No son secretos.
+
+Mientras estén vacíos, el botón avisa qué falta.
+
 ## Cómo sacar buenas fotos
 
 Hay una guía corta para imprimir junto al examen en [`docs/guia-de-uso.md`](docs/guia-de-uso.md).
