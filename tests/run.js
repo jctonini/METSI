@@ -995,6 +995,108 @@ test('merge: configuración y clave de la versión más nueva', () => {
   assert.deepEqual(mergeStates(b, a).key, [2]);
 });
 
+// ---------- lectura del número de registro (OCR local) ----------
+const DIGITS = require('../js/digits.js');
+const { cropRegion } = require('../js/scanner.js');
+const DFX = require('./fixtures/digits-sample.json');
+const dimgs = DFX.images.map((b) => Float32Array.from(Buffer.from(b, 'base64'), (v) => v / 255));
+
+test('dígitos: el modelo tiene la forma esperada y clasifica dígitos sueltos', () => {
+  const model = require('../js/digit-model.js');
+  assert.deepEqual(model.layers.map((l) => [l.in, l.out]), [[784, 128], [128, 64], [64, 10]]);
+  let ok = 0;
+  dimgs.forEach((img, i) => { const p = DIGITS.classify(img); if (p.indexOf(Math.max(...p)) === DFX.labels[i]) ok++; });
+  assert.ok(ok >= dimgs.length * 0.95, `acertó ${ok} de ${dimgs.length}`);
+});
+
+// Lee el registro de una hoja sintética con dígitos escritos en los casilleros.
+function readSynthRegistro(version, seed, digitIdx, extra) {
+  const cfg = { numQuestions: 10, numOptions: 4, modalidades: ['A', 'B'], regDigits: 7 };
+  const L = buildLayout(cfg, version);
+  const rand = rng(seed * 31 + version);
+  const cells = digitIdx.map((k) => (k == null ? null : { img: dimgs[k], dx: (rand() - 0.5) * 1.2, dy: (rand() - 0.5) * 1.2 }));
+  const photo = renderPhoto(L, [], { seed, jitter: 60, regBorders: true, regCells: cells, ...extra });
+  const scan = scanImage(photo, (v) => buildLayout(cfg, v));
+  assert.ok(scan.ok, scan.error);
+  return DIGITS.readRegistro(scan.layout.fields.regBoxes, (rect, ppm) => cropRegion(photo, scan.H, rect, ppm));
+}
+
+test('dígitos: lee el registro de hojas V1 a V4 (perspectiva, ruido, borde impreso) sin errores silenciosos', () => {
+  let total = 0, ok = 0, silent = 0;
+  for (const version of [1, 2, 3, 4]) {
+    for (let seed = 1; seed <= 3; seed++) {
+      const rand = rng(seed * 7 + version);
+      const idx = Array.from({ length: 7 }, () => Math.floor(rand() * dimgs.length));
+      const res = readSynthRegistro(version, seed, idx);
+      res.cells.forEach((c, i) => {
+        total++;
+        const truth = String(DFX.labels[idx[i]]);
+        if (c.ch === truth) ok++; else if (!c.empty && !c.uncertain) silent++;
+      });
+    }
+  }
+  assert.ok(ok >= total * 0.97, `acertó ${ok} de ${total}`);
+  assert.equal(silent, 0, 'un dígito mal leído tiene que quedar marcado como dudoso');
+});
+
+test('dígitos: un «1» (trazo fino y largo) no se confunde con un resto del borde del casillero', () => {
+  const ones = DFX.labels.map((l, i) => (l === 1 ? i : -1)).filter((i) => i >= 0);
+  const res = readSynthRegistro(4, 9, [...ones, ones[0]].slice(0, 7)); // el fixture trae 6 unos: se repite uno
+  assert.equal(res.cells.filter((c) => c.empty).length, 0);
+  assert.ok(res.cells.filter((c) => c.ch === '1').length >= 6);
+});
+
+test('dígitos: casilleros todos vacíos: no se inventa nada, aunque el borde esté corrido', () => {
+  for (const shift of [0, 0.6, -0.6]) {
+    const res = readSynthRegistro(4, 3, [null, null, null, null, null, null, null], { regBorderShift: shift });
+    assert.ok(res.cells.every((c) => c.empty));
+    assert.equal(res.text, '');
+    assert.equal(res.complete, false);
+    assert.equal(res.sure, false);
+  }
+});
+
+test('dígitos: un registro de 6 dígitos en 7 casilleros (vacío al principio o al final) se lee completo y seguro', () => {
+  const six = [3, 14, 25, 36, 47, 53];
+  for (const [name, idx] of [['vacío al final', [...six, null]], ['vacío al principio', [null, ...six]]]) {
+    const res = readSynthRegistro(4, 4, idx);
+    assert.equal(res.read.length, 6, name);
+    assert.equal(res.text.length, 6, name);
+    assert.equal(res.text.includes('?'), false, name);
+    assert.equal(res.complete, true, name);
+    assert.equal(res.sure, true, name);
+    assert.equal(res.text, six.map((k) => DFX.labels[k]).join(''), name);
+  }
+});
+
+test('dígitos: con 7 dígitos no se descarta ninguno, y con 5 (dos vacíos) la lectura no es «segura»', () => {
+  const res7 = readSynthRegistro(4, 5, [3, 14, 25, 36, 47, 53, 8]);
+  assert.equal(res7.read.length, 7);
+  assert.equal(res7.sure, true);
+  const res5 = readSynthRegistro(4, 5, [3, 14, 25, 36, 47, null, null]);
+  assert.equal(res5.read.length, 5);
+  assert.equal(res5.text.includes('?'), false);
+  assert.equal(res5.sure, false, 'faltan dígitos: hay que revisar');
+});
+
+test('dígitos: un casillero vacío ENTRE dígitos queda como «?» y la lectura no es «segura»', () => {
+  const idx = [0, 12, null, 30, 44, 51, 5];
+  const res = readSynthRegistro(4, 2, idx);
+  assert.equal(res.cells[2].empty, true);
+  assert.equal(res.text[2], '?');
+  assert.equal(res.text.length, 7);
+  assert.equal(res.complete, false);
+  assert.equal(res.sure, false);
+});
+
+test('casos a revisar: no incluyen el registro leído ni el cargado', () => {
+  const s = { id: 'x', fileName: 'a.jpg', failed: false, registro: '9876543', regAuto: { text: '9876543', st: 'kkkkkkk' },
+    answers: [[0]], autoAnswers: [[1]], review: { flag: true, note: '', q: {} } };
+  const out = JSON.stringify(REV.buildCases([s], { letters: 'ABCD', exam: {} }));
+  assert.equal(out.includes('9876543'), false);
+  assert.equal(out.includes('regAuto'), false);
+});
+
 (async () => {
   for (const [name, fn] of asyncTests) {
     try { await fn(); passed++; console.log('  ok  ' + name); }
