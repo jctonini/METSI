@@ -5,6 +5,7 @@ Material en bruto para la sección «Registro de uso de IA» del informe. Alcanc
 ## Cómo leer este archivo
 
 - **Límite importante:** el archivo de esta sesión empieza con un *resumen de contexto* que sustituye la parte inicial del chat. De los pedidos anteriores a ese resumen **no está disponible el texto completo**. Para esos pedidos copio solo los fragmentos que el resumen reproduce entre comillas y lo indico con «(fragmento)». Lo que el resumen cuenta con palabras propias lo marco «(paráfrasis del resumen, no textual)». El mensaje completo figura como **NO CONSTA**.
+- **Texto aportado después por el usuario:** el usuario pegó un fragmento del chat anterior al resumen (el episodio del descuento libre y la fusión del PR n.º 3). El pegado no traía fecha ni indicaba quién habla; atribuí al usuario solo las líneas que son pedidos suyos (la primera línea, la respuesta numerada y «pasalo a main») y al asistente el resto. Con ese texto se completó la N.º 16 y se confirmó el primer fragmento de la N.º 1. **El pegado no cubre el resto del tramo anterior al resumen**: las demás entradas de la Parte 1 siguen con fragmentos.
 - Los pedidos posteriores al resumen (N.º 23 a 30) están copiados textualmente del archivo de la sesión, con sus errores de tipeo.
 - **Fechas:** de los pedidos posteriores al resumen consta la hora (UTC) del archivo de la sesión. De los anteriores, la fecha del pedido **NO CONSTA**; indico, marcados «(según git)», los commits relacionados con su fecha de commit (solo el día).
 - «NO CONSTA» significa que no hay dato en lo disponible. No rellené con suposiciones.
@@ -29,6 +30,7 @@ Lista de cumplimiento (ítems 1 a 12) usada en el campo «Ítem(s)»: 1 Problema
   > Resulta que los examenes en papel son multiple choice y lleva mucho tiempo corregirlos
   >
   > yo estaba pensando en la primera de las opciones, que los alumnos completen una grilla con las respuestas, sacarles una foto y que una app lo corrija
+- **Nota:** el primer fragmento («Yo soy profesor…») coincide con el texto pegado por el usuario.
 - **Qué hizo la IA:** presentó opciones de solución (consta por la referencia «la primera de las opciones»); el contenido de las opciones NO CONSTA.
 - **Qué hubo que corregir:** NO CONSTA
 - **Qué inventó o erró la IA:** NO CONSTA
@@ -242,24 +244,23 @@ Lista de cumplimiento (ítems 1 a 12) usada en el campo «Ítem(s)»: 1 Problema
 - **Sección del informe donde encaja:** 4 Cómo se construyó
 - **Ítem(s):** 7
 
-### N.º 16 · NO CONSTA · Claude Code
+### N.º 16 · NO CONSTA (según git, PR n.º 3 fusionado el 2026-10-02) · Claude Code
 - **Etapa:** diseño
-- **Pedido (textual, fragmentos de mensajes separados):**
-  > 3 decimales esta bien
-
-  > ok
-
-  > hoy no puedo imprimirla esto queda pendiente
+- **Pedido (textual, mensajes del usuario copiados del texto pegado):**
+  > 1. acepto tu propuesta de poder configurar un numero entre 0 y 1. 
+  > 2. 3 decimales esta bien. 
+  > 3, ok.
+  > hoy no puedo imprimrla esto queda pendiente.
 
   > pasalo a main
 
-  Contexto del resumen (paráfrasis, no textual): una captura de la clave mostraba 0 o 1 para la pregunta 8 y el usuario dudó del descuento; los «ok» corresponden a los números de versión de la hoja.
-- **Qué hizo la IA:** explicó el cálculo; reemplazó el descuento fijo por un número libre de 0 a 1; mostró hasta 3 decimales; agregó números de versión visibles en la app y en los archivos (`?v=hash`); fusionó a `main` («Descuento libre por incorrecta, números con 3 decimales y versión de archivos», según git, 2026-10-02).
-- **Qué hubo que corregir:** la regla de descuento (la IA había fijado un esquema fijo) para pasarla a un valor libre entre 0 y 1.
-- **Qué inventó o erró la IA (según el resumen de contexto):** confusión con la pregunta 8 (en la clave del usuario solo B y C eran correctas). La caché del navegador hacía ver comportamientos viejos (el error de orientación); se resolvió con la versión de archivos.
-- **Decisión mía (no delegada):** que el descuento sea un número libre de 0 a 1, tres decimales, y dejar la impresión para otro día.
+  Contexto (texto del asistente, copiado del pegado, no es pedido del usuario): una captura enviada por el usuario con su clave y su foto; el asistente respondió que «la pregunta 8 da 0/1 porque tu clave tiene B y C, y el total de 4,666667 coincide con el que calculé», propuso mostrar los números redondeados a 2 decimales y con coma, un campo numérico libre de 0 a 1 para el descuento por incorrecta (el valor por defecto era 1, con tres opciones fijas), un número de versión en los archivos de la app y generar y probar la hoja V2 impresa.
+- **Qué hizo la IA:** sin ejecutar nada hasta tener las respuestas («todo en espera hasta que me digas»); luego implementó un campo numérico de 0 a 1 para el descuento (corrige valores fuera de rango, muestra un ejemplo que se recalcula y avisa con 0), números con hasta 3 decimales y coma en pantalla y en el CSV, y número de versión visible en la app y en los archivos. Verificó con la clave y la foto del usuario (descuento 1 → 4,667; 0,5 → 5,583; 0,33 → 6,065; pregunta 8 → 0,505/1 con 0,33) y pasaron 60 pruebas. Subió a la rama, y ante «pasalo a main» fusionó el pull request n.º 3 («Descuento libre por incorrecta, números con 3 decimales y versión de archivos», según git, 2026-10-02).
+- **Qué hubo que corregir:** la propuesta de la IA de 2 decimales; el usuario pidió 3. El descuento fijo de tres opciones pasó a un valor libre.
+- **Qué inventó o erró la IA:** NO CONSTA error afirmado. Consta que el valor inicial de 0,33 para un examen nuevo lo eligió la IA sin que el usuario dijera un número (dicho por la IA: «Ese número lo elegí yo, porque no me dijiste uno»). Según el resumen de contexto, hubo confusión con la pregunta 8 y la caché del navegador mostraba versiones viejas, lo que motivó el número de versión.
+- **Decisión mía (no delegada):** aceptar un descuento configurable entre 0 y 1, fijar 3 decimales, aceptar el número de versión, dejar pendiente la impresión de la hoja V2 («hoy no puedo imprimirla») y ordenar la publicación en `main`.
 - **Sección del informe donde encaja:** 3 Solución
-- **Ítem(s):** 3, 6
+- **Ítem(s):** 3, 5, 6
 
 ### N.º 17 · NO CONSTA · Claude Code
 - **Etapa:** pruebas
@@ -496,11 +497,13 @@ Lista de cumplimiento (ítems 1 a 12) usada en el campo «Ítem(s)»: 1 Problema
 - 10 o 20 preguntas, 4 o 5 opciones por pregunta: respuestas del usuario a la IA (paráfrasis del resumen). Origen: usuario.
 - 7 casilleros para el registro: elección del usuario en el formulario. Origen: usuario.
 - Hoja A5, 2 por hoja A4 apaisada: propuesta de la IA, aceptada por el usuario. Origen: IA.
-- Descuento por incorrecta: valor inicial 0,33 en un examen nuevo, configurable de 0 a 1. Origen: valor puesto por la IA (según el resumen); el usuario lo dejó. En el `casos.json` del examen del usuario figura 0,33.
+- Descuento por incorrecta: valor inicial 0,33 en un examen nuevo, configurable de 0 a 1. Origen: valor elegido por la IA (dicho por la IA en el texto pegado); el usuario lo dejó. En el `casos.json` del examen del usuario figura 0,33.
 - Puntos por pregunta en el examen de prueba del usuario: 5 (`casos.json`). Origen: archivo del usuario en Drive.
 - Sensibilidad normal 0,085 (alta 0,05, baja 0,16): calibrada por la IA con fotos reales (según el resumen: seis fotos). Origen: pruebas de la IA con fotos del usuario.
 - Capacidad de la hoja V4: 32 preguntas con 5 opciones o 48 con 4 opciones. Origen: cálculo de la app.
-- Pruebas automáticas: 82 al inicio de este tramo y 83 al final. Origen: salida de `node tests/run.js`.
+- Pruebas automáticas: 60 el 2026-10-02 (texto pegado por el usuario), 82 al inicio del tramo posterior al resumen y 83 al final. Origen: salida de `node tests/run.js`.
+- Puntajes de la clave del usuario con su foto, según el texto pegado: descuento 1 → 4,667; 0,5 → 5,583; 0,33 → 6,065; pregunta 8 → 0,505 sobre 1 con 0,33. Origen: cálculo de la IA con la clave y la foto del usuario.
+- Descuento por defecto anterior: 1 (con tres opciones fijas); nuevo valor inicial 0,33 elegido por la IA. Origen: IA.
 - Fallas reportadas en la primera prueba real: respuestas 4 y 6 no leídas (N.º 13); en la segunda prueba, mal leídas 4, 11, 15, 18 y 20 y no leídas 12, 13, 14 y 17 (N.º 17). Origen: usuario (según el resumen).
 - Costo acumulado de la sesión: USD 39,33 hasta el 2026-11-08, según la consulta de la sesión de la plataforma. **Incluye también el trabajo fuera del alcance de este registro** (armado del examen); no es solo el costo de la herramienta. Origen: la consulta de la sesión hecha en este chat.
 - Tiempo de corrección a mano: SIN ORIGEN. El usuario solo dijo «lleva mucho tiempo corregirlos»; no hay cifra.
