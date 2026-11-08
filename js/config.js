@@ -4,5 +4,5 @@
 window.METSI_GOOGLE_CLIENT_ID = '130330666077-14aku6vf3dvuahmlrugo5fv1ldqso4p4.apps.googleusercontent.com';
 // Para «Elegir fotos desde Drive» (ver README): clave de API y número de proyecto de Google Cloud.
 // Tampoco son secretos. Mientras estén vacíos, ese botón explica qué falta configurar.
-window.METSI_GOOGLE_API_KEY = '';
+window.METSI_GOOGLE_API_KEY = 'AIzaSyBsILmmhLiiPgSpndg-8_Mt4hX0k73IhDM';
 window.METSI_GOOGLE_APP_ID = '';
