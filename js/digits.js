@@ -193,7 +193,10 @@
   }
 
   // Lee todos los casilleros de la hoja. `crop(rect, ppm)` recorta una zona de la hoja (en mm) de la foto.
-  function readRegistro(regBoxes, crop) {
+  // Los registros pueden tener menos dígitos que casilleros (6 o 7 en 7 casilleros): los casilleros vacíos de los
+  // extremos son normales y no se cuentan. Un vacío ENTRE dígitos sí es un dato que falta («?»).
+  // opts.minDigits: cuántos dígitos se esperan como mínimo (por defecto, uno menos que casilleros).
+  function readRegistro(regBoxes, crop, opts) {
     const cells = [];
     for (let i = 0; i < regBoxes.n; i++) {
       const rect = {
@@ -202,12 +205,18 @@
       };
       cells.push(readCell(crop(rect, PPM)));
     }
+    const minDigits = opts && opts.minDigits != null ? opts.minDigits : Math.max(1, regBoxes.n - 1);
+    let lo = 0, hi = cells.length - 1;
+    while (lo <= hi && cells[lo].empty) lo++;
+    while (hi >= lo && cells[hi].empty) hi--;
+    const read = cells.slice(lo, hi + 1); // lo que queda sin los vacíos de los extremos
     return {
       cells,
-      // Vacíos: «?». Los dudosos conservan su mejor dígito (se resaltan en pantalla).
-      text: cells.map((c) => (c.empty ? '?' : c.ch)).join(''),
-      complete: cells.every((c) => !c.empty),
-      sure: cells.every((c) => !c.empty && !c.uncertain),
+      read,
+      // Vacíos entre dígitos: «?». Los dudosos conservan su mejor dígito (se resaltan en pantalla).
+      text: read.map((c) => (c.empty ? '?' : c.ch)).join(''),
+      complete: read.length >= minDigits && read.every((c) => !c.empty),
+      sure: read.length >= minDigits && read.every((c) => !c.empty && !c.uncertain),
     };
   }
 

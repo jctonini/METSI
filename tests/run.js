@@ -1046,22 +1046,46 @@ test('dígitos: un «1» (trazo fino y largo) no se confunde con un resto del bo
   assert.ok(res.cells.filter((c) => c.ch === '1').length >= 6);
 });
 
-test('dígitos: casilleros vacíos quedan vacíos (no se inventa un dígito), aunque el borde esté corrido', () => {
+test('dígitos: casilleros todos vacíos: no se inventa nada, aunque el borde esté corrido', () => {
   for (const shift of [0, 0.6, -0.6]) {
     const res = readSynthRegistro(4, 3, [null, null, null, null, null, null, null], { regBorderShift: shift });
-    assert.equal(res.text, '???????');
     assert.ok(res.cells.every((c) => c.empty));
+    assert.equal(res.text, '');
     assert.equal(res.complete, false);
     assert.equal(res.sure, false);
   }
 });
 
-test('dígitos: con un casillero vacío entre los demás, solo ese queda vacío y la lectura no es «segura»', () => {
+test('dígitos: un registro de 6 dígitos en 7 casilleros (vacío al principio o al final) se lee completo y seguro', () => {
+  const six = [3, 14, 25, 36, 47, 53];
+  for (const [name, idx] of [['vacío al final', [...six, null]], ['vacío al principio', [null, ...six]]]) {
+    const res = readSynthRegistro(4, 4, idx);
+    assert.equal(res.read.length, 6, name);
+    assert.equal(res.text.length, 6, name);
+    assert.equal(res.text.includes('?'), false, name);
+    assert.equal(res.complete, true, name);
+    assert.equal(res.sure, true, name);
+    assert.equal(res.text, six.map((k) => DFX.labels[k]).join(''), name);
+  }
+});
+
+test('dígitos: con 7 dígitos no se descarta ninguno, y con 5 (dos vacíos) la lectura no es «segura»', () => {
+  const res7 = readSynthRegistro(4, 5, [3, 14, 25, 36, 47, 53, 8]);
+  assert.equal(res7.read.length, 7);
+  assert.equal(res7.sure, true);
+  const res5 = readSynthRegistro(4, 5, [3, 14, 25, 36, 47, null, null]);
+  assert.equal(res5.read.length, 5);
+  assert.equal(res5.text.includes('?'), false);
+  assert.equal(res5.sure, false, 'faltan dígitos: hay que revisar');
+});
+
+test('dígitos: un casillero vacío ENTRE dígitos queda como «?» y la lectura no es «segura»', () => {
   const idx = [0, 12, null, 30, 44, 51, 5];
   const res = readSynthRegistro(4, 2, idx);
   assert.equal(res.cells[2].empty, true);
-  assert.equal(res.cells.filter((c) => c.empty).length, 1);
   assert.equal(res.text[2], '?');
+  assert.equal(res.text.length, 7);
+  assert.equal(res.complete, false);
   assert.equal(res.sure, false);
 });
 

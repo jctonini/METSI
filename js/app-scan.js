@@ -91,16 +91,17 @@
   }
 
   // Lectura sugerida del número de registro. Es solo una sugerencia: no se guarda como `registro` hasta que el
-  // docente la usa o la escribe él. Guarda el texto leído y, por casillero, k = leído, u = dudoso, e = vacío.
+  // docente la usa o la escribe él. Guarda el texto leído (sin los casilleros vacíos de los extremos), por dígito
+  // k = leído, u = dudoso, e = vacío entre dígitos, y ok = lectura segura con la cantidad de dígitos esperada.
   function suggestRegistro(L, img, H) {
     try {
       const r = Digits.readRegistro(L.fields.regBoxes, (rect, ppm) => cropRegion(img, H, rect, ppm));
-      return { text: r.text, st: r.cells.map((c) => (c.empty ? 'e' : c.uncertain ? 'u' : 'k')).join('') };
+      return { text: r.text, st: r.read.map((c) => (c.empty ? 'e' : c.uncertain ? 'u' : 'k')).join(''), ok: r.sure };
     } catch (e) {
       return null; // si la lectura falla, la hoja se carga igual y el registro se escribe a mano
     }
   }
-  const regSure = (a) => !!a && /^k+$/.test(a.st);
+  const regSure = (a) => !!a && (a.ok !== undefined ? a.ok : /^k+$/.test(a.st));
 
   // Qué tan bien leyó la app los registros, comparando con lo que el docente terminó cargando (solo cuenta casilleros).
   function regAccuracy() {
@@ -126,7 +127,7 @@
     return `<div class="wide reg-suggest ${sure ? '' : 'unsure'}"><span class="muted">Lectura del registro (sugerida, no cargada):</span>
       <span class="reg-digits">${digits}</span>
       <button type="button" class="reg-use ${sure ? 'primary' : ''}">${sure ? '✓ Es correcto' : 'Usar y revisar'}</button>
-      ${sure ? '' : '<span class="muted">Hay dígitos dudosos o vacíos: revisalos con la imagen.</span>'}</div>`;
+      ${sure ? '' : '<span class="muted">Hay dígitos dudosos, vacíos o de menos: revisalos con la imagen.</span>'}</div>`;
   }
 
   const sheetNumber = (sh) => state.sheets.indexOf(sh) + 1;
@@ -545,7 +546,7 @@
       const useReg = fields.querySelector('.reg-use');
       if (useReg) useReg.addEventListener('click', () => {
         const sure = regSure(sheet.regAuto);
-        sheet.registro = sheet.regAuto.text; // los casilleros que no se pudieron leer quedan como «?» para que se vea que falta
+        sheet.registro = sheet.regAuto.text; // un hueco entre dígitos queda como «?» para que se vea que falta
         clearAck(sheet); touch(sheet);
         afterIdChange().then(() => { if (!sure) focusSheet(sheet.id); }); // con dudas: deja el cursor en el campo para revisar
       });

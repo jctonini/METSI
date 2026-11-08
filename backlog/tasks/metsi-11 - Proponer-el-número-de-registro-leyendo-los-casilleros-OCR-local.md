@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T21:52:00Z'
-updated_date: '2026-11-08T22:04:00Z'
+updated_date: '2026-11-08T22:12:00Z'
 labels:
   - lectura
 dependencies: []
@@ -43,6 +43,8 @@ Hoy el docente tipea a mano el número de registro de cada hoja mirando el recor
 
 <!-- SECTION:NOTES:BEGIN -->
 Modelo: MLP 784-128-64-10 entrenado con MNIST + variaciones (tools/train-digits.py, 30 épocas): 98,9 % en MNIST limpio y 96,2 % con deformaciones fuertes; cuantizado a 8 bits sin pérdida apreciable (146 KB). Recorrido completo sobre fotos sintéticas V1-V4: 99,6-100 % de casilleros, sin errores silenciosos con trazo fino/grueso y dígitos chicos/grandes; con el borde impreso desalineado >=0,9 mm baja a ~92-94 % (casi todo marcado dudoso). Corregido en el camino: un «1» se descartaba como resto de borde. Verificado en Chromium con la app real (cargar 2 fotos, confirmar, usar y revisar, sin errores de consola). Pendiente de datos reales: no hay fotos con letra a mano; la métrica real es la línea «acertó X de Y casilleros» de la pestaña Corregir.
+
+Ajuste tras probar el diseño: los registros tienen 6 o 7 dígitos en 7 casilleros, así que un vacío en un extremo es normal. readRegistro ahora descarta los vacíos del principio y del final (read/text), conserva «?» solo para huecos entre dígitos y marca la lectura como no segura si quedan menos de n-1 dígitos (opts.minDigits). Pruebas: 115 en verde; verificado en Chromium con hojas de 6 dígitos (vacío al final y al principio) y con un hueco entre dígitos.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
