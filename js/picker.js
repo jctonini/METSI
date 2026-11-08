@@ -5,6 +5,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.MetsiPicker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
+  const IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/heic,image/heif';
   const isImage = (doc) => !!doc && typeof doc.mimeType === 'string' && /^image\//.test(doc.mimeType);
 
   // De lo que devuelve el selector, deja solo las imágenes (id, nombre, tipo), sin repetir.
@@ -48,7 +49,9 @@
     await loadPicker();
     const g = window.google.picker;
     return new Promise((resolve) => {
-      const view = new g.DocsView(g.ViewId.DOCS_IMAGES).setIncludeFolders(true).setSelectFolderEnabled(false);
+      // Primero «Mi unidad» (la raíz del Drive, con sus carpetas, mostrando solo imágenes) y, en otra pestaña, todas las imágenes de la cuenta.
+      const root = new g.DocsView(g.ViewId.DOCS).setParent('root').setIncludeFolders(true).setSelectFolderEnabled(false).setMimeTypes(IMAGE_TYPES);
+      const all = new g.DocsView(g.ViewId.DOCS_IMAGES).setIncludeFolders(true).setSelectFolderEnabled(false);
       new g.PickerBuilder()
         .setDeveloperKey(cfg.apiKey)
         .setAppId(cfg.appId)
@@ -56,7 +59,8 @@
         .setLocale('es')
         .setTitle('Elegí las fotos de las hojas (Ctrl+A marca todas las de la carpeta)')
         .enableFeature(g.Feature.MULTISELECT_ENABLED)
-        .addView(view)
+        .addView(root)
+        .addView(all)
         .setCallback((data) => {
           if (data.action === g.Action.PICKED) resolve(imagesFrom(data.docs));
           else if (data.action === g.Action.CANCEL) resolve([]);
