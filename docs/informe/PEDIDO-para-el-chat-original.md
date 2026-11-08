@@ -1,6 +1,10 @@
 # Pedido para pegar en el chat original
 
-**Cómo usarlo:** abrí el chat donde se hicieron los primeros pedidos del proyecto (METSI · Corrector de multiple choice), pegá el bloque de abajo y esperá la respuesta. Copiá lo que devuelva en `docs/informe/registro-ia-bruto.md` (o pegámelo en la sesión de Claude Code) y yo lo ordeno según el informe.
+**Cómo usarlo:** ese chat también ve el repo, así que no hace falta copiar y pegar la respuesta. Pegale en ese chat este mensaje corto:
+
+> Traé la rama `claude/beautiful-darwin-ovif08` (`git fetch origin claude/beautiful-darwin-ovif08`), leé `docs/informe/PEDIDO-para-el-chat-original.md` con `git show origin/claude/beautiful-darwin-ovif08:docs/informe/PEDIDO-para-el-chat-original.md` y hacé lo que dice el bloque de texto.
+
+El bloque le indica que guarde el resultado en `docs/informe/registro-ia-bruto.md`, lo suba a una rama propia y te avise el nombre. Después me pasás ese nombre de rama y yo lo traigo y lo ordeno en `registro-ia.md`.
 
 Si el chat es muy largo y se corta, pedile «continuá desde el pedido N.º X» hasta terminar.
 
@@ -17,7 +21,10 @@ REGLAS (importantes):
 3. Reemplazá por «[OMITIDO]» cualquier dato sensible: claves, tokens, contraseñas, emails, nombres reales de alumnos o personas, URLs privadas.
 4. Distinguí lo que dijo la IA de lo que decidí yo. En «qué corregí» y «qué inventó/erró la IA» incluí solo lo que se ve en el chat (por ejemplo: la IA propuso algo, yo lo rechacé o lo corregí; la IA afirmó algo falso o un dato inexistente).
 
-FORMATO DE SALIDA: un único bloque de Markdown. Una entrada por pedido, así:
+DÓNDE ESCRIBIR: no me respondas en el chat. Guardá el resultado en `docs/informe/registro-ia-bruto.md` dentro del repo, hacé commit en TU rama de trabajo actual (sin tocar `main` ni la rama `claude/beautiful-darwin-ovif08`), subila con `git push -u origin <tu-rama>` y decime el nombre exacto de la rama. No abras pull request.
+Además de lo que veas en este chat, podés usar `git log` y los mensajes de commit del repo para completar fechas y etapas, pero marcá esas entradas con «(según git)» para distinguirlas de lo que consta en el chat.
+
+FORMATO DE SALIDA (el contenido del archivo): Markdown. Una entrada por pedido, así:
 
 ### N.º <número correlativo> · <fecha o NO CONSTA> · <herramienta/modelo si consta>
 - **Etapa:** idea | diseño | construcción | pruebas | despliegue | documentación | otra
