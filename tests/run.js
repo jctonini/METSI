@@ -610,6 +610,19 @@ test('selector de Drive: una foto elegida se baja de Drive con reintentos', asyn
   const back = Buffer.from(await (await d.downloadBlob(id)).arrayBuffer());
   assert.deepEqual([...back], [1, 2, 3, 4]);
 });
+test('selección de hojas: una a una, todas, y limpieza de las quitadas', () => {
+  const { createSelection } = require('../js/selection.js');
+  const sel = createSelection(); const all = ['a', 'b', 'c'];
+  sel.toggle('a'); sel.toggle('c', true);
+  assert.deepEqual(sel.ids().sort(), ['a', 'c']);
+  assert.equal(sel.allSelected(all), false);
+  sel.toggle('a'); assert.equal(sel.has('a'), false);
+  sel.toggleAll(all); assert.equal(sel.size(), 3); assert.equal(sel.allSelected(all), true);
+  sel.toggleAll(all); assert.equal(sel.size(), 0); // con todas marcadas, desmarca todo
+  sel.toggle('b'); sel.toggle('z'); sel.prune(all);
+  assert.deepEqual(sel.ids(), ['b']);
+  assert.equal(sel.allSelected([]), false);
+});
 test('identidad: hash de archivo igual para bytes iguales, distinto si cambia uno', () => {
   const a = new Uint8Array([1, 2, 3, 4, 5, 250]), b = new Uint8Array([1, 2, 3, 4, 5, 250]), c = new Uint8Array([1, 2, 3, 4, 6, 250]);
   assert.equal(ID.hashBytes(a), ID.hashBytes(b));
