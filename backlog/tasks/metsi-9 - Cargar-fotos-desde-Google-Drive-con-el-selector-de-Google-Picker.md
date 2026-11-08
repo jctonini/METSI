@@ -1,10 +1,10 @@
 ---
 id: METSI-9
 title: Cargar fotos desde Google Drive con el selector de Google (Picker)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-08T19:15:00Z'
-updated_date: '2026-11-08T19:19:00Z'
+updated_date: '2026-11-08T20:44:00Z'
 labels: []
 dependencies: []
 ordinal: 9000
@@ -18,9 +18,9 @@ Las fotos se sacan con el celular y se suben a una carpeta de Drive; hoy la app 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Botón Elegir fotos desde Drive en la pestaña Corregir abre el selector de Google con multiselección de imágenes
-- [ ] #2 Las fotos elegidas se descargan de a una con reintentos, con progreso visible, y pasan por el mismo procesamiento que las fotos locales (repetidos, lectura, etc.)
-- [ ] #3 El permiso de Google sigue siendo drive.file|Si faltan la API key o el App ID en js/config.js, el botón explica qué configurar en vez de fallar|README documenta la configuración de Google Cloud (Picker API, API key, App ID)
+- [x] #1 Botón Elegir fotos desde Drive en la pestaña Corregir abre el selector de Google con multiselección de imágenes
+- [x] #2 Las fotos elegidas se descargan de a una con reintentos, con progreso visible, y pasan por el mismo procesamiento que las fotos locales (repetidos, lectura, etc.)
+- [x] #3 El permiso de Google sigue siendo drive.file|Si faltan la API key o el App ID en js/config.js, el botón explica qué configurar en vez de fallar|README documenta la configuración de Google Cloud (Picker API, API key, App ID)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,4 +37,12 @@ Las fotos se sacan con el celular y se suben a una carpeta de Drive; hoy la app 
 
 <!-- SECTION:NOTES:BEGIN -->
 Implementado: js/picker.js, botón en Corregir, processFiles con carga diferida (baja cada foto al procesarla), claves en js/config.js, README. NO verificado con Google real (faltan API key y App ID): ningún criterio se marca hasta probarlo. Verificado en Chromium local: botón visible y aviso de configuración faltante. Nota: la descripción de AC #3 quedó con 3 criterios fusionados por un error de carga.
+
+Verificado en producción por el usuario (metsi-correcciones.vercel.app, versión 8250aa8c): el selector abre en Mi unidad y se cargaron 11 fotos elegidas desde Drive. Aviso de configuración faltante verificado antes en Chromium local.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Botón «Elegir fotos desde Drive» con Google Picker (drive.file): abre en Mi unidad, multiselección de imágenes, descarga de a una con reintentos y procesamiento normal. Claves públicas en js/config.js, README actualizado. Probado en producción con 11 fotos reales. Pendiente de otras tareas: memoria de canvases con 80 hojas en celulares viejos (no medido).
+<!-- SECTION:FINAL_SUMMARY:END -->
