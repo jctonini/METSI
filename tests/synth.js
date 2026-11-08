@@ -105,6 +105,32 @@ function renderPhoto(layout, marks, opts) {
     });
   }
 
+  // Casilleros del registro (opcional): opts.regBorders dibuja el borde impreso y opts.regCells trae, por casillero,
+  // null (vacío) o { img: Float32Array(784) con el dígito (1 = tinta), size (mm, 8.4 por defecto), dx, dy, thr }.
+  const rb = layout.fields && layout.fields.regBoxes;
+  if (rb && (opts.regBorders || opts.regCells)) {
+    for (let i = 0; i < rb.n; i++) {
+      const bx = rb.x + i * rb.pitch, by = rb.y;
+      if (opts.regBorders) {
+        // regBorderShift: desplaza el borde impreso (mm) para simular una foto mal alineada.
+        const ox = bx + (opts.regBorderShift || 0), oy = by + (opts.regBorderShift || 0) * 0.6;
+        paint(ox - 0.5, oy - 0.5, ox + rb.w + 0.5, oy + rb.h + 0.5, (sx, sy) => {
+          const dx = Math.min(sx - ox, ox + rb.w - sx), dy = Math.min(sy - oy, oy + rb.h - sy);
+          return Math.min(dx, dy) > -0.15 && Math.min(dx, dy) < 0.15;
+        });
+      }
+      const cell = opts.regCells && opts.regCells[i];
+      if (cell) {
+        const size = cell.size || 8.4, thr = cell.thr == null ? 0.45 : cell.thr;
+        const cx = bx + rb.w / 2 + (cell.dx || 0), cy = by + rb.h / 2 + (cell.dy || 0);
+        paint(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2, (sx, sy) => {
+          const u = Math.floor(((sx - (cx - size / 2)) / size) * 28), v = Math.floor(((sy - (cy - size / 2)) / size) * 28);
+          return u >= 0 && u < 28 && v >= 0 && v < 28 && cell.img[v * 28 + u] > thr;
+        });
+      }
+    }
+  }
+
   // Marcas del alumno.
   for (const m of marks) {
     const ox = (rand() - 0.5) * 0.6, oy = (rand() - 0.5) * 0.6;

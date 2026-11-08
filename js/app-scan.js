@@ -5,6 +5,7 @@
   const { scanImage, interpret, applyH, cropRegion } = MetsiScanner;
   const Identity = MetsiIdentity;
   const Similar = MetsiSimilar;
+  const Digits = MetsiDigits;
   const Review = MetsiReview;
   const selection = MetsiSelection.createSelection();
   const { $, state, memory, Photos, save, touch, removeSheet, scoreOf, clientId, layout, fmt, escapeHtml, newId, MAX_SIDE, THUMB_SIDE } = App;
@@ -87,6 +88,45 @@
       name: L.version >= 2 ? { x: 16, y: 26.2, w: 116, h: 10.2 } : L.fields.name,
       reg: L.fields.reg,
     };
+  }
+
+  // Lectura sugerida del número de registro. Es solo una sugerencia: no se guarda como `registro` hasta que el
+  // docente la usa o la escribe él. Guarda el texto leído y, por casillero, k = leído, u = dudoso, e = vacío.
+  function suggestRegistro(L, img, H) {
+    try {
+      const r = Digits.readRegistro(L.fields.regBoxes, (rect, ppm) => cropRegion(img, H, rect, ppm));
+      return { text: r.text, st: r.cells.map((c) => (c.empty ? 'e' : c.uncertain ? 'u' : 'k')).join('') };
+    } catch (e) {
+      return null; // si la lectura falla, la hoja se carga igual y el registro se escribe a mano
+    }
+  }
+  const regSure = (a) => !!a && /^k+$/.test(a.st);
+
+  // Qué tan bien leyó la app los registros, comparando con lo que el docente terminó cargando (solo cuenta casilleros).
+  function regAccuracy() {
+    let cells = 0, hit = 0, sheets = 0;
+    for (const sh of state.sheets) {
+      const a = sh.regAuto, fin = String(sh.registro || '');
+      if (sh.failed || !a || !fin || a.text.length !== fin.length) continue;
+      sheets++;
+      for (let i = 0; i < fin.length; i++) { cells++; if (a.text[i] === fin[i]) hit++; }
+    }
+    return { sheets, cells, hit };
+  }
+
+  // Sugerencia de registro para mostrar junto al recorte, mientras el registro no esté cargado.
+  function regSuggestHtml(sheet) {
+    const a = sheet.regAuto;
+    if (sheet.registro || !a || !/[0-9]/.test(a.text)) return '';
+    const digits = [...a.text].map((ch, i) => {
+      const st = a.st[i];
+      return `<b class="rd ${st === 'k' ? '' : st === 'u' ? 'doubt' : 'blank'}" title="${st === 'k' ? 'leído' : st === 'u' ? 'dudoso: revisalo' : 'casillero vacío'}">${escapeHtml(ch)}</b>`;
+    }).join('');
+    const sure = regSure(a);
+    return `<div class="wide reg-suggest ${sure ? '' : 'unsure'}"><span class="muted">Lectura del registro (sugerida, no cargada):</span>
+      <span class="reg-digits">${digits}</span>
+      <button type="button" class="reg-use ${sure ? 'primary' : ''}">${sure ? '✓ Es correcto' : 'Usar y revisar'}</button>
+      ${sure ? '' : '<span class="muted">Hay dígitos dudosos o vacíos: revisalos con la imagen.</span>'}</div>`;
   }
 
   const sheetNumber = (sh) => state.sheets.indexOf(sh) + 1;
@@ -293,6 +333,7 @@
         autoAnswers: r.answers.map((a) => a.slice()), autoModalidad: r.modalidad,
         appVersion: window.METSI_VERSION || null, fullScale: 1 / tk, review: { flag: false, note: '', q: {} },
         crops: { name: crop(rects.name), reg: crop(rects.reg) },
+        regAuto: suggestRegistro(L, img, scan.H),
         // Firma de la letra: sirve para avisar si se fotografió dos veces el mismo papel.
         sig: Similar.signature((rect, ppm) => cropRegion(img, scan.H, rect, ppm), L),
         // Datos para revisar más tarde (también desde otro dispositivo): homografía ya
@@ -417,6 +458,11 @@
     const missingIds = new Set(an.missing.map((x) => x.id));
     const hardIds = new Set(an.hard.flatMap((c) => [c.a.id, c.b.id]));
     renderBanner($('scan-banner'), an);
+    const ra = regAccuracy(), rs = $('reg-stats');
+    if (rs) {
+      rs.hidden = !ra.cells;
+      if (ra.cells) rs.textContent = `Lectura automática del registro: acertó ${ra.hit} de ${ra.cells} casilleros (${Math.round(100 * ra.hit / ra.cells)} %) en las ${ra.sheets} hoja(s) que ya cargaste.`;
+    }
     state.sheets.forEach((sheet, idx) => {
       const card = document.createElement('div');
       card.className = 'card' + (sheet.failed ? ' failed' : '') + (missingIds.has(sheet.id) || hardIds.has(sheet.id) ? ' missing' : '');
@@ -482,6 +528,7 @@
       const hasCrops = sheet.crops && sheet.crops.reg;
       fields.innerHTML = `
         ${hasCrops ? `<div class="crops wide"><img alt="Nombre escrito" src="${sheet.crops.name}"><img alt="Registro escrito" src="${sheet.crops.reg}"></div>` : ''}
+        ${regSuggestHtml(sheet)}
         <label>Nombre y apellido <input type="text" class="f-name ${missingIds.has(sheet.id) ? 'warn' : ''}" placeholder="nombre o registro: hace falta uno" value="${escapeHtml(sheet.nombre || '')}"></label>
         <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
         <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
@@ -495,6 +542,13 @@
       };
       fields.querySelector('.f-name').addEventListener('change', (e) => { sheet.nombre = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
       fields.querySelector('.f-reg').addEventListener('change', (e) => { sheet.registro = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
+      const useReg = fields.querySelector('.reg-use');
+      if (useReg) useReg.addEventListener('click', () => {
+        const sure = regSure(sheet.regAuto);
+        sheet.registro = sheet.regAuto.text; // los casilleros que no se pudieron leer quedan como «?» para que se vea que falta
+        clearAck(sheet); touch(sheet);
+        afterIdChange().then(() => { if (!sure) focusSheet(sheet.id); }); // con dudas: deja el cursor en el campo para revisar
+      });
       fields.querySelector('.f-mod').addEventListener('change', (e) => {
         sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); touch(sheet);
       });

@@ -10,6 +10,8 @@ Se usa desde el navegador del celular o de la PC. Los resultados se sincronizan 
    En la pestaña **Hoja** podés personalizar el encabezado (línea de materia/comisión/fecha), las etiquetas, las instrucciones del pie y poner tu **logo**. Los textos largos se ajustan solos y la grilla no se modifica, así la lectura de las fotos siempre funciona.
    El alumno escribe a mano su **nombre y apellido**, su **número de registro** (en los casilleros) y la **fecha**, marca su **modalidad de cursada** y rellena las burbujas de las respuestas **con birome**. Al pie, la hoja aclara que en caso de diferencias prevalecen las respuestas marcadas en la grilla.
 3. **Corregir**: sacá una foto de cada hoja (entera, en vertical, bien iluminada) o elegí fotos de la galería. La app lee las marcas de respuesta y la modalidad, y calcula el puntaje. El nombre y el registro son manuscritos: la app los **recorta de la foto y los muestra** para que los cargues mirando la imagen. Señala lo dudoso para que lo revises.
+   - **Lectura sugerida del registro:** la app intenta leer los dígitos de los casilleros y te muestra la lectura al lado del recorte. Es solo una **sugerencia**: el campo queda vacío y la hoja sigue sin identificar hasta que vos tocás **✓ Es correcto** (o escribís el número). Si hay un dígito dudoso o un casillero vacío, el botón pasa a **Usar y revisar**: carga lo leído (con «?» donde no leyó nada) y te deja el cursor en el campo para corregirlo mirando la imagen. Abajo de la lista aparece cuánto acertó la app en tus hojas.
+   - El nombre sigue siendo manual (la lectura automática es solo del registro).
    - **Identificación obligatoria:** cada hoja necesita **nombre o registro** cargado (la modalidad puede faltar). Mientras haya hojas sin ninguno de los dos, la app no deja descargar ni copiar los resultados.
    - **Repetidos:** si el **registro** coincide con el de otra hoja (con el mismo nombre, con otro o sin nombre), o el **nombre** coincide y a una le falta el registro, la app frena y pregunta si son personas distintas, si es la misma hoja cargada dos veces, o si hay que corregir el dato. El mismo nombre con registros distintos solo avisa (pueden ser homónimos). Los nombres se comparan sin importar mayúsculas, tildes ni espacios de más.
    - **Foto repetida:** avisa si cargás el mismo archivo dos veces, y también si una foto parece ser **el mismo papel fotografiado otra vez** (compara la letra del nombre y del registro).
@@ -17,6 +19,13 @@ Se usa desde el navegador del celular o de la PC. Los resultados se sincronizan 
 5. **Drive**: sincronización entre celular y PC (ver abajo).
 
 La app **no decide quién aprueba**: solo calcula el puntaje. El criterio de aprobación se aplica después sobre la planilla.
+
+## Cómo se lee el registro (y sus límites)
+
+- La lectura corre **dentro del navegador, sin enviar nada a ningún servicio externo**: una red neuronal chica (`js/digit-model.js`, unos 150 KB) mira cada casillero por separado. Se entrena con `python3 tools/train-digits.py --mnist <carpeta>` (MNIST más variaciones: trazo fino o grueso, escritura rotada o corrida, restos del borde, 7 con barrita y 1 con base).
+- Un casillero sin tinta queda **vacío** (no se inventa un dígito). Si la red no está segura, o duda entre dos dígitos, queda **dudoso** y se resalta.
+- **Precisión medida:** con dígitos manuscritos de MNIST dibujados sobre fotos sintéticas de hojas V1 a V4 (perspectiva, ruido, borde impreso) acierta cerca del 99 % de los casilleros y los errores quedan casi siempre marcados como dudosos. Es una prueba **optimista**: son dígitos de otra población y dibujados por computadora. Con birome real, letra apurada o dígitos que se salen del casillero va a fallar más. Por eso nunca se carga solo: la medida que vale es la línea «acertó X de Y casilleros» que muestra la app con tus hojas reales.
+- Límites conocidos: un dígito pegado o cruzado con el borde del casillero, o una foto con el borde desalineado más de ~1 mm, se leen peor.
 
 ## Casos a revisar (para mejorar la lectura)
 

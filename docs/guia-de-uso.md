@@ -17,6 +17,7 @@
 - Usá **luz pareja**, sin sombras fuertes, con la hoja apoyada y lo más plana posible.
 - Si imprimiste dos hojas por A4 sin cortar, se puede fotografiar igual: dejá la hoja a corregir **entera y centrada**.
 - Revisá lo que la app señala como dudoso, y cargá el **nombre** y el **registro** mirando el recorte que muestra.
+- La app intenta leer el **registro** y lo muestra como sugerencia. Si coincide con lo escrito en el recorte, tocá **✓ Es correcto**; si no, escribilo vos. Si marca dígitos dudosos o vacíos, usá **Usar y revisar** y corregí lo que haga falta. Nada se carga sin que lo confirmes.
 - Si la app lee algo mal, tocá **🚩 Marcar a revisar**: así queda guardado para mejorar la lectura.
 
 ## Antes de imprimir
