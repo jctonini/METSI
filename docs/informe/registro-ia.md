@@ -1,37 +1,120 @@
-# Registro de uso de IA (borrador)
+# Registro de uso de IA · ordenado para el informe
 
-> Se completa con lo que devuelva el chat original (`PEDIDO-para-el-chat-original.md`) más los pedidos de las sesiones de Claude Code. Cada entrada lleva el pedido **textual**. Lo que no consta se marca «NO CONSTA»: no se rellena.
+Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, del 1 al 24 de octubre de 2026) según las secciones del informe y los 12 ítems de la lista de cumplimiento. Los pedidos textuales completos están en el bruto; acá se cita por **N.º**. Nada de lo que sigue es nuevo: sale del bruto, del historial de git y del README. Lo que no consta figura como **NO CONSTA** o **PENDIENTE**.
 
-## 1. Herramientas usadas y por qué
+## 1. Estado del material
 
-| Herramienta / modelo | Para qué se usó | Por qué esa y no otra | Costo |
+| Tramo | Fechas | Pedidos en el bruto | Pull requests (según git) |
 |---|---|---|---|
-| _completar_ | | | |
+| Idea, diseño de la hoja, Drive, publicación | 1 y 2 de oct | N.º 1 a 22 | #1, #2, #3 |
+| Pruebas con hojas reales, hojas V3 y V4, banderas, regla de puntaje | 24 de oct | N.º 23 a 36 | #4, #5, #6 |
+| Backlog.md, Drive con reintentos, módulos, calibración, guía de uso | 1 de nov | **sin pedidos** | #7, #8 |
+| Acceso con usuario y contraseña (Supabase + Vercel) | 7 de nov | **sin pedidos** | #9 |
+| Selector de Drive, selección múltiple, lectura del registro (OCR local), README | 8 de nov | **sin pedidos** | #10 a #13 |
 
-## 2. Pedidos principales (orden cronológico)
+**Hueco principal.** Todo lo del 1 al 8 de noviembre (ramas `determined-ramanujan`, `dreamy-hamilton`, `awesome-hawking` y `exciting-bardeen`) lo hicieron otras sesiones cuyos pedidos no están en el bruto. Eso incluye el login, el selector de Drive y la lectura del número de registro, que son parte importante de la herramienta. Hay que extraerlos de esas sesiones antes de cerrar el registro.
 
-_Pegar acá las entradas N.º 1, 2, 3… en el formato del pedido._
+## 2. Herramientas usadas (para la sección 4 y el ítem 2)
 
-## 3. Qué hubo que corregir
+| Herramienta | Rol | Dato que falta |
+|---|---|---|
+| Claude Code (sesiones en la nube de claude.ai/code) | Escribió y modificó la app, corrió las pruebas, hizo commits y pull requests | Modelo y versión por sesión (completar a mano) |
+| GitHub (servidor MCP) | Pull requests y fusiones a `main` | — |
+| Google Drive (servidor MCP) | Leer `casos.json` para analizar casos marcados | — |
+| Backlog.md | Gestión de tareas (11 tareas, ver `backlog/tasks/`) | — |
+| Supabase, Vercel, GitHub Pages, Google Cloud (Drive API y Picker) | Servicios de la app publicada | Costo real de cada uno |
+| Pruebas propias (`tests/run.js`) | Verificación | — |
 
-_Lista consolidada._
+- **Costo de uso de IA:** el bruto registra USD 39,33 acumulados hasta el 2026-11-08, pero ese número **incluye trabajo fuera de la herramienta** (armado del examen). No se puede citar tal cual como costo de la herramienta.
+- **Alternativa justificada (ítem 2):** no consta una comparación. Hay que redactarla: por ejemplo, Apps Script sobre una planilla frente a una app web con lectura de fotos en el navegador. Esto es una decisión de diseño tuya y no se puede inferir del material.
 
-## 4. Qué inventó o erró el asistente
+## 3. Pedidos sugeridos para el cuerpo del informe
 
-_Lista consolidada._
+El informe tiene 12 páginas, así que no entran los 36 pedidos. Propongo citar textualmente estos y dejar el resto como anexo. Los elegí porque muestran una decisión tuya, una corrección o un error de la IA.
 
-## 5. Decisiones que no se delegaron
+| N.º | Por qué sirve | Sección del informe |
+|---|---|---|
+| 1 | El problema y la solución elegida, en tus palabras | 1 Problema |
+| 3 y 4 | Puntaje por pregunta repartido entre correctas, y la decisión de que la app no decida quién aprueba | 3 Solución, ítem 6 |
+| 7 | Hoja A5, registro manuscrito en 7 casilleros | 3 Solución |
+| 13 | Primera prueba real; la IA usó tu nombre y registro reales en los ejemplos | 5 Registro y 7 Riesgos |
+| 21 y 22 | Caso de respuesta conocida (pregunta 8) que lleva al descuento configurable entre 0 y 1; valor 0,33 elegido por la IA | 6 Pruebas |
+| 23 y 24 | Prueba real con fallas y rediseño de las marcas de esquina | 6 Pruebas, 3 Solución |
+| 25 | Banderas de casos dudosos con fotos sin nombre ni registro | 3 Solución, 7 Riesgos |
+| 30 a 35 | Cómo se llegó a la regla de puntaje: criterio elegido, rechazado al probar casos, corregido | 5 Registro (mejor ejemplo de verificación humana) |
 
-_Lista consolidada._
+## 4. Mapa de todos los pedidos a las secciones del informe
 
-## 6. Cifras mencionadas y su origen
+(Según el campo «Sección» del bruto.)
 
-| Cifra | Origen (medición / estimación con supuestos / fuente) |
+| Sección del informe | Pedidos |
 |---|---|
-| _completar_ | |
+| 1 El problema | 1 |
+| 3 La solución | 2, 3, 4, 5, 6, 7, 9, 14, 15, 16, 17, 18, 22, 24, 25, 27, 28, 30, 33, 34 |
+| 4 Cómo se construyó | 8, 10, 11, 12, 19, 35, 36 |
+| 6 Pruebas | 13, 20, 21, 23, 26, 29, 31, 32 |
+| 7 Riesgos y controles | 7, 10, 13, 14, 17, 25 (datos personales y enmascarado) |
 
-## 7. Mapa a la lista de cumplimiento
+## 5. Qué hubo que corregir y qué erró la IA (sección 5)
 
-| Ítem | Dónde se trabaja en el informe |
+Todo consta en la lista B del bruto. Los cuatro casos más útiles para el informe:
+
+1. **Datos reales en las pruebas (N.º 13).** Los ejemplos de prueba de la IA coincidían con tu nombre y registro reales. Se reemplazaron por datos inventados y se reescribió la historia de la rama. Desde entonces se revisa el repositorio antes de cada commit.
+2. **Lectura de hojas reales (N.º 13, 23, 26).** Falló el chequeo de orientación, la línea base se inflaba con más de la mitad de las burbujas marcadas, y una foto con la hoja vecina daba una lectura corrida. Cada caso se corrigió con una prueba de regresión.
+3. **Regla de puntaje (N.º 30 a 34).** Un primer criterio dejaba la primera incorrecta sin descuento; el siguiente daba 0 con 4 correctas de 5 por una sola incorrecta. Las dos fallas las detectaste vos probando casos concretos.
+4. **Copia vieja en el navegador (N.º 20).** Motivó el número de versión en los archivos.
+
+Además hubo un commit con una prueba fallando (82 pasaron, 1 falló) y una cuenta mal armada en una descripción de opciones (N.º 30).
+
+## 6. Decisiones que no se delegaron
+
+Resumen por tema (detalle en la lista C del bruto):
+
+- **Problema y alcance:** qué resolver, 10 o 20 preguntas, 4 o 5 opciones, quién fotografía, salida en planilla (N.º 1 y 2).
+- **Quién decide qué:** la app calcula el puntaje y **no** decide quién aprueba (N.º 4).
+- **Hoja:** A5, registro manuscrito, 7 casilleros, versión impresa «Vx», fecha, leyenda de que prevalece la hoja de respuestas, banda de ejemplos de marcado (N.º 7, 16 a 18, 27 y 28).
+- **Controles de identificación:** nombre o registro obligatorio, qué es un repetido y qué hacer en cada caso (N.º 14 y 15).
+- **Privacidad:** no subir tus datos al repositorio (N.º 13); los casos a revisar sin nombre ni registro (N.º 25).
+- **Puntaje:** parcial, descuento entre 0 y 1, tres decimales, tratamiento de «marcar todas» (N.º 5, 22, 33 y 34).
+- **Publicación:** vos autorizás cada fusión a `main` (N.º 12, 19, 22, 28 y 36).
+
+## 7. Cifras y su origen (ítems 1 y 12)
+
+| Cifra | Origen |
 |---|---|
-| 1 a 12 | _completar al ordenar_ |
+| 10 y 20 preguntas por examen; 4 o 5 opciones | Tu indicación (N.º 2) |
+| 7 casilleros de registro; hoja A5 | Tu elección (N.º 7) |
+| Sensibilidad normal 0,085 (alta 0,05; baja 0,16) | Calibración con seis fotos reales (según el resumen de contexto) |
+| 0,33 como valor inicial del descuento | **Lo eligió la IA**, sin que dijeras un número |
+| 32 preguntas con 5 opciones o 48 con 4 (hoja V4) | Cálculo de la app (README) |
+| 115 pruebas automáticas, todas en verde | Corrida de `node tests/run.js` del 2026-11-08 con `npm install` hecho |
+| USD 39,33 de uso de IA | Consulta de la sesión; **incluye trabajo ajeno a la herramienta** |
+| Tiempo de corrección a mano | **SIN ORIGEN**: solo dijiste que «lleva mucho tiempo». Hay que medirlo |
+| Cantidad de alumnos o exámenes por cuatrimestre | **NO CONSTA** |
+
+## 8. Cumplimiento de los 12 ítems: qué hay y qué falta
+
+| Ítem | Estado hoy | Evidencia en el material | Qué falta |
+|---|---|---|---|
+| 1 Problema real | Parcial | N.º 1 y 2 | Cuánto pesa: horas por examen, alumnos por cuatrimestre. Hay que medirlo |
+| 2 Herramienta y costo | Parcial | N.º 6 y 8, lista de herramientas | Comparación con otra opción y costo real |
+| 3 Instrucciones para el modelo (PEDIR) | **Ausente** | Ninguna | Ningún pedido está escrito con PEDIR. El bruto marcó el ítem 3 en varias entradas, pero allí se refiere a reglas de negocio, no a instrucciones para un modelo. Hay que escribir al menos un pedido de construcción con PEDIR y justificar que la app, al ejecutarse, no usa un modelo de lenguaje |
+| 4 Datos o documentos | Parcial | N.º 2, 3, 6, 7; README | Qué queda afuera y por qué (por ejemplo, nombres y registros en los casos a revisar) |
+| 5 Verificación con casos conocidos | Bien cubierto | N.º 13, 21, 23, 26, 29, 31, 32; 115 pruebas | Resolver la duda de la pregunta 8 (ver sección 9) |
+| 6 Autonomía | Bien cubierto | N.º 4, 14, 25; README (el registro sugerido nunca se carga solo) | Redactarlo como tabla: hace sola / propone / aprueba una persona |
+| 7 Construcción paso a paso | Parcial | N.º 9, 12, 16 a 19, 24, 27, 28, 35; README y mapa de archivos | Falta el tramo del 1 al 8 de noviembre y un paso a paso para rehacerla |
+| 8 Datos en tablas y diccionario | **Ausente** | — | Documentar `datos.json`, `resultados.csv` y `casos.json` |
+| 9 Instalación en la organización | Parcial | N.º 6, 8, 10 a 12, 19, 28, 36; README | Quién la usa, quién la mantiene, cómo se capacita (la guía `docs/guia-de-uso.md` ayuda) |
+| 10 Riesgos y datos personales | Parcial | N.º 7, 10, 13, 14, 17, 25 | Ley 25.326, quién responde si se equivoca, el acceso público de GitHub Pages |
+| 11 Uso de IA declarado | En curso | Este archivo y el bruto | Completar el hueco del 1 al 8 de noviembre y el modelo de cada sesión |
+| 12 Valor estimado | **Ausente** | Solo el costo de IA (USD 39,33) | Medir tiempo de corrección a mano frente a la app, con supuestos |
+
+## 9. Pendientes y dudas a resolver antes de citar
+
+1. **Pregunta 8 (N.º 21).** El bruto señala una diferencia: con la clave A, B, C, D, marcar las cinco opciones daría 0,75 y no 0; el 0 coincide con una clave B y C. Confirmá cuál era tu clave real antes de usar el caso como ejemplo.
+2. **Pedidos del 1 al 8 de noviembre.** Hay que extraerlos de las cuatro sesiones restantes (login, módulos, reintentos de Drive, selector de Drive, selección múltiple, OCR de registro, README).
+3. **Datos personales en el historial.** El bruto cuenta que se reescribió la historia de una rama por tu nombre y registro. Conviene que busques tu nombre y tu registro en todo el repositorio (`git log -p`, `tests/`, `docs/`) antes de entregar el `.zip`.
+4. **Modelo y versión** de cada sesión: completar a mano.
+5. **Tiempo de corrección a mano:** medirlo (por ejemplo, cronometrar la corrección manual de 20 hojas de prueba) y registrar el supuesto.
+6. **Pedido con PEDIR** para el ítem 3.
+7. **Capturas o video** con hojas inventadas, sin datos reales.
