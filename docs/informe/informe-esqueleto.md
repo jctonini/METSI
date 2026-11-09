@@ -42,7 +42,7 @@ Hoy corrijo los exámenes completamente a mano, uno por uno. El proceso, paso po
 6. Cargo las notas en MiEcon, la web de la facultad.
 7. Aplico el criterio de aprobación sobre la planilla; lo decido yo después de ver los puntajes.
 
-Los pasos 2 y 3 consumen el tiempo: según mi estimación, entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR el 18/11 con la medición]**. Además dependen de mi atención en cada pregunta, en el puntaje parcial y en el control de repetidos y de exámenes sin identificar.
+Los pasos 2, 3 y 4 son los repetitivos: corregir, calcular y volver a tipear cada dato en la planilla. Según mi estimación, entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR el 18/11 con la medición]**. Además dependen de mi atención en cada pregunta, en el puntaje parcial y en el control de repetidos y de exámenes sin identificar.
 
 Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso / Hoy / Con METSI Corrector» de `seccion-02-situacion-actual.md` es el insumo. **Sigue igual con la herramienta:** MiEcon y el control contra el listado de inscriptos.
 

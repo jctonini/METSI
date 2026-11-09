@@ -14,7 +14,7 @@ Hoy corrijo los exámenes completamente a mano, uno por uno. El proceso, paso po
 6. **Cargo las notas en MiEcon**, la web de la facultad.
 7. **Aplico el criterio de aprobación** sobre la planilla. Eso lo decido yo después de ver los puntajes.
 
-Este proceso es lento y repetitivo en los pasos 2 y 3, que son los que consumen el tiempo: según mi estimación, entre 4 y 5 minutos por examen, con unos 80 alumnos por turno. También depende de mi atención en cada pregunta, en el cálculo del puntaje parcial y en el control de repetidos y de exámenes sin identificar, que hago a ojo contra el listado de inscriptos.
+Este proceso es lento y repetitivo en los pasos 2, 3 y 4 (corregir, calcular y volver a tipear cada dato en la planilla), que son los que consumen el tiempo: según mi estimación, entre 4 y 5 minutos por examen, con unos 80 alumnos por turno. También depende de mi atención en cada pregunta, en el cálculo del puntaje parcial y en el control de repetidos y de exámenes sin identificar, que hago a ojo contra el listado de inscriptos.
 
 ## Qué cambia con la herramienta (material para el diagrama de «hoy» y «propuesto»)
 
@@ -23,12 +23,13 @@ Este proceso es lento y repetitivo en los pasos 2 y 3, que son los que consumen 
 | 1. Cómo marcan los alumnos | En el examen impreso | En una **hoja de respuestas A5** aparte, con birome, que se fotografía |
 | 2. Corregir | A mano, con la clave impresa | **La app lee las marcas** de la foto y compara con la clave cargada |
 | 3. Puntaje | A mano, pregunta por pregunta | **La app lo calcula** (reparto entre correctas, puntaje parcial y las incorrectas marcadas entran en el cálculo con un peso configurable de 0 a 1) |
-| 4. Planilla | Cargo cada alumno a mano en Excel | **Exporta un CSV** para Excel o Google Sheets |
+| 4. Planilla | Cargo cada alumno y su nota a mano en Excel | **Exporta un CSV** para Excel o Google Sheets con registro, nombre, modalidad, puntaje y respuestas de cada hoja. Lo que está escrito en la hoja y la app logra identificar no se vuelve a tipear: marcas, modalidad y puntaje solos; el registro como **sugerencia** que se confirma; el **nombre** se escribe mirando el recorte de la foto |
 | 5. Identificación y repetidos | A ojo, contra el listado de inscriptos | La app exige nombre o registro, **frena repetidos** entre las hojas cargadas y avisa de fotos duplicadas; **sigue sin comparar con el listado de inscriptos** |
 | 6. MiEcon | A mano | **Sigue a mano** (la app no se conecta con MiEcon) |
 | 7. Criterio de aprobación | Lo aplico yo | **Lo sigo aplicando yo**: la app solo calcula el puntaje |
 
 ## Observaciones útiles para el resto del informe
 - **Qué sigue igual:** el paso 6 (MiEcon) y el control contra el listado de inscriptos. Conviene decirlo en la sección 3 y en los próximos pasos (sección 9): una mejora posible es comparar la planilla exportada con el listado de inscriptos.
-- **Qué cambia de verdad:** los pasos 2 y 3, que son los que consumen los 4 a 5 minutos por examen. Es lo que se mide el 18 de noviembre.
+- **Qué cambia de verdad:** los pasos 2 y 3 y buena parte del 4. Según el autor, todo lo que está escrito en la hoja y la herramienta identifica representa un ahorro de tipeo (2026-11-09). Es lo que se mide el 18 de noviembre, **incluyendo el tiempo de volcar los datos a la planilla en los dos métodos**.
+- **Límites de ese ahorro:** el nombre sigue siendo manual; el registro es una sugerencia que hay que confirmar y su precisión con hojas reales **no está medida**; si la lectura falla, corregir cuesta tiempo.
 - **Cambio de proceso para los alumnos:** pasan de marcar en el examen a usar una hoja de respuestas aparte. La hoja aclara que, en caso de diferencias, **prevalecen las respuestas marcadas en la hoja** (decisión del autor, N.º 17).

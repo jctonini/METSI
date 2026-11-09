@@ -19,7 +19,7 @@ El valor de METSI Corrector es el **tiempo que ahorra** corregir exámenes multi
 | Costo de uso de IA | hasta USD 56,13 | Datos que informa la plataforma para las 5 sesiones de desarrollo, 2026-11-09 (detalle en `registro-ia.md` §2); modelo Claude Sonnet 5.5, esfuerzo medio | **Cota superior**: dos sesiones incluyen trabajo ajeno a la herramienta (armado de exámenes y otro proyecto). Solo las tres sesiones que tocan únicamente la herramienta suman USD 7,24. Falta aclarar si se cobró o está incluido en una suscripción |
 | Licencias de la app | Ver sección 5 | — | Parcial |
 
-**Qué no se sabe del 4 a 5 minutos** (hay que aclararlo en el informe): si es para el examen de 10 o el de 20 preguntas, y si incluye aplicar el puntaje parcial y el descuento por incorrecta, cargar la nota en la planilla y revisar casos dudosos.
+**Qué no se sabe del 4 a 5 minutos** (hay que aclararlo en el informe): si es para el examen de 10 o el de 20 preguntas, si incluye cargar los datos y la nota en la planilla (paso 4 del proceso de hoy) y si incluye el control contra el listado de inscriptos.
 
 ## 3. Tiempo de corrección a mano (con el dato declarado)
 
@@ -35,7 +35,9 @@ Supuestos: el tiempo es el mismo para todos los exámenes del turno, el docente 
 
 `Ahorro por turno = alumnos × (minutos a mano − minutos con la herramienta)`.
 
-El segundo término es **SIN DATO**. La tabla siguiente es una **hipótesis de sensibilidad** para ver cuánto importa ese número; **no es una medición**:
+**De dónde sale el ahorro** (según el autor, 2026-11-09): de corregir y calcular el puntaje (pasos 2 y 3 del proceso de hoy) y también de **no tipear de nuevo lo que ya está escrito en la hoja y la herramienta identifica** (paso 4, la planilla): marcas, modalidad, puntaje y, como sugerencia, el registro. El nombre sigue siendo manual. Para que la comparación sea justa, el tiempo a mano y el tiempo con la herramienta tienen que incluir los mismos pasos: **corregir, calcular y dejar los datos en la planilla**.
+
+El segundo término de la cuenta es **SIN DATO**. La tabla siguiente es una **hipótesis de sensibilidad** para ver cuánto importa ese número; **no es una medición**:
 
 | Si con la herramienta se tarda… | Ahorro por examen | Ahorro en un turno de 80 |
 |---|---|---|
