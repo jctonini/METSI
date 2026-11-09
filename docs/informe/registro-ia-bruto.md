@@ -5,7 +5,7 @@ Material en bruto para la sección «Registro de uso de IA» del informe. Alcanc
 ## Cómo leer este archivo
 
 - **Origen del texto:** el archivo de esta sesión empieza con un *resumen de contexto* que sustituye la parte inicial del chat, así que los mensajes anteriores a ese resumen los pegó el usuario después (1 y 2 de octubre en la Parte 1, 24 de octubre en la Parte 2) y están copiados tal cual. Los posteriores al resumen (Parte 3) están copiados del archivo de la sesión.
-- **Límite:** los pegados traen solo los mensajes del usuario, sin las preguntas ni las respuestas del asistente. Por eso, en «Qué hizo la IA» solo escribo lo que consta en esos mensajes, en el historial de git («según git») o en el resumen de contexto («según el resumen de contexto»). Un mensaje del 24 de octubre (el pedido de la banda de ejemplos, N.º 27) no figura en el pegado y lo cito del resumen.
+- **Límite:** los pegados traen solo los mensajes del usuario, sin las preguntas ni las respuestas del asistente. Por eso, en «Qué hizo la IA» solo escribo lo que consta en esos mensajes, en el historial de git («según git») o en el resumen de contexto («según el resumen de contexto»).
 - **Fechas:** de los pedidos del 1, 2 y 24 de octubre, la fecha la indicó el usuario. De los posteriores al resumen consta la hora (UTC) del archivo de la sesión. Los commits relacionados se citan «(según git)» con su fecha de commit (solo el día).
 - «NO CONSTA» significa que no hay dato en lo disponible. No rellené con suposiciones.
 - Se reemplazó por «[OMITIDO]» el ID de cliente de Google, y no se incluyen nombres ni registros de alumnos ni datos personales.
@@ -375,7 +375,7 @@ Los mensajes de esta parte son los que el usuario pegó, copiados tal cual. El p
 
 ## Parte 2 · Pedidos del 24 de octubre anteriores al resumen de contexto (texto pegado por el usuario)
 
-Los mensajes de esta parte los pegó el usuario y están copiados tal cual. El pegado trae solo sus mensajes, sin las respuestas del asistente, así que «Qué hizo la IA» se apoya en el historial de git y en el resumen de contexto, marcados como tales. Un mensaje del tramo (el pedido de la banda de ejemplos, N.º 27) no figura en el pegado; lo cito del resumen de contexto y lo indico.
+Los mensajes de esta parte los pegó el usuario y están copiados tal cual. El pegado trae solo sus mensajes, sin las respuestas del asistente, así que «Qué hizo la IA» se apoya en el historial de git y en el resumen de contexto, marcados como tales.
 
 ### N.º 23 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** pruebas
@@ -431,12 +431,12 @@ Los mensajes de esta parte los pegó el usuario y están copiados tal cual. El p
 
 ### N.º 27 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** diseño
-- **Pedido (textual):**
+- **Pedido (textual, mensajes consecutivos; el primero lo aportó el usuario después):**
+  > Quiero que agregues al pie, separado del espacio para marcar las respuestas, dos ejemplos en una misma fila, uno que indique como es la forma correcta de identificar una respuesta, y otro que indique como no es una forma correcta de marcar una respuesta.
+  >
   > mostrame alternativas
   >
   > me gusta la opción A PERO el correcto lo haría pintando todo el circulo, asi como esta parece que hay que hacer rayitas, y del lado incorrecto, pondría los 4 ejemplos incorrectos.
-
-  El primer mensaje del pedido («Quiero que agregues al pie, separado del espacio para marcar las respuestas, dos ejemplos en una misma fila, uno que indique como es la forma correcta de identificar una respuesta, y otro que indique como no es una forma correcta de marcar una respuesta.») no figura en el pegado; el texto es el que reproduce el resumen de contexto.
 - **Qué hizo la IA:** mostró alternativas y creó la hoja V4 con una banda de ejemplos al pie: correcto con el círculo pintado por completo y cuatro formas incorrectas (tilde, cruz, punto y medio relleno) («Hoja V4: banda de ejemplos de cómo marcar al pie», según git, 2026-10-24).
 - **Qué hubo que corregir:** el ejemplo correcto de la alternativa A parecía mostrar rayitas en lugar del círculo pintado.
 - **Qué inventó o erró la IA:** NO CONSTA
