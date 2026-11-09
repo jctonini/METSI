@@ -107,9 +107,9 @@ Sesión creada el 2026-11-07 19:12 UTC; plataforma: Claude Code en la nube. Mode
 - **Pedido (textual):**
   > por que en esta url no veo el acceso a usuarios? https://jctonini.github.io/METSI/
 - **Qué hizo la IA:** según el resumen de la sesión: «GitHub Pages no ejecuta el login de Vercel y deja la app abierta; hay que desactivarlo en Settings → Pages». El 8 de noviembre un commit del README documenta que la app también se publica en GitHub Pages **sin login** (según git).
-- **Qué hubo que corregir:** el usuario descubrió que en GitHub Pages no aparece el acceso de usuarios: la copia publicada ahí **no tiene el control de acceso**. NO CONSTA si se desactivó Pages; el README actual lo deja como advertencia.
+- **Qué hubo que corregir:** el usuario descubrió que en GitHub Pages no aparece el acceso de usuarios: la copia publicada ahí **no tiene el control de acceso**. Pages sigue publicado (decisión del 2026-11-09); el README lo deja como advertencia.
 - **Qué inventó o erró la IA:** NO CONSTA
-- **Decisión mía (no delegada):** probar la otra URL de publicación; mantener Pages abierto o desactivarlo es decisión mía.
+- **Decisión mía (no delegada):** probar la otra URL de publicación. Decisión del 2026-11-09: **dejar GitHub Pages publicado sin login por ahora** y consultar al profesor de la diplomatura antes de cambiarlo.
 - **Sección del informe donde encaja:** 7 Riesgos y controles
 - **Ítem(s):** 10
 

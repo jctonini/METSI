@@ -117,4 +117,5 @@ Resumen por tema (detalle en la lista C del bruto):
 4. **Modelo y versión** de cada sesión: completar a mano.
 5. **Tiempo de corrección a mano:** medirlo (por ejemplo, cronometrar la corrección manual de 20 hojas de prueba) y registrar el supuesto.
 6. **Pedido con PEDIR** para el ítem 3.
-7. **Capturas o video** con hojas inventadas, sin datos reales.
+7. **GitHub Pages sin login:** decidiste dejarlo publicado y consultar al profesor. Anotá su respuesta y, según lo que diga, ajustá la sección 7 del informe (Riesgos y controles).
+8. **Capturas o video** con hojas inventadas, sin datos reales.
