@@ -48,7 +48,7 @@ Hay una guía corta para imprimir junto al examen en [`docs/guia-de-uso.md`](doc
 
 - Cada pregunta tiene un puntaje propio, que se **reparte en partes iguales entre sus respuestas correctas**.
 - Se admite **puntaje parcial**: cada opción correcta marcada suma su parte, aunque no se marquen todas.
-- Cada opción **incorrecta** marcada resta una fracción de lo que vale una opción correcta. Esa fracción es un número entre 0 y 1 que elegís en la pestaña Examen (0 = no resta; 1 = cada incorrecta anula un acierto; un examen nuevo arranca en 0,33). **Una pregunta nunca baja de 0.**
+- Cada opción **incorrecta** marcada **por encima de la cantidad de respuestas correctas** resta una fracción de lo que vale una opción correcta. Esa fracción es un número entre 0 y 1 que elegís en la pestaña Examen (0 = no resta; 1 = cada incorrecta anula un acierto; un examen nuevo arranca en 0,33). **Una pregunta nunca baja de 0.**
 - Una pregunta sin ninguna respuesta correcta definida se considera **anulada** y suma sus puntos a todos.
 - En pantalla y en el CSV los puntajes se muestran con hasta 3 decimales.
 
@@ -59,7 +59,7 @@ Ejemplo con penalización 0,33 y una pregunta de 1 punto con correctas B y C:
 | B y C | 1 |
 | B, C y una incorrecta | 0,835 |
 
-**Marcar todas las opciones vale 0** cuando las correctas son la mitad o menos de las opciones (con 5 opciones: 1 o 2 correctas; con 4: 1 o 2). Si hay más correctas se aplica la fórmula normal: con 5 opciones y 4 correctas, marcarlas todas da 0,9175.
+Las incorrectas **solo restan por las marcas que exceden la cantidad de respuestas correctas**: si el alumno marca tantas opciones como correctas hay (por ejemplo, 2 marcas en una pregunta de 2 correctas, con una incorrecta), la incorrecta no resta. Con penalización 0,33 y una pregunta de 1 punto: 2 correctas (A y B) y marca A y C = 0,5; 1 correcta (A) y marca A y C = 0,67; 2 correctas (A y B) y marca A, B y C = 0,835; 3 correctas (A, B y C) y marca las cuatro = 0,89. No hay una regla especial para «marcar todas».
 
 ---
 

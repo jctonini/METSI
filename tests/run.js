@@ -69,18 +69,19 @@ test('descuento libre: el caso de la pregunta 8 (correctas B y C, marcó A–E) 
   assert.equal(scoreQuestion(all, k, 0.25).earned, 0.625);
   assert.equal(scoreQuestion(all, k, 0).earned, 1); // sin descuento, marcar todo da el máximo (se avisa en pantalla)
 });
-test('descuento: cada incorrecta resta; marcar todas vale 0 si las correctas son la mitad o menos', () => {
+test('descuento: las incorrectas solo restan por las marcas que exceden la cantidad de correctas (regla del 24/10 y criterio del autor)', () => {
   const q = (c) => ({ correct: c, points: 1 });
-  assert.equal(scoreQuestion([0, 2], q([0, 1]), 0.33, 5).earned, 0.335);
-  assert.equal(scoreQuestion([0, 2, 3], q([0, 1]), 0.33, 5).earned, 0.17);
-  assert.equal(scoreQuestion([0, 1, 2], q([0, 1]), 0.33, 5).earned, 0.835);
-  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1]), 0.33, 5).earned, 0); // todas, 2 de 5
-  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0]), 0, 5).earned, 0); // aun sin descuento
-  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1, 2]), 0.33, 5).earned, 0.78); // 3 de 5: fórmula
-  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1, 2, 3]), 0.33, 5).earned, 0.9175);
-  assert.equal(scoreQuestion([0, 1, 2, 3], q([0, 1]), 0.33, 4).earned, 0); // 4 de 4 con 2 correctas
-  assert.equal(scoreQuestion([0, 1, 2, 3], q([0, 1, 2]), 0.33, 4).earned, 0.89);
-  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1, 2, 3, 4]), 0.33, 5).earned, 1); // clave con todas
+  // Valores declarados por el autor el 2026-11-09 para su corrección a mano (descuento 0,33, pregunta de 1 punto).
+  assert.equal(scoreQuestion([0, 2], q([0, 1]), 0.33).earned, 0.5); // 2 marcas con 2 correctas: la incorrecta no resta
+  assert.equal(scoreQuestion([0, 2], q([0]), 0.33).earned, 0.67); // 1 correcta, marcó A y C
+  assert.equal(scoreQuestion([0, 1, 2], q([0, 1]), 0.33).earned, 0.835); // 3 marcas con 2 correctas
+  assert.equal(scoreQuestion([0, 1, 2, 3], q([0, 1, 2]), 0.33).earned, 0.89); // las 4 con 3 correctas
+  // Diferencia abierta: el autor declaró 0,5 para las 4 con 2 correctas; la regla da 0,67.
+  assert.equal(scoreQuestion([0, 1, 2, 3], q([0, 1]), 0.33).earned, 0.67);
+  assert.equal(scoreQuestion([2], q([0, 1]), 0.33).earned, 0); // solo una incorrecta
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1, 2, 3, 4]), 0.33).earned, 1); // clave con todas
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1]), 0).earned, 1); // sin descuento, marcar todo da el máximo
+  assert.equal(scoreQuestion([0, 1, 2, 3, 4], q([0, 1]), 1).earned, 0); // con descuento 1, las tres de más anulan los dos aciertos
 });
 test('descuento libre: más descuento nunca da más puntaje', () => {
   const k = { correct: [0, 2], points: 2 };
