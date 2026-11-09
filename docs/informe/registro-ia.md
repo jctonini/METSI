@@ -4,15 +4,18 @@ Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, de
 
 ## 1. Estado del material
 
-| Tramo | Fechas | Pedidos en el bruto | Pull requests (según git) |
-|---|---|---|---|
-| Idea, diseño de la hoja, Drive, publicación | 1 y 2 de oct | N.º 1 a 22 | #1, #2, #3 |
-| Pruebas con hojas reales, hojas V3 y V4, banderas, regla de puntaje | 24 de oct | N.º 23 a 36 | #4, #5, #6 |
-| Backlog.md, Drive con reintentos, módulos, calibración, guía de uso | 1 de nov | **sin pedidos** | #7, #8 |
-| Acceso con usuario y contraseña (Supabase + Vercel) | 7 de nov | **sin pedidos** | #9 |
-| Selector de Drive, selección múltiple, lectura del registro (OCR local), README | 8 de nov | **sin pedidos** | #10 a #13 |
+| Tramo | Fechas | Pedidos | Archivo | Pull requests (según git) |
+|---|---|---|---|---|
+| Idea, diseño de la hoja, Drive, publicación | 1 y 2 de oct | N.º 1 a 22 | `registro-ia-bruto.md` | #1, #2, #3 |
+| Pruebas con hojas reales, hojas V3 y V4, banderas, regla de puntaje | 24 de oct | N.º 23 a 36 | `registro-ia-bruto.md` | #4, #5, #6 |
+| Backlog.md, Drive con reintentos, módulos, calibración, guía de uso | 1 de nov | N.º 44 a 46 | `registro-ia-bruto-noviembre.md` | #7, #8 |
+| Acceso con usuario y contraseña (Supabase + Vercel) | 7 de nov | N.º 37 a 43 | `registro-ia-bruto-login.md` | #9 |
+| Capacidad, selector de Drive, selección múltiple | 8 de nov | N.º 47 a 50 | `registro-ia-bruto-noviembre.md` | #10, #11, #12 |
+| Lectura del registro (OCR local), README | 8 de nov | N.º 51 a 53 | `registro-ia-bruto-noviembre.md` | #13 |
 
-**Hueco principal.** Todo lo del 1 al 8 de noviembre (ramas `determined-ramanujan`, `dreamy-hamilton`, `awesome-hawking` y `exciting-bardeen`) lo hicieron otras sesiones cuyos pedidos no están en el bruto. Eso incluye el login, el selector de Drive y la lectura del número de registro, que son parte importante de la herramienta. Hay que extraerlos de esas sesiones antes de cerrar el registro.
+**Cobertura.** Quedan cubiertas todas las sesiones de la herramienta, del 1 de octubre al 8 de noviembre. El orden numérico de los N.º no es cronológico (el login, del 7 de noviembre, lleva los N.º 37 a 43 porque se extrajo antes). Si querés, se pueden renumerar por fecha al armar el anexo.
+
+**Sesiones que no se registran** (no pidieron agregados ni correcciones a la herramienta): armado del examen del 2.º parcial y su guía, la skill de armado de exámenes, la escala de calificación no lineal (4 de oct), el acceso a Google Drive para el examen (23 de oct), y el trabajo en el otro proyecto (EjeZ3D).
 
 ## 2. Herramientas usadas (para la sección 4 y el ítem 2)
 
@@ -23,6 +26,8 @@ Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, de
 | Google Drive (servidor MCP) | Leer `casos.json` para analizar casos marcados | — |
 | Backlog.md | Gestión de tareas (11 tareas, ver `backlog/tasks/`) | — |
 | Supabase, Vercel, GitHub Pages, Google Cloud (Drive API y Picker) | Servicios de la app publicada | Costo real de cada uno |
+| Selector de archivos de Google (Picker), Google Identity Services y Drive API | Cargar fotos desde Drive y sincronizar | Costo (hoy gratuito con los límites de cuota; verificar) |
+| Red neuronal chica entrenada con MNIST (`tools/train-digits.py`) | Sugerir el número de registro, dentro del navegador | Sin costo; no usa servicios externos |
 | Pruebas propias (`tests/run.js`) | Verificación | — |
 
 - **Costo de uso de IA:** el bruto registra USD 39,33 acumulados hasta el 2026-11-08, pero ese número **incluye trabajo fuera de la herramienta** (armado del examen). No se puede citar tal cual como costo de la herramienta.
@@ -49,11 +54,11 @@ El informe tiene 12 páginas, así que no entran los 36 pedidos. Propongo citar 
 
 | Sección del informe | Pedidos |
 |---|---|
-| 1 El problema | 1 |
-| 3 La solución | 2, 3, 4, 5, 6, 7, 9, 14, 15, 16, 17, 18, 22, 24, 25, 27, 28, 30, 33, 34 |
-| 4 Cómo se construyó | 8, 10, 11, 12, 19, 35, 36 |
-| 6 Pruebas | 13, 20, 21, 23, 26, 29, 31, 32 |
-| 7 Riesgos y controles | 7, 10, 13, 14, 17, 25 (datos personales y enmascarado) |
+| 1 El problema | 1, 47 (volumen: unos 80 alumnos) |
+| 3 La solución | 2, 3, 4, 5, 6, 7, 9, 14, 15, 16, 17, 18, 22, 24, 25, 27, 28, 30, 33, 34, 37, 47, 49, 51 |
+| 4 Cómo se construyó | 8, 10, 11, 12, 19, 35, 36, 38, 40, 42, 44, 45, 46, 48, 50, 53 |
+| 6 Pruebas | 13, 20, 21, 23, 26, 29, 31, 32, 39, 41, 45, 48, 49, 52 |
+| 7 Riesgos y controles | 7, 10, 13, 14, 17, 25, 37, 43, 51, 53 (datos personales, enmascarado, acceso y lectura local) |
 
 ## 5. Qué hubo que corregir y qué erró la IA (sección 5)
 
@@ -90,32 +95,38 @@ Resumen por tema (detalle en la lista C del bruto):
 | 115 pruebas automáticas, todas en verde | Corrida de `node tests/run.js` del 2026-11-08 con `npm install` hecho |
 | USD 39,33 de uso de IA | Consulta de la sesión; **incluye trabajo ajeno a la herramienta** |
 | Tiempo de corrección a mano | **SIN ORIGEN**: solo dijiste que «lleva mucho tiempo». Hay que medirlo |
-| Cantidad de alumnos o exámenes por cuatrimestre | **NO CONSTA** |
+| Unos 80 alumnos en el primer uso en serio | Tu indicación (N.º 47) |
+| 11 fotos de la prueba con el selector de Drive; registros de 6 o 7 dígitos | Tu indicación (N.º 49 y 52) |
+| Redibujo con 80 hojas: 561 ms → 17 ms | Medición de la IA en Node, no en un celular (Backlog METSI-7) |
+| Exámenes por cuatrimestre | **NO CONSTA** |
 
 ## 8. Cumplimiento de los 12 ítems: qué hay y qué falta
 
 | Ítem | Estado hoy | Evidencia en el material | Qué falta |
 |---|---|---|---|
-| 1 Problema real | Parcial | N.º 1 y 2 | Cuánto pesa: horas por examen, alumnos por cuatrimestre. Hay que medirlo |
+| 1 Problema real | Parcial | N.º 1, 2 y 47 (unos 80 alumnos) | Cuánto pesa en horas: hay que medir la corrección a mano |
 | 2 Herramienta y costo | Parcial | N.º 6 y 8, lista de herramientas | Comparación con otra opción y costo real |
 | 3 Instrucciones para el modelo (PEDIR) | **Ausente** | Ninguna | Ningún pedido está escrito con PEDIR. El bruto marcó el ítem 3 en varias entradas, pero allí se refiere a reglas de negocio, no a instrucciones para un modelo. Hay que escribir al menos un pedido de construcción con PEDIR y justificar que la app, al ejecutarse, no usa un modelo de lenguaje |
 | 4 Datos o documentos | Parcial | N.º 2, 3, 6, 7; README | Qué queda afuera y por qué (por ejemplo, nombres y registros en los casos a revisar) |
 | 5 Verificación con casos conocidos | Bien cubierto | N.º 13, 21, 23, 26, 29, 31, 32; 115 pruebas | Resolver la duda de la pregunta 8 (ver sección 9) |
 | 6 Autonomía | Bien cubierto | N.º 4, 14, 25; README (el registro sugerido nunca se carga solo) | Redactarlo como tabla: hace sola / propone / aprueba una persona |
-| 7 Construcción paso a paso | Parcial | N.º 9, 12, 16 a 19, 24, 27, 28, 35; README y mapa de archivos | Falta el tramo del 1 al 8 de noviembre y un paso a paso para rehacerla |
+| 7 Construcción paso a paso | Parcial | N.º 9, 12, 16 a 19, 24, 27, 28, 35, 45, 47, 49; README y mapa de archivos | Falta redactar un paso a paso para que otra persona la rehaga |
 | 8 Datos en tablas y diccionario | **Ausente** | — | Documentar `datos.json`, `resultados.csv` y `casos.json` |
-| 9 Instalación en la organización | Parcial | N.º 6, 8, 10 a 12, 19, 28, 36; README | Quién la usa, quién la mantiene, cómo se capacita (la guía `docs/guia-de-uso.md` ayuda) |
-| 10 Riesgos y datos personales | Parcial | N.º 7, 10, 13, 14, 17, 25 | Ley 25.326, quién responde si se equivoca, el acceso público de GitHub Pages |
-| 11 Uso de IA declarado | En curso | Este archivo y el bruto | Completar el hueco del 1 al 8 de noviembre y el modelo de cada sesión |
+| 9 Instalación en la organización | Parcial | N.º 6, 8, 10 a 12, 19, 28, 36, 37, 38, 44, 46, 48, 53; README; `docs/guia-de-uso.md` | Quién la mantiene y cómo se capacita; costo de Supabase y Vercel |
+| 10 Riesgos y datos personales | Parcial | N.º 7, 10, 13, 14, 17, 25, 37, 43, 51, 53 | Ley 25.326, quién responde si se equivoca, el acceso público de GitHub Pages (decisión pendiente con el profesor) |
+| 11 Uso de IA declarado | Casi completo | Los tres archivos brutos (N.º 1 a 53) | El modelo de cada sesión y al menos un pedido con PEDIR |
 | 12 Valor estimado | **Ausente** | Solo el costo de IA (USD 39,33) | Medir tiempo de corrección a mano frente a la app, con supuestos |
 
 ## 9. Pendientes y dudas a resolver antes de citar
 
 1. **Pregunta 8 (N.º 21).** El bruto señala una diferencia: con la clave A, B, C, D, marcar las cinco opciones daría 0,75 y no 0; el 0 coincide con una clave B y C. Confirmá cuál era tu clave real antes de usar el caso como ejemplo.
-2. **Pedidos del 1 al 8 de noviembre.** Hay que extraerlos de las cuatro sesiones restantes (login, módulos, reintentos de Drive, selector de Drive, selección múltiple, OCR de registro, README).
-3. **Datos personales en el historial.** El bruto cuenta que se reescribió la historia de una rama por tu nombre y registro. Conviene que busques tu nombre y tu registro en todo el repositorio (`git log -p`, `tests/`, `docs/`) antes de entregar el `.zip`.
-4. **Modelo y versión** de cada sesión: completar a mano.
-5. **Tiempo de corrección a mano:** medirlo (por ejemplo, cronometrar la corrección manual de 20 hojas de prueba) y registrar el supuesto.
-6. **Pedido con PEDIR** para el ítem 3.
-7. **GitHub Pages sin login:** decidiste dejarlo publicado y consultar al profesor. Anotá su respuesta y, según lo que diga, ajustá la sección 7 del informe (Riesgos y controles).
-8. **Capturas o video** con hojas inventadas, sin datos reales.
+2. **Backlog desactualizado.** METSI-6 (login) sigue «In Progress» con 4 de 6 criterios sin marcar, aunque dijiste que probaste y funciona (N.º 40). METSI-1 (calibrar) sigue en curso por falta de casos reales. Conviene cerrar o aclarar METSI-6 antes de entregar, con el comando `backlog` y no editando el archivo.
+3. **Causa del error de autenticación de Drive** en la versión publicada (N.º 48): no consta cómo se resolvió. Anotala si la recordás.
+4. **Umbral del «punto suelto»** (N.º 53): lo dejaste para revisar con ejemplos reales; va en limitaciones.
+5. **La guía para Windows** (N.º 46) no está en el repositorio: se entregó como archivo suelto en la sesión. Si la querés citar en el informe, hay que guardarla.
+6. **Datos personales en el historial.** El bruto cuenta que se reescribió la historia de una rama por tu nombre y registro. Conviene que busques tu nombre y tu registro en todo el repositorio (`git log -p`, `tests/`, `docs/`) antes de entregar el `.zip`.
+7. **Modelo y versión** de cada sesión: completar a mano.
+8. **Tiempo de corrección a mano:** medirlo (por ejemplo, cronometrar la corrección manual de 20 hojas de prueba) y registrar el supuesto.
+9. **Pedido con PEDIR** para el ítem 3.
+10. **GitHub Pages sin login:** decidiste dejarlo publicado y consultar al profesor. Anotá su respuesta y, según lo que diga, ajustá la sección 7 del informe (Riesgos y controles).
+11. **Capturas o video** con hojas inventadas, sin datos reales.
