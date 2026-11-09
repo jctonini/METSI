@@ -75,7 +75,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 
 **Los datos y su diccionario.** Resumen en una tabla (estado del examen, hoja corregida, `resultados.csv`) y el diccionario completo en el Anexo B (`diccionario-de-datos.md`). Qué datos usa, de dónde salen y qué queda afuera: usa fotos de hojas, la clave de respuestas y datos de identificación que carga el docente; la lectura del registro nunca envía imágenes a servicios externos; los casos que se mandan a analizar van sin nombre, registro ni recortes. Queda afuera, porque no es necesario para la herramienta: el enunciado de las preguntas (solo se carga la clave de respuestas), el listado de inscriptos y los datos académicos de los alumnos (carrera, comisión, mail). Tampoco se conecta con MiEcon.
 
-**Cómo se construyó, paso por paso** (ítem 7), en orden cronológico según el registro de IA:
+**Cómo se construyó, paso por paso** (ítem 7), en orden cronológico según el registro de IA (**el paso a paso técnico completo para rehacerla está en el Anexo F**):
 1. Idea y diseño de la hoja (1 de octubre): grilla A5, 7 casilleros de registro, puntaje parcial.
 2. Sincronización con Drive y publicación (1 de octubre).
 3. Primeras pruebas con hojas reales, identificación obligatoria y control de repetidos (2 de octubre).
@@ -158,7 +158,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 | 4 | Datos o documentos que usa y qué queda afuera | 4 y Anexo B | Cubierto | — |
 | 5 | Verificación con casos de respuesta conocida | 6 | Cubierto | Confirmar la pregunta 8; resultados del 18/11 |
 | 6 | Nivel de autonomía | 3 | Cubierto | — |
-| 7 | Construcción paso por paso | 4 | Parcial | Paso a paso para que otro la rehaga |
+| 7 | Construcción paso por paso | 4 y Anexo F | Cubierto | Que alguien ajeno la pruebe siguiendo el Anexo F (consigna §8) |
 | 8 | Datos en tablas con diccionario | Anexo B | Cubierto | Resumirlo en la sección 4 |
 | 9 | Instalación: quién usa, mantiene y capacita | 4 | Cubierto | Validar si el mantenimiento seguirá con el asistente |
 | 10 | Riesgos, datos personales, secreto profesional, responsable | 7 | Casi cubierto | Verificar el texto de la Ley 25.326 y la autorización formal |
@@ -168,6 +168,8 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 ### Anexo B · Diccionario de datos → `diccionario-de-datos.md`
 ### Anexo C · Pedidos textuales → `anexo-c-pedidos-textuales.md` (los 17 pedidos principales completos, más el índice de los 53); el texto de todos está en `registro-ia-bruto.md`, `registro-ia-bruto-login.md` y `registro-ia-bruto-noviembre.md`
 ### Anexo D · Instrucciones con la consigna de siete partes → `instrucciones-para-el-modelo.md`
+### Anexo F · Cómo rehacer la herramienta, paso por paso → `anexo-f-paso-a-paso.md` (qué hace falta, arquitectura, hoja, lectura de la foto, registro, puntaje, identificación, sincronización, publicación con login, Google Cloud, método de construcción y problemas conocidos)
+
 ### Anexo E · Evidencia de que funciona
 Video de hasta 3 minutos (enlace en el informe) **o** cinco capturas comentadas, **solo con datos inventados** y sin nombres de carpetas ni emails personales. **[COMPLETAR]**
 
