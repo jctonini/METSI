@@ -33,18 +33,19 @@
 ## 2. La situación actual · presupuesto ~350 palabras
 *Fuente: respuestas del autor del 2026-11-09. Texto completo y tabla «hoy / propuesto» en `seccion-02-situacion-actual.md`.*
 
-Hoy corrijo los exámenes completamente a mano, uno por uno. El proceso, paso por paso:
-1. Los alumnos rinden en papel. Marcan sus respuestas directamente en el examen impreso y anotan nombre, número de registro y modalidad de cursada.
-2. Corrijo cada examen con la clave de respuestas impresa, comparando pregunta por pregunta.
-3. Calculo el puntaje a mano, también pregunta por pregunta: el puntaje se reparte entre las respuestas correctas, se reconoce puntaje parcial y en el cálculo final de cada pregunta entran también las respuestas incorrectas que marcó el alumno. Por ejemplo, si en una pregunta de dos correctas marcó una correcta y una incorrecta, le doy solo el puntaje de la respuesta correcta **[COMPLETAR otros casos]**.
-4. Paso las notas a una planilla de Excel, con los datos de cada alumno.
-5. Verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ningún examen haya quedado sin identificar.
-6. Cargo las notas en MiEcon, la web de la facultad.
-7. Aplico el criterio de aprobación sobre la planilla; lo decido yo después de ver los puntajes.
+Hoy corrijo los exámenes completamente a mano, y no examen por examen sino por lotes. El proceso, paso por paso:
+1. Los alumnos rinden en papel. Marcan sus respuestas directamente en el examen impreso, de cuatro carillas, y anotan nombre, número de registro y modalidad de cursada.
+2. Corrijo por carillas, con la clave impresa: primero todas las carillas 4 de todos los exámenes, después volteo la pila y sigo con la 3, luego la 2 y por último la 1. El puntaje de cada pregunta se reparte entre las respuestas correctas, se reconoce puntaje parcial y en el cálculo entran también las incorrectas (si en una pregunta de dos correctas marcó una correcta y una incorrecta, le doy solo el puntaje de la correcta) **[COMPLETAR otros casos]**.
+3. Sumo los puntos examen por examen, juntando las cuatro carillas, y anoto la nota en el frente.
+4. Ordeno todos los exámenes por número de registro, de menor a mayor.
+5. Paso las notas a una planilla de Excel y verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ninguno haya quedado sin identificar.
+6. Comparto las notas con los alumnos.
+7. Subo las notas a MiEcon, la web de la facultad.
+8. Aplico el criterio de aprobación sobre la planilla **[VALIDAR en qué momento]**.
 
-Los pasos 2, 3 y 4 son los repetitivos: corregir, calcular y volver a tipear cada dato en la planilla. Según mi estimación, entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR el 18/11 con la medición]**. Además dependen de mi atención en cada pregunta, en el puntaje parcial y en el control de repetidos y de exámenes sin identificar.
+Como el trabajo es por lotes, el tiempo por examen no se mide directamente: se obtiene haciendo todo el proceso para el conjunto y dividiendo por la cantidad. No lo cronometré; mi estimación, sin medir, es de entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR si se mide el 18/11]**.
 
-Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso / Hoy / Con METSI Corrector» de `seccion-02-situacion-actual.md` es el insumo. **Sigue igual con la herramienta:** MiEcon y el control contra el listado de inscriptos.
+Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso / Hoy / Con METSI Corrector» de `seccion-02-situacion-actual.md` es el insumo. **Sigue igual con la herramienta:** compartir las notas, MiEcon y el control contra el listado de inscriptos.
 
 ## 3. La solución · presupuesto ~500 palabras
 *Fuentes: `README.md`, `diccionario-de-datos.md`, `registro-ia-bruto.md` N.º 2 a 7, 14 y 51.*

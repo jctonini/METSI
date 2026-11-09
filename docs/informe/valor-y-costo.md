@@ -11,7 +11,7 @@ El valor de METSI Corrector es el **tiempo que ahorra** corregir exámenes multi
 | Dato | Valor | Origen | Tipo |
 |---|---|---|---|
 | Cantidad de alumnos del primer uso en serio | ~80 | Declarado por el docente, 2026-11-08 (registro de IA, N.º 47) | Declaración |
-| Tiempo de corrección a mano por examen | **4 a 5 minutos** | Declarado por el docente, 2026-11-09: «debo estar tardando entre 4 y 5 minutos por examen» | **Estimación sin cronometrar** |
+| Tiempo de corrección a mano por examen | **4 a 5 minutos** | Declarado por el docente, 2026-11-09: «debo estar tardando entre 4 y 5 minutos por examen» | **Estimación sin cronometrar.** El proceso es por lotes (se corrige por carillas, se suma, se ordena y se pasa a Excel), así que el tiempo por examen no se mide directamente: es el tiempo del proceso completo de un lote dividido por la cantidad de exámenes. El autor indicó que **no va a cronometrar el proceso completo de todo el set a mano** |
 | Tiempo por hoja con la herramienta | **SIN DATO** | — | Falta medir (sección 7) |
 | Preguntas por examen | 10 (primer parcial) y 20 (segundo) | Declarado por el docente, 2026-10-01 (N.º 2) | Declaración |
 | Exámenes por año, recuperatorios | **SIN DATO** | — | Falta |
@@ -19,7 +19,7 @@ El valor de METSI Corrector es el **tiempo que ahorra** corregir exámenes multi
 | Costo de uso de IA | hasta USD 56,13 | Datos que informa la plataforma para las 5 sesiones de desarrollo, 2026-11-09 (detalle en `registro-ia.md` §2); modelo Claude Sonnet 5.5, esfuerzo medio | **Cota superior**: dos sesiones incluyen trabajo ajeno a la herramienta (armado de exámenes y otro proyecto). Solo las tres sesiones que tocan únicamente la herramienta suman USD 7,24. Falta aclarar si se cobró o está incluido en una suscripción |
 | Licencias de la app | Ver sección 5 | — | Parcial |
 
-**Qué no se sabe del 4 a 5 minutos** (hay que aclararlo en el informe): si es para el examen de 10 o el de 20 preguntas, si incluye cargar los datos y la nota en la planilla (paso 4 del proceso de hoy) y si incluye el control contra el listado de inscriptos.
+**Qué no se sabe del 4 a 5 minutos** (hay que aclararlo en el informe): si es para el examen de 10 o el de 20 preguntas, si incluye ordenar los exámenes por registro, pasar las notas a Excel y el control contra el listado de inscriptos, y si incluye compartir las notas y subirlas a MiEcon.
 
 ## 3. Tiempo de corrección a mano (con el dato declarado)
 
@@ -35,7 +35,7 @@ Supuestos: el tiempo es el mismo para todos los exámenes del turno, el docente 
 
 `Ahorro por turno = alumnos × (minutos a mano − minutos con la herramienta)`.
 
-**De dónde sale el ahorro** (según el autor, 2026-11-09): de corregir y calcular el puntaje (pasos 2 y 3 del proceso de hoy) y también de **no tipear de nuevo lo que ya está escrito en la hoja y la herramienta identifica** (paso 4, la planilla): marcas, modalidad, puntaje y, como sugerencia, el registro. El nombre sigue siendo manual. Para que la comparación sea justa, el tiempo a mano y el tiempo con la herramienta tienen que incluir los mismos pasos: **corregir, calcular y dejar los datos en la planilla**.
+**De dónde sale el ahorro** (según el autor, 2026-11-09): de corregir por carillas y sumar los puntos, de **no ordenar físicamente los exámenes por registro** (la tabla de resultados ya sale ordenada) y de **no tipear de nuevo lo que ya está escrito en la hoja y la herramienta identifica** al pasar a Excel: marcas, modalidad, puntaje y, como sugerencia, el registro. El nombre sigue siendo manual. Para que la comparación sea justa, el tiempo a mano y el tiempo con la herramienta tienen que incluir los mismos pasos: **corregir, sumar, ordenar y dejar los datos en la planilla**.
 
 El segundo término de la cuenta es **SIN DATO**. La tabla siguiente es una **hipótesis de sensibilidad** para ver cuánto importa ese número; **no es una medición**:
 
