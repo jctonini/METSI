@@ -11,6 +11,7 @@
 ## Portada
 - Título: «METSI Corrector: corrección asistida de exámenes multiple choice en papel»
 - Diplomatura en IA Aplicada a Entornos Digitales de Gestión · FCEUBA · Comisión de los martes 2026
+- Materia de aplicación: Metodología de Sistemas de Información (658-1), FCE-UBA
 - Autor: **[COMPLETAR nombre y apellido]** (trabajo individual)
 - Camino A · Fecha de entrega: 11 de diciembre de 2026
 - Enlace a la solución: `https://metsi-correcciones.vercel.app` (requiere usuario; ver «Acceso para la corrección») y copia sin login en `https://jctonini.github.io/METSI/`; repositorio: `https://github.com/jctonini/METSI`
@@ -20,15 +21,14 @@
 ---
 
 ## 1. El problema · presupuesto ~350 palabras
-*Fuentes: `registro-ia-bruto.md` N.º 1, 2 y 47; `valor-y-costo.md`.*
+*Fuente: respuestas del autor del 2026-11-09. Texto completo y tabla de datos en `seccion-01-el-problema.md`.*
 
-> **Elegí este problema porque** soy docente de la materia METSI **[COMPLETAR nombre completo de la materia y la cátedra]** y los exámenes son en papel, multiple choice, y corregirlos me lleva mucho tiempo.
+> **Elegí este problema porque** soy ayudante de primera simple de la materia Metodología de Sistemas de Información (658-1), de la Facultad de Ciencias Económicas de la UBA, y los exámenes son en papel, multiple choice, y corregirlos me lleva mucho tiempo.
 
-- **Quién lo sufre:** el docente que corrige. **[VALIDAR si también querés mencionar a los alumnos esperando la nota]**
-- **Cuánto pesa hoy:** unos **80 alumnos** en el primer uso en serio (dato tuyo, 2026-11-08). La corrección a mano me lleva, según mi estimación **sin cronometrar**, **entre 4 y 5 minutos por examen**, es decir, entre **5 h 20 min y 6 h 40 min** por turno de 80. **[COMPLETAR el 18/11 con la medición real y si los 4 a 5 minutos son para 10 o 20 preguntas]**
-- **Variantes del examen:** 10 preguntas el primer parcial y 20 el segundo; 4 o 5 opciones; puede haber varias respuestas correctas por pregunta; dos modalidades de cursada (Presencial y A distancia).
-- **Errores:** **[COMPLETAR si tenés algún dato de errores de cálculo a mano; si no, decí que no se midieron]**
-- **Qué pasa si no se resuelve:** **[COMPLETAR en una o dos frases]**
+- **Quién lo sufre:** yo, que corrijo; los alumnos, que esperan las notas más tiempo cuanto más tarda la corrección; y el resto de la cátedra, que depende de que las notas estén a tiempo.
+- **Cuánto pesa hoy:** unos **80 alumnos** por turno. El primer parcial tiene 10 preguntas y el segundo 20, con 4 o 5 opciones y varias respuestas correctas posibles. La corrección se hace por lotes, así que el tiempo por examen no se mide directamente: mi estimación, **sin cronometrar**, es de **entre 4 y 5 minutos por examen**, es decir, **entre 5 h 20 min y 6 h 40 min por turno de 80** **[COMPLETAR si se mide el 18/11; aclarar para cuántas preguntas vale y qué pasos incluye]**.
+- **Errores:** puede haber errores en la corrección a mano; los suelo detectar en mis propios controles, que suman tiempo, y rara vez un alumno los detectó. No tengo una cifra **[VALIDAR si tenés alguna]**.
+- **Qué pasa si no se resuelve:** las notas se demoran para los alumnos; cada parcial consume horas que no se pueden dedicar a otras tareas docentes; y sigue el riesgo de errores y de controles extra.
 
 ## 2. La situación actual · presupuesto ~350 palabras
 *Fuente: respuestas del autor del 2026-11-09. Texto completo y tabla «hoy / propuesto» en `seccion-02-situacion-actual.md`.*
