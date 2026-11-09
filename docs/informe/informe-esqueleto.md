@@ -38,14 +38,13 @@ Hoy corrijo los exámenes completamente a mano, y no examen por examen sino por 
 2. Corrijo por carillas, con la clave impresa: primero todas las carillas 4 de todos los exámenes, después volteo la pila y sigo con la 3, luego la 2 y por último la 1. El puntaje de cada pregunta se reparte entre las respuestas correctas, se reconoce puntaje parcial y en el cálculo entran también las incorrectas (si en una pregunta de dos correctas marcó una correcta y una incorrecta, le doy solo el puntaje de la correcta) **[COMPLETAR otros casos]**.
 3. Sumo los puntos examen por examen, juntando las cuatro carillas, y anoto la nota en el frente.
 4. Ordeno todos los exámenes por número de registro, de menor a mayor.
-5. Paso las notas a una planilla de Excel y verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ninguno haya quedado sin identificar.
+5. Paso el puntaje de cada examen a una planilla de Excel, con los datos de cada alumno. Ahí aplico el criterio de aprobación, que está fijado de antemano: hace falta el 60 % del examen aprobado para obtener un 4 y a partir de ahí hay una correlación de puntajes hasta el 10 (60 % → 4; 65 % → 5; 70 % → 6; 75 % → 7; 80 % → 8; 90 % → 9; 95 % → 10, valores aproximados), y Excel redondea las notas. También verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ningún examen haya quedado sin identificar **[VALIDAR: nota de los porcentajes intermedios y de los menores a 60 %]**.
 6. Comparto las notas con los alumnos.
 7. Subo las notas a MiEcon, la web de la facultad.
-8. Aplico el criterio de aprobación, fijado de antemano: hay que tener el 60 % del examen aprobado para obtener un 4 y a partir de ahí hay una correlación de puntajes hasta el 10. La equivalencia, aproximada, es: 60 % → 4; 65 % → 5; 70 % → 6; 75 % → 7; 80 % → 8; 90 % → 9; 95 % → 10 **[VALIDAR: nota de los porcentajes intermedios (por ejemplo 62 %) y de los menores a 60 %; COMPLETAR en qué momento lo aplico]**.
 
 Como el trabajo es por lotes, el tiempo por examen no se mide directamente: se obtiene haciendo todo el proceso para el conjunto y dividiendo por la cantidad. No lo cronometré; mi estimación, sin medir, es de entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR si se mide el 18/11]**.
 
-Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso / Hoy / Con METSI Corrector» de `seccion-02-situacion-actual.md` es el insumo. **Sigue igual con la herramienta:** compartir las notas, MiEcon y el control contra el listado de inscriptos.
+Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso / Hoy / Con METSI Corrector» de `seccion-02-situacion-actual.md` es el insumo. **Sigue igual con la herramienta:** aplicar el criterio y redondear en Excel, compartir las notas, MiEcon y el control contra el listado de inscriptos.
 
 ## 3. La solución · presupuesto ~500 palabras
 *Fuentes: `README.md`, `diccionario-de-datos.md`, `registro-ia-bruto.md` N.º 2 a 7, 14 y 51.*
