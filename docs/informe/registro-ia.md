@@ -12,8 +12,9 @@ Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, de
 | Acceso con usuario y contraseña (Supabase + Vercel) | 7 de nov | N.º 37 a 43 | `registro-ia-bruto-login.md` | #9 |
 | Capacidad, selector de Drive, selección múltiple | 8 de nov | N.º 47 a 50 | `registro-ia-bruto-noviembre.md` | #10, #11, #12 |
 | Lectura del registro (OCR local), README | 8 de nov | N.º 51 a 53 | `registro-ia-bruto-noviembre.md` | #13 |
+| Armado del informe, verificaciones y cambio de la regla de puntaje | 8 y 9 de nov | N.º 54 a 80 | `registro-ia-bruto-sesion-informe.md` | — (commits en `claude/beautiful-darwin-ovif08`; tarea METSI-12) |
 
-**Cobertura.** Quedan cubiertas todas las sesiones de la herramienta, del 1 de octubre al 8 de noviembre. El orden numérico de los N.º no es cronológico (el login, del 7 de noviembre, lleva los N.º 37 a 43 porque se extrajo antes). Si querés, se pueden renumerar por fecha al armar el anexo.
+**Cobertura.** Quedan cubiertas todas las sesiones de la herramienta, del 1 de octubre al 8 de noviembre, y la sesión de armado del informe (8 y 9 de noviembre). El orden numérico de los N.º no es cronológico (el login, del 7 de noviembre, lleva los N.º 37 a 43 porque se extrajo antes). Si querés, se pueden renumerar por fecha al armar el anexo.
 
 **Sesiones que no se registran** (no pidieron agregados ni correcciones a la herramienta): armado del examen del 2.º parcial y su guía, la skill de armado de exámenes, la escala de calificación no lineal (4 de oct), el acceso a Google Drive para el examen (23 de oct), y el trabajo en el otro proyecto (EjeZ3D).
 
@@ -127,7 +128,7 @@ Resumen por tema (detalle en la lista C del bruto):
 | 8 Datos en tablas y diccionario | **Cubierto** (falta citarlo en el informe) | `docs/informe/diccionario-de-datos.md`: estado del examen, hoja, `resultados.csv`, `casos.json`, usuarios, reglas de validación y datos personales, con un ejemplo inventado | Resumirlo en la sección 4 del informe (tablas clave) y dejar el diccionario completo como anexo |
 | 9 Instalación en la organización | **Cubierto** | `seccion-04-como-se-construyo.md` §4.6 (usa: docentes de la cátedra; mantiene: el autor; capacita: el autor, con la guía de uso); `docs/guia-de-uso.md`, `docs/guia-windows.md` | Validar si el mantenimiento seguirá con el asistente de IA; recordar la pausa de Supabase y revisar los planes gratuitos antes de usar la app en serio |
 | 10 Riesgos y datos personales | **Casi cubierto** | `docs/informe/seccion-07-riesgos-y-controles.md`: datos personales, autorización, secreto profesional, conservación, responsable e incidente de la clave; N.º 7, 10, 13, 14, 17, 25, 37, 43, 51, 53 | Verificar el texto de la Ley 25.326 contra la fuente oficial; autorización formal de la cátedra o la facultad; decisión sobre GitHub Pages |
-| 11 Uso de IA declarado | Casi completo | Los tres archivos brutos (N.º 1 a 53) | Al menos un pedido con PEDIR (hecho con un equivalente; confirmar la sigla) |
+| 11 Uso de IA declarado | Casi completo | Los cuatro archivos brutos (N.º 1 a 80) | Al menos un pedido con PEDIR (hecho con un equivalente; confirmar la sigla) |
 | 12 Valor estimado | **Parcial** | `docs/informe/valor-y-costo.md`: tiempo manual declarado (4 a 5 min por examen, ~80 alumnos = 5 h 20 min a 6 h 40 min por turno), costos y beneficios, con su origen | Falta medir el tiempo con la herramienta, los turnos por año, las horas de armado y los planes de Vercel, Supabase y GitHub |
 
 ## 9. Pendientes y dudas a resolver antes de citar

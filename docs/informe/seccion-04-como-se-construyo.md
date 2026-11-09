@@ -1,6 +1,6 @@
 # Sección 4 · Cómo se construyó (borrador)
 
-> **Fuente:** respuestas del autor del 2026-11-09 sobre sus motivos, el registro de IA (N.º 1 a 53), el README, el diccionario de datos y la clase 13 de la cursada (`diploiafceuba.vercel.app/13`, consultada el 2026-11-09). Presupuesto: ~700 palabras. Lo que falta está marcado **[COMPLETAR]** o **[VALIDAR]**. Esta sección responde los ítems 2, 4, 7 y 9.
+> **Fuente:** respuestas del autor del 2026-11-09 sobre sus motivos, el registro de IA (N.º 1 a 80), el README, el diccionario de datos y la clase 13 de la cursada (`diploiafceuba.vercel.app/13`, consultada el 2026-11-09). Presupuesto: ~700 palabras. Lo que falta está marcado **[COMPLETAR]** o **[VALIDAR]**. Esta sección responde los ítems 2, 4, 7 y 9.
 
 ## 4.1 Herramientas y por qué esas (ítem 2)
 

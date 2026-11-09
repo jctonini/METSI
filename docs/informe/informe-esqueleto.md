@@ -87,7 +87,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 **Instalación en la organización** (ítem 9): quién la usa, quién la mantiene y cómo se capacita. Hay una guía de uso (`docs/guia-de-uso.md`) y una guía de instalación para Windows (`docs/guia-windows.md`). La mantiene el autor, que también se ocuparía de explicársela a otros docentes.
 
 ## 5. Registro de uso de IA · presupuesto ~600 palabras
-*Fuentes: `registro-ia.md`, `registro-ia-bruto*.md` (N.º 1 a 53), `instrucciones-para-el-modelo.md`.*
+*Fuentes: `registro-ia.md`, `registro-ia-bruto*.md` (N.º 1 a 80), `instrucciones-para-el-modelo.md`.*
 
 - **Herramientas:** Claude Code (sesiones en la nube) con **Claude Sonnet 5.5, esfuerzo medio, en todas las sesiones** (verificado el 2026-11-09). Servidores de GitHub y Google Drive del asistente.
 - **Pedidos principales copiados textualmente:** elegí 8 y copialos en este apartado, con el resto en el Anexo C. Propuestos: N.º 1, 3 y 4, 7, 13, 21 y 22, 23 y 24, 25, 30 a 35, 51 (ver `registro-ia.md` §3).
@@ -166,7 +166,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 | 12 | Valor estimado con supuestos y conclusión | 8 | Parcial | Medición, planes y horas de armado |
 
 ### Anexo B · Diccionario de datos → `diccionario-de-datos.md`
-### Anexo C · Pedidos textuales → `anexo-c-pedidos-textuales.md` (los 17 pedidos principales completos, más el índice de los 53); el texto de todos está en `registro-ia-bruto.md`, `registro-ia-bruto-login.md` y `registro-ia-bruto-noviembre.md`
+### Anexo C · Pedidos textuales → `anexo-c-pedidos-textuales.md` (los 17 pedidos principales completos, más el índice de los 80); el texto de todos está en `registro-ia-bruto.md`, `registro-ia-bruto-login.md` y `registro-ia-bruto-noviembre.md`
 ### Anexo D · Instrucciones con la consigna de siete partes → `instrucciones-para-el-modelo.md`
 ### Anexo F · Cómo rehacer la herramienta, paso por paso → `anexo-f-paso-a-paso.md` (qué hace falta, arquitectura, hoja, lectura de la foto, registro, puntaje, identificación, sincronización, publicación con login, Google Cloud, método de construcción y problemas conocidos)
 

@@ -1,6 +1,6 @@
 # Anexo C · Pedidos textuales
 
-> Los pedidos están **copiados tal cual** de los registros brutos (`registro-ia-bruto.md`, `registro-ia-bruto-login.md` y `registro-ia-bruto-noviembre.md`), con sus errores de tipeo. Este archivo se generó copiando esos textos, no retipeándolos. Se reemplazó por `[OMITIDO]` lo sensible (ID de cliente, API key, email, URL del proyecto de Supabase). Los pedidos que se hicieron a Claude Code en el chat original pegaron solo los mensajes del usuario, sin las respuestas del asistente; por eso «Qué hizo la IA» se apoya en el historial de git y en el resumen de la sesión. **Modelo: Claude Sonnet 5.5 (`claude-sonnet-5-5`) con esfuerzo medio, en todas las sesiones de desarrollo. Lo declaró el autor («se utilizó siempre Sonnet 5.5 medio») y se verificó el 2026-11-09 en los datos de cada sesión (modelo configurado y último modelo servido).**
+> Los pedidos están **copiados tal cual** de los registros brutos (`registro-ia-bruto.md`, `registro-ia-bruto-login.md`, `registro-ia-bruto-noviembre.md` y `registro-ia-bruto-sesion-informe.md`), con sus errores de tipeo. Este archivo se generó copiando esos textos, no retipeándolos. Se reemplazó por `[OMITIDO]` lo sensible (ID de cliente, API key, email, URL del proyecto de Supabase). Los pedidos que se hicieron a Claude Code en el chat original pegaron solo los mensajes del usuario, sin las respuestas del asistente; por eso «Qué hizo la IA» se apoya en el historial de git y en el resumen de la sesión. **La sesión de armado del informe (N.º 54 a 80) está registrada completa en `registro-ia-bruto-sesion-informe.md`; sus mensajes incluyen los que el autor mandó mientras el asistente trabajaba y sus respuestas a las preguntas del asistente.** **Modelo: Claude Sonnet 5.5 (`claude-sonnet-5-5`) con esfuerzo medio, en todas las sesiones de desarrollo. Lo declaró el autor («se utilizó siempre Sonnet 5.5 medio») y se verificó el 2026-11-09 en los datos de cada sesión (modelo configurado y último modelo servido).**
 
 ## Parte 1 · Pedidos principales para el cuerpo del informe
 
@@ -231,7 +231,7 @@ Cada grupo muestra el pedido textual, lo que hubo que corregir, lo que erró o i
 - **Qué inventó o erró la IA:** NO CONSTA un error afirmado. **Límites declarados (según README y Backlog):** el nombre sigue siendo manual (solo se lee el registro); la precisión de cerca del 99 % se midió con dígitos de MNIST dibujados sobre fotos sintéticas, es una prueba optimista, y con birome real puede fallar más.
 - **Decisión mía (no delegada):** que lo manuscrito lo confirme una persona (la lectura es solo una sugerencia); **no enviar a un servicio externo los recortes de lo que escriben los alumnos** y elegir la lectura local (opción 3).
 
-## Parte 2 · Índice de los 53 pedidos
+## Parte 2 · Índice de los 80 pedidos
 
 El texto completo de cada uno está en el archivo indicado, con su número. Orden cronológico.
 
@@ -290,5 +290,32 @@ El texto completo de cada uno está en el archivo indicado, con su número. Orde
 | 51 | 2026-11-08 21:48 | diseño | 3 Solución | 4, 5, 6, 10 | `registro-ia-bruto-noviembre.md` |
 | 52 | 2026-11-08 22:03 | pruebas | 6 Pruebas y 5 Registro de IA | 4, 5 | `registro-ia-bruto-noviembre.md` |
 | 53 | 2026-11-08 22:42 | documentación | 4 Cómo se construyó y 7 Riesgos y controles | 9, 10 | `registro-ia-bruto-noviembre.md` |
+| 54 | 2026-11-08 23:18 | idea | 5 Registro de IA | 11 | `registro-ia-bruto-sesion-informe.md` |
+| 55 | 2026-11-08 23:23 | pruebas | 6 Pruebas | 5 | `registro-ia-bruto-sesion-informe.md` |
+| 56 | 2026-11-08 23:29 | gestión | 5 Registro de IA | 11 | `registro-ia-bruto-sesion-informe.md` |
+| 57 | 2026-11-09 00:43 | gestión | 5 Registro de IA y 7 Riesgos y controles | 10, 11 | `registro-ia-bruto-sesion-informe.md` |
+| 58 | 2026-11-09 03:05 | pruebas | 6 Pruebas | 5, 10 | `registro-ia-bruto-sesion-informe.md` |
+| 59 | 2026-11-09 03:08 | pruebas | 6 Pruebas y 7 Riesgos y controles | 5, 10 | `registro-ia-bruto-sesion-informe.md` |
+| 60 | 2026-11-09 03:12 | documentación | 4 Cómo se construyó y 5 Registro de IA | 9, 11 | `registro-ia-bruto-sesion-informe.md` |
+| 61 | 2026-11-09 03:15 | riesgos | 7 Riesgos y controles | 10, 11 | `registro-ia-bruto-sesion-informe.md` |
+| 62 | 2026-11-09 03:20 | riesgos | 7 Riesgos y controles | 10 | `registro-ia-bruto-sesion-informe.md` |
+| 63 | 2026-11-09 03:26 | riesgos | 7 Riesgos y controles | 10 | `registro-ia-bruto-sesion-informe.md` |
+| 64 | 2026-11-09 03:34 | documentación | 4 Cómo se construyó | 8 | `registro-ia-bruto-sesion-informe.md` |
+| 65 | 2026-11-09 03:37 | documentación | 5 Registro de IA y Anexo D | 3, 11 | `registro-ia-bruto-sesion-informe.md` |
+| 66 | 2026-11-09 03:49 | diseño | 8 Valor y costo | 12 | `registro-ia-bruto-sesion-informe.md` |
+| 67 | 2026-11-09 03:51 | documentación | 5 Registro de IA y estructura del informe | 1 a 12 | `registro-ia-bruto-sesion-informe.md` |
+| 68 | 2026-11-09 03:58 | documentación | 5 Registro de IA | 11 | `registro-ia-bruto-sesion-informe.md` |
+| 69 | 2026-11-09 04:02 | documentación | 5 Registro de IA y 8 Valor y costo | 2, 11, 12 | `registro-ia-bruto-sesion-informe.md` |
+| 70 | 2026-11-09 04:10 | diseño | 2 La situación actual | 1, 6 | `registro-ia-bruto-sesion-informe.md` |
+| 71 | 2026-11-09 04:15 | diseño | 2 La situación actual y 6 Pruebas | 5, 12 | `registro-ia-bruto-sesion-informe.md` |
+| 72 | 2026-11-09 04:20 | diseño | 2 La situación actual y 8 Valor y costo | 1, 12 | `registro-ia-bruto-sesion-informe.md` |
+| 73 | 2026-11-09 04:24 | diseño | 2 La situación actual y 3 La solución | 6, 12 | `registro-ia-bruto-sesion-informe.md` |
+| 74 | 2026-11-09 04:31 | diseño | 1 El problema | 1 | `registro-ia-bruto-sesion-informe.md` |
+| 75 | 2026-11-09 04:37 | diseño | 4 Cómo se construyó | 2, 4, 9 | `registro-ia-bruto-sesion-informe.md` |
+| 76 | 2026-11-09 04:43 | riesgos | 7 Riesgos y controles | 10 | `registro-ia-bruto-sesion-informe.md` |
+| 77 | 2026-11-09 04:48 | documentación | 4 Cómo se construyó | 7 | `registro-ia-bruto-sesion-informe.md` |
+| 78 | 2026-11-09 17:33 | pruebas | 6 Pruebas | 5, 6 | `registro-ia-bruto-sesion-informe.md` |
+| 79 | 2026-11-09 17:40 | construcción | 3 La solución y 6 Pruebas | 5, 6, 7 | `registro-ia-bruto-sesion-informe.md` |
+| 80 | 2026-11-09 17:45 | documentación | 5 Registro de IA | 11 | `registro-ia-bruto-sesion-informe.md` |
 
-Total: 53 pedidos.
+Total: 80 pedidos.
