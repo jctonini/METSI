@@ -82,6 +82,19 @@ El docente corrige **uno de los parciales a mano y toma el tiempo**. Para poder 
 
 **Comparar también los puntajes.** Para el ítem 5 (verificación con casos de respuesta conocida) conviene anotar cuántas hojas obtienen **un puntaje distinto** con la herramienta que a mano, porque tus puntajes manuales son la respuesta conocida. La regla de las incorrectas de la app es configurable (valor inicial 0,33, que **eligió el asistente** y no vos, N.º 22): si difiere de tu cálculo manual, hay que ajustar el valor antes de comparar.
 
+**Tu regla manual, según lo declarado el 2026-11-09:** si en una pregunta de dos correctas el alumno marca una correcta y una incorrecta, le das solo el puntaje de la correcta. En la app eso equivale a poner el valor de las incorrectas en **0**. Con el valor inicial de 0,33 (que eligió el asistente) daría 0,335 en vez de 0,5. Puntajes de la app para otros casos, calculados con `scoreQuestion` (pregunta de 1 punto, 4 opciones), para que anotes qué hacés vos en cada uno:
+
+| Caso | Valor 0 | Valor 0,33 | Valor 1 | **Tu criterio a mano** |
+|---|---|---|---|---|
+| 2 correctas (A y B): marcó A y C | 0,5 | 0,335 | 0 | 0,5 (declarado) |
+| 1 correcta (A): marcó A y C | 1 | 0,67 | 0 | _completar_ |
+| 2 correctas (A y B): marcó A, B y C | 1 | 0,835 | 0,5 | _completar_ |
+| 2 correctas (A y B): marcó solo C | 0 | 0 | 0 | _completar_ |
+| 2 correctas (A y B): marcó las 4 opciones | 0 | 0 | 0 | _completar_ |
+| 3 correctas (A, B y C): marcó las 4 opciones | 1 | 0,89 | 0,667 | _completar_ |
+
+Antes de la corrida del 18 de noviembre hay que dejar el valor de las incorrectas de la app de modo que coincida con tu criterio en **todos** estos casos. Si ningún valor coincide en todos (por ejemplo, si no querés puntaje completo en la tercera fila), la regla de la app tendría que cambiar y eso es un hallazgo para el informe. El caso de marcar todas las opciones tiene una regla propia en la app (vale 0 cuando las correctas son la mitad o menos de las opciones), que aceptaste el 2026-10-24 (N.º 34).
+
 Plantilla para anotar (solo tiempos y cantidades, **sin nombres ni registros de alumnos**):
 
 | Parcial | Hojas | Preguntas | Método | Tiempo total | Min. por hoja | Hojas que pidieron revisión | Hojas con puntaje distinto al manual | Observaciones |

@@ -36,7 +36,7 @@
 Hoy corrijo los exámenes completamente a mano, uno por uno. El proceso, paso por paso:
 1. Los alumnos rinden en papel. Marcan sus respuestas directamente en el examen impreso y anotan nombre, número de registro y modalidad de cursada.
 2. Corrijo cada examen con la clave de respuestas impresa, comparando pregunta por pregunta.
-3. Calculo el puntaje a mano, también pregunta por pregunta: el puntaje se reparte entre las respuestas correctas, se reconoce puntaje parcial y en el cálculo final de cada pregunta entran también las respuestas incorrectas que marcó el alumno.
+3. Calculo el puntaje a mano, también pregunta por pregunta: el puntaje se reparte entre las respuestas correctas, se reconoce puntaje parcial y en el cálculo final de cada pregunta entran también las respuestas incorrectas que marcó el alumno. Por ejemplo, si en una pregunta de dos correctas marcó una correcta y una incorrecta, le doy solo el puntaje de la respuesta correcta **[COMPLETAR otros casos]**.
 4. Paso las notas a una planilla de Excel, con los datos de cada alumno.
 5. Verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ningún examen haya quedado sin identificar.
 6. Cargo las notas en MiEcon, la web de la facultad.
