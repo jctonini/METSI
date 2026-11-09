@@ -187,12 +187,14 @@ Los mensajes de esta parte son los que el usuario pegó, copiados tal cual. El p
   >
   > hagamoslo
   > hecho
-- **Qué hizo la IA:** NO CONSTA. El pegado no dice a qué se refiere el «punto 3»: puede ser la fusión de la rama a `main` (como lo asocia el resumen de contexto) o un paso de la subida de la skill a otro repositorio (fuera del alcance de este registro). El historial de git muestra el primer pull request fusionado a `main` el 2026-10-01.
+
+  Contexto (texto del asistente, aportado por el usuario: es el «punto 3» que pidió explicar): «Pasar el código a la rama main del repositorio METSI. Hoy la app se publica desde una rama con nombre automático, y conviene dejarla en main para que quede ordenado. Cuando quieras, lo hacemos.»
+- **Qué hizo la IA:** había propuesto pasar el código a la rama `main`, porque la app se publicaba desde una rama con nombre automático. Respondió a la petición de explicación (el texto de la explicación NO CONSTA). Con la aprobación del usuario se fusionó el primer pull request a `main` (el historial de git muestra el pull request n.º 1 fusionado el 2026-10-01). Qué pasos hizo el usuario antes de decir «hecho»: NO CONSTA.
 - **Qué hubo que corregir:** NO CONSTA
 - **Qué inventó o erró la IA:** NO CONSTA
-- **Decisión mía (no delegada):** pedir una explicación antes de aprobar y aprobar («hagamoslo») un paso que después hice yo («hecho»).
+- **Decisión mía (no delegada):** pedir una explicación antes de aprobar, aprobar el pase a `main` («hagamoslo») y hacer yo los pasos que me indicó («hecho»).
 - **Sección del informe donde encaja:** 4 Cómo se construyó
-- **Ítem(s):** 9
+- **Ítem(s):** 7, 9
 
 ### N.º 13 · 2026-10-02 (indicado por el usuario) · Claude Code
 - **Etapa:** pruebas
