@@ -50,5 +50,5 @@ El orden de los N.º no es cronológico (el login se extrajo antes que las demá
 
 **Opcionales:**
 - Tráfico por API y por credencial en la consola de Google Cloud (Anexo G).
-- Mejoras que quedaron anotadas: aplicar la escala de equivalencias dentro de la app; comparar el CSV con el listado de inscriptos; sumar las reglas del proyecto a `CLAUDE.md`; calibrar con hojas reales (tarea METSI-1, abierta).
+- Mejoras que quedaron anotadas: aplicar la escala de equivalencias dentro de la app; comparar el CSV con el listado de inscriptos; calibrar con hojas reales (tarea METSI-1, abierta).
 - En la pantalla Examen, la etiqueta del campo dice «Descuento por cada opción incorrecta marcada»; con la regla vigente el descuento es por cada marca **de más** sobre la cantidad de correctas (el texto de ayuda lo explica bien). Es un cambio de código que no se hizo.
