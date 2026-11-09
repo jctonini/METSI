@@ -110,15 +110,16 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 - **Limitaciones honestas:** la lectura del registro se midió con dígitos de MNIST sobre fotos sintéticas (cerca del 99 %), una prueba optimista; con hojas reales no está calibrada (tarea METSI-1 abierta). El umbral de «punto suelto» se dejó para revisar con ejemplos reales.
 
 ## 7. Riesgos y controles · presupuesto ~500 palabras
-*Fuentes: `diccionario-de-datos.md` §7, `registro-ia.md` §9 (pendientes 12), tarea METSI-6.*
+*Fuente: respuestas del autor del 2026-11-09. Texto completo y tabla de respuestas en `seccion-07-riesgos-y-controles.md`.*
 
-- **Datos personales (Ley 25.326):** la app procesa nombre, registro, letra manuscrita y fotos de hojas de alumnos. Quedan en el Google Drive de quien sincroniza, no en un servidor de la app; Supabase solo guarda email y rol de los docentes. **[COMPLETAR cómo se cumplen las obligaciones aplicables, tras verificar el texto de la ley]**
-- **Controles:** lectura del registro dentro del navegador (ninguna imagen sale del dispositivo); casos a revisar sin nombre ni registro y con fotos tapadas; acceso con usuario y contraseña con roles validados en el servidor; permiso mínimo de Drive (`drive.file`).
-- **Secreto profesional:** **[COMPLETAR si aplica a las calificaciones y a quién tiene acceso]**.
-- **Qué pasa si se equivoca y quién responde:** la app solo calcula el puntaje; el docente revisa lo dudoso, confirma el registro y decide la aprobación. Si la lectura falla, la hoja queda marcada y se corrige a mano. **Responde el docente.** **[VALIDAR la redacción]**
-- **Incidente real, para mostrar el control:** la API key del selector de Drive quedó en un repositorio público y Google la detectó a los 10 segundos (`LEAKED_CREDENTIALS`, solo notificó). Se restringió a los dos sitios de la app y solo a la API del selector; el proyecto no tiene facturación, así que no puede generar cargos. Cronología y evidencia en `registro-ia.md` (pendiente 12).
-- **Riesgos de los planes gratuitos (clase 13):** Supabase pausa el proyecto tras una semana sin actividad y el login dejaría de funcionar hasta reactivarlo; el plan Hobby de Vercel es para uso personal y no comercial.
-- **Riesgos abiertos:** GitHub Pages sigue publicado **sin login** (decisión pendiente con el profesor); al dar de baja a un usuario su sesión vale hasta una hora; el token de sesión se guarda en una cookie que escribe el navegador; la nota libre de «casos a revisar» y el nombre del archivo de la foto pueden contener datos personales.
+- **Datos personales (Ley 25.326):** procesa nombre, registro, letra manuscrita, foto de cada hoja y puntajes. Quedan en el Google Drive del docente (una cuenta personal) y en el navegador; no van a un servidor de la herramienta; Supabase solo guarda email y rol de los docentes y Vercel solo publica la app. **[VERIFICAR el texto de la ley y qué obligaciones aplican: finalidad, seguridad, conservación, proveedor; consultar con la facultad]**
+- **Autorización:** iniciativa propia, consultada con el titular de cátedra; no consta autorización formal **[VALIDAR antes del primer uso en serio]**.
+- **Secreto profesional:** las notas y los exámenes son confidenciales en la cátedra. Controles: login con roles validados en el servidor, permiso mínimo de Drive, casos a revisar sin nombre ni registro y con fotos tapadas, lectura del registro sin enviar imágenes. Limitación: la copia de GitHub Pages abre sin login (no expone datos guardados, pero cualquiera puede usar la herramienta).
+- **Conservación:** con la copia impresa, la versión digital se elimina una vez que las notas fueron subidas y firmadas por el titular de cátedra **[VALIDAR si ya lo aplica; no hay borrado automático]**.
+- **Qué pasa si se equivoca y quién responde:** la herramienta calcula y marca lo dudoso pero nunca decide sola (el registro es una sugerencia que se confirma, no exporta hojas sin identificar, frena repetidos y el criterio de aprobación lo aplica el docente en Excel). **Responde el autor, como docente que corrige**; las notas las firma el titular de cátedra.
+- **Incidente real:** la API key del selector de Drive quedó en un repositorio público y Google la detectó a los 10 segundos (`LEAKED_CREDENTIALS`, solo notificó). Se restringió a los dos sitios y a la API del selector; el proyecto no tiene facturación; sin picos de tráfico. Lección: restringir la clave antes de subirla. Cronología en `registro-ia.md` (pendiente 12).
+- **Riesgos de los planes gratuitos (clase 13):** Supabase pausa el proyecto tras una semana sin actividad y el login dejaría de funcionar hasta reactivarlo; el plan Hobby de Vercel es para uso personal y no comercial **[VALIDAR si una cátedra califica]**.
+- **Riesgos abiertos:** GitHub Pages sin login (decisión pendiente con el profesor); sesión de usuarios dados de baja vigente hasta una hora; token de sesión en una cookie que escribe el navegador; la nota libre de los casos a revisar y el nombre del archivo de la foto pueden contener datos personales; datos de alumnos en una cuenta personal de Google; lectura del registro sin calibrar con hojas reales.
 
 ## 8. Valor y costo · presupuesto ~350 palabras
 *Fuente: `valor-y-costo.md`.*
@@ -160,7 +161,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 | 7 | Construcción paso por paso | 4 | Parcial | Paso a paso para que otro la rehaga |
 | 8 | Datos en tablas con diccionario | Anexo B | Cubierto | Resumirlo en la sección 4 |
 | 9 | Instalación: quién usa, mantiene y capacita | 4 | Cubierto | Validar si el mantenimiento seguirá con el asistente |
-| 10 | Riesgos, datos personales, secreto profesional, responsable | 7 | Parcial | Ley 25.326, secreto profesional |
+| 10 | Riesgos, datos personales, secreto profesional, responsable | 7 | Casi cubierto | Verificar el texto de la Ley 25.326 y la autorización formal |
 | 11 | Uso de IA declarado con pedidos textuales | 5 y Anexo C | Cubierto | Elegir los pedidos para el cuerpo |
 | 12 | Valor estimado con supuestos y conclusión | 8 | Parcial | Medición, planes y horas de armado |
 
