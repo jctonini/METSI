@@ -342,16 +342,17 @@ Los mensajes de esta parte son los que el usuario pegó, copiados tal cual. El p
 
 ### N.º 21 · 2026-10-02 (indicado por el usuario) · Claude Code
 - **Etapa:** pruebas
-- **Pedido (textual, mensajes consecutivos):**
+- **Pedido (textual, mensajes del usuario en el orden del chat; el texto del asistente que sigue lo aportó el usuario en una captura de pantalla):**
   > pero me acorde de algo mas a corregir
   > hay algo con el calculo de las respuestas que quiero revisar.
-  >
+
+  Respuesta del asistente (texto de la captura, no es pedido del usuario): «Contame qué viste. Para entenderlo rápido me sirve saber: Qué esperabas como puntaje y qué mostró la app, con el caso concreto: la pregunta, cuáles eran las correctas, qué marcó el alumno y cuántos puntos valía. Si te parece que el error es en cómo se leyeron las respuestas (marcó una y leyó otra) o en cómo se calcularon los puntos a partir de lo leído. Si querés repasar las reglas actuales, por si hay algo ahí que no te cierra: El puntaje de cada pregunta se reparte en partes iguales entre sus respuestas correctas. Cada opción correcta marcada suma su parte, aunque no marque todas. Cada opción incorrecta marcada resta una parte, y la pregunta nunca baja de cero. Eso es configurable: restar una parte, media parte o nada. Una pregunta sin ninguna respuesta correcta definida es anulada y da el puntaje completo a todos. Mandame el caso y lo reviso sin cambiar nada hasta que me digas.»
   > en mi ejemplo en la pregunta 8, las respuestas correctas son A, B, C, D y en el ejemplo marqué todas las letras, de A a E, sin embargo el alumno estaria recibiendo 0 puntos, cuando en realidad.. considero que tendria que recibir puntaje. no perfecto, pero si algun puntaje.
   > asi fue mi configuraciòn del examen de respuestas correctas.
-- **Qué hizo la IA:** NO CONSTA el detalle de su explicación. Después propuso un descuento por incorrecta configurable entre 0 y 1 (ver N.º 22).
+- **Qué hizo la IA:** respondió pidiendo el caso concreto y repasando las reglas de puntaje vigentes (con el descuento configurable en tres opciones), y se comprometió a revisar sin cambiar nada hasta que el usuario lo indicara. Después revisó el caso y propuso un descuento por incorrecta configurable entre 0 y 1 (ver N.º 22).
 - **Qué hubo que corregir:** el puntaje de la pregunta 8 con todas las opciones marcadas.
-- **Qué inventó o erró la IA:** NO CONSTA. Hay una diferencia a revisar entre lo que dice el usuario (clave A, B, C, D en la pregunta 8) y un mensaje del asistente que hablaba de una clave con B y C para esa pregunta.
-- **Decisión mía (no delegada):** señalar que marcar todas las opciones no debe dar cero cuando hay varias correctas.
+- **Qué inventó o erró la IA:** NO CONSTA un error afirmado. Diferencia a revisar: con las reglas que repasó el asistente y el descuento de 1 que tenía la clave del usuario, una clave A, B, C, D con las cinco opciones marcadas daría 0,75 de 1 y no 0 (cálculo de quien redacta este registro, no del chat); el 0 que vio el usuario coincide con una clave B y C, que es la que mencionaba un mensaje del asistente. La clave real de la pregunta 8 NO CONSTA con certeza.
+- **Decisión mía (no delegada):** señalar que marcar todas las opciones no debe dar cero cuando hay varias correctas y que se espera algún puntaje, «no perfecto».
 - **Sección del informe donde encaja:** 6 Pruebas
 - **Ítem(s):** 5, 6
 
@@ -579,7 +580,7 @@ Los mensajes de esta parte los pegó el usuario y están copiados tal cual. El p
 2. (N.º 13, según el resumen) Los ejemplos de prueba de la IA usaban mi nombre y registro reales; pedí que no se subieran al repositorio.
 3. (N.º 19) La clave de respuestas se veía distinta en la PC (de a pares) y en el celular (de a una).
 4. (N.º 20) La app fallaba con el error de orientación en una foto que ya había leído bien; el navegador tenía una copia vieja del código, y al actualizarlo la leyó. Motivó el número de versión en los archivos (N.º 22).
-5. (N.º 21) Con la clave de la pregunta 8 (A, B, C, D) y todas las opciones marcadas, la app daba 0 puntos; pedí que diera algún puntaje.
+5. (N.º 21) Con todas las opciones marcadas en la pregunta 8, la app daba 0 puntos; pedí que diera algún puntaje. El usuario recordaba una clave A, B, C, D; un cálculo con esas reglas daría 0,75 y no 0, así que la clave real queda por confirmar.
 6. (N.º 23) En la prueba del 24 de octubre, las preguntas 4, 11, 15, 18 y 20 se detectaron mal, las 12, 13, 14 y 17 no se detectaron y varias hojas se rechazaron por no encontrar las esquinas; según el resumen, la lectura fallaba con hojas con más de la mitad de las burbujas marcadas y con la hoja vecina en la foto.
 7. (N.º 30) El criterio «descuento solo por marcas por encima de la cantidad de correctas» daba resultados que señalé como raros (casos 7, 9, 21 y 24: la primera incorrecta salía gratis); además, las descripciones de las opciones en el formulario traían una cuenta mal armada.
 8. (N.º 34) La regla «marcar todas las opciones vale 0» no distinguía cuántas correctas había; con 4 correctas de 5 daba 0 por una sola incorrecta.
@@ -616,7 +617,7 @@ Los mensajes de esta parte los pegó el usuario y están copiados tal cual. El p
 - Hoja A5, 2 por hoja A4 apaisada. Origen: usuario (formato A5) y IA (2 por A4).
 - Descuento por incorrecta: antes 1, con tres opciones fijas; nuevo valor inicial 0,33 en un examen nuevo, configurable de 0 a 1. Origen: valor elegido por la IA (dicho por la IA en el texto pegado); el usuario lo dejó. En el `casos.json` del examen del usuario figura 0,33.
 - Puntajes de la clave del usuario con su foto: descuento 1 → 4,667; 0,5 → 5,583; 0,33 → 6,065; pregunta 8 → 0,505 sobre 1 con 0,33. Origen: cálculo de la IA con la clave y la foto del usuario (texto pegado).
-- Pregunta 8 de la prueba del usuario: clave A, B, C, D y respuesta marcada de A a E, que daba 0 puntos. Origen: usuario (N.º 21). Un mensaje del asistente hablaba de una clave con B y C: diferencia a revisar.
+- Pregunta 8 de la prueba del usuario: según el usuario, clave A, B, C, D y respuesta marcada de A a E, que daba 0 puntos. Origen: usuario (N.º 21). Un mensaje del asistente hablaba de una clave con B y C, y con las reglas descritas esa clave sí da 0: diferencia a revisar.
 - Puntos por pregunta en el examen de prueba del usuario: 5. Origen: `casos.json` en Drive.
 - Sensibilidad normal 0,085 (alta 0,05, baja 0,16): calibrada por la IA con fotos reales (según el resumen: seis fotos). Origen: pruebas de la IA con fotos del usuario.
 - Capacidad de la hoja V4: 32 preguntas con 5 opciones o 48 con 4 opciones. Origen: cálculo de la app.
