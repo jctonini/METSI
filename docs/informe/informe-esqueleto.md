@@ -86,7 +86,7 @@ Incluir un **diagrama simple del proceso de hoy** (una fila de cajas alcanza) y 
 ## 5. Registro de uso de IA · presupuesto ~600 palabras
 *Fuentes: `registro-ia.md`, `registro-ia-bruto*.md` (N.º 1 a 53), `instrucciones-para-el-modelo.md`.*
 
-- **Herramientas:** Claude Code (sesiones en la nube). **[COMPLETAR modelo y versión de cada sesión]** Servidores de GitHub y Google Drive del asistente.
+- **Herramientas:** Claude Code (sesiones en la nube) con **Claude Sonnet 5.5, esfuerzo medio, en todas las sesiones** (verificado el 2026-11-09). Servidores de GitHub y Google Drive del asistente.
 - **Pedidos principales copiados textualmente:** elegí 8 y copialos en este apartado, con el resto en el Anexo C. Propuestos: N.º 1, 3 y 4, 7, 13, 21 y 22, 23 y 24, 25, 30 a 35, 51 (ver `registro-ia.md` §3).
 - **Instrucciones armadas con la consigna de siete partes de la clase 5** (equivalente de PEDIR **[confirmar]**): el Pedido A y el Pedido B de `instrucciones-para-el-modelo.md`, con la aclaración de que son una reescritura y no los pedidos usados.
 - **Qué tuve que corregir:** la lectura de hojas reales (orientación, cruces finas, hojas con muchas marcas, hoja vecina en la foto), la regla de puntaje de «marcar todas» (un primer criterio daba resultados raros y otro daba 0 con 4 correctas de 5), el selector de Drive que abría en una carpeta que no era la raíz, y el README que decía que solo se publicaba en Vercel.
@@ -121,7 +121,7 @@ Incluir un **diagrama simple del proceso de hoy** (una fila de cajas alcanza) y 
 
 - **Valor:** tiempo de corrección. Con 80 alumnos y 4 a 5 minutos por examen (estimación), un turno consume 5 h 20 min a 6 h 40 min a mano. **[COMPLETAR el 18/11: tiempo por hoja con la herramienta, ahorro por turno y turnos por año]**
 - **Beneficios no medidos en minutos:** criterio de puntaje uniforme, control de identificación y repetidos, trazabilidad con la foto de cada hoja.
-- **Costo:** licencias, horas de armado y mantenimiento. Google Cloud sin facturación (USD 0); uso de IA hasta USD 39,33 (cota superior, incluye trabajo ajeno a la herramienta). **[COMPLETAR planes de GitHub, Vercel y Supabase, horas de armado y mantenimiento]**
+- **Costo:** licencias, horas de armado y mantenimiento. Google Cloud sin facturación (USD 0); uso de IA hasta USD 56,13 en las cinco sesiones de desarrollo (cota superior: incluye trabajo ajeno a la herramienta; USD 7,24 en las tres que solo la tocan). **[COMPLETAR planes de GitHub, Vercel y Supabase, horas de armado y mantenimiento]**
 - **Todas las cifras con su origen y sus supuestos a la vista.** Las hipótesis de sensibilidad de `valor-y-costo.md` **no** se citan como resultados.
 
 ## 9. Conclusiones y próximos pasos · presupuesto ~300 palabras
@@ -157,7 +157,7 @@ Incluir un **diagrama simple del proceso de hoy** (una fila de cajas alcanza) y 
 | 8 | Datos en tablas con diccionario | Anexo B | Cubierto | Resumirlo en la sección 4 |
 | 9 | Instalación: quién usa, mantiene y capacita | 4 | Parcial | Mantenimiento y capacitación |
 | 10 | Riesgos, datos personales, secreto profesional, responsable | 7 | Parcial | Ley 25.326, secreto profesional |
-| 11 | Uso de IA declarado con pedidos textuales | 5 y Anexo C | Casi completo | Modelo de cada sesión |
+| 11 | Uso de IA declarado con pedidos textuales | 5 y Anexo C | Cubierto | Elegir los pedidos para el cuerpo |
 | 12 | Valor estimado con supuestos y conclusión | 8 | Parcial | Medición, planes y horas de armado |
 
 ### Anexo B · Diccionario de datos → `diccionario-de-datos.md`
@@ -171,7 +171,7 @@ Video de hasta 3 minutos (enlace en el informe) **o** cinco capturas comentadas,
 ## Lista de verificación antes de entregar (consigna §8)
 - [ ] Abrir la solución con otra cuenta (o pedirle a alguien) y probarla desde cero con datos de ejemplo.
 - [ ] Mostrarla a alguien que no sepa del tema y anotar qué entendió y qué cambiaste.
-- [ ] Revisar que las cifras del informe coincidan con las de la solución (115 pruebas, 4 a 5 minutos, 80 alumnos, USD 39,33).
+- [ ] Revisar que las cifras del informe coincidan con las de la solución (115 pruebas, 4 a 5 minutos, 80 alumnos, USD 56,13).
 - [ ] Completar el Anexo A.
 - [ ] Verificar que no quede ningún dato real de personas, ni en los datos ni en las capturas ni en el historial del repositorio (buscá tu nombre y tu registro en todo el repo).
 - [ ] Nombrar los archivos como pide la consigna y armar el `.zip` con la carpeta del proyecto.

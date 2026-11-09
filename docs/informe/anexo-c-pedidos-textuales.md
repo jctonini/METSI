@@ -1,6 +1,6 @@
 # Anexo C · Pedidos textuales
 
-> Los pedidos están **copiados tal cual** de los registros brutos (`registro-ia-bruto.md`, `registro-ia-bruto-login.md` y `registro-ia-bruto-noviembre.md`), con sus errores de tipeo. Este archivo se generó copiando esos textos, no retipeándolos. Se reemplazó por `[OMITIDO]` lo sensible (ID de cliente, API key, email, URL del proyecto de Supabase). Los pedidos que se hicieron a Claude Code en el chat original pegaron solo los mensajes del usuario, sin las respuestas del asistente; por eso «Qué hizo la IA» se apoya en el historial de git y en el resumen de la sesión. **Modelo y versión de cada sesión: [COMPLETAR].**
+> Los pedidos están **copiados tal cual** de los registros brutos (`registro-ia-bruto.md`, `registro-ia-bruto-login.md` y `registro-ia-bruto-noviembre.md`), con sus errores de tipeo. Este archivo se generó copiando esos textos, no retipeándolos. Se reemplazó por `[OMITIDO]` lo sensible (ID de cliente, API key, email, URL del proyecto de Supabase). Los pedidos que se hicieron a Claude Code en el chat original pegaron solo los mensajes del usuario, sin las respuestas del asistente; por eso «Qué hizo la IA» se apoya en el historial de git y en el resumen de la sesión. **Modelo: Claude Sonnet 5.5 (`claude-sonnet-5-5`) con esfuerzo medio, en todas las sesiones de desarrollo. Lo declaró el autor («se utilizó siempre Sonnet 5.5 medio») y se verificó el 2026-11-09 en los datos de cada sesión (modelo configurado y último modelo servido).**
 
 ## Parte 1 · Pedidos principales para el cuerpo del informe
 

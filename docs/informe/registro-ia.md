@@ -21,7 +21,7 @@ Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, de
 
 | Herramienta | Rol | Dato que falta |
 |---|---|---|
-| Claude Code (sesiones en la nube de claude.ai/code) | Escribió y modificó la app, corrió las pruebas, hizo commits y pull requests | Modelo y versión por sesión (completar a mano) |
+| Claude Code (sesiones en la nube de claude.ai/code) | Escribió y modificó la app, corrió las pruebas, hizo commits y pull requests | **Claude Sonnet 5.5, esfuerzo medio** en todas las sesiones (verificado, ver tabla de abajo) |
 | GitHub (servidor MCP) | Pull requests y fusiones a `main` | — |
 | Google Drive (servidor MCP) | Leer `casos.json` para analizar casos marcados | — |
 | Backlog.md | Gestión de tareas (11 tareas, ver `backlog/tasks/`) | — |
@@ -30,7 +30,19 @@ Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, de
 | Red neuronal chica entrenada con MNIST (`tools/train-digits.py`) | Sugerir el número de registro, dentro del navegador | Sin costo; no usa servicios externos |
 | Pruebas propias (`tests/run.js`) | Verificación | — |
 
-- **Costo de uso de IA:** el bruto registra USD 39,33 acumulados hasta el 2026-11-08, pero ese número **incluye trabajo fuera de la herramienta** (armado del examen). No se puede citar tal cual como costo de la herramienta.
+**Modelo y costo por sesión** (datos que informa la plataforma el 2026-11-09; el modelo configurado y el último modelo servido coinciden en todas):
+
+| Sesión | Pedidos | Modelo y esfuerzo | Costo informado (USD) | Qué incluye además |
+|---|---|---|---|---|
+| «Profesor Metsi universidad» (desde el 1 de oct) | N.º 1 a 36 | Sonnet 5.5, medio | 45,28 | Armado de exámenes y otro repositorio de materiales; el registro de IA |
+| «Backlog.md repository overview» (1 de nov) | N.º 44 a 46 | Sonnet 5.5, medio | 3,62 | Trabajo en otro proyecto (EjeZ3D) |
+| «Autenticación y gestión de usuarios» (7 de nov) | N.º 37 a 43 | Sonnet 5.5, medio | 1,51 | — |
+| «Capacidad del corrector de exámenes» (8 de nov) | N.º 47 a 50 | Sonnet 5.5, medio | 2,51 | — |
+| «Lectura de escritura manual de alumnos» (8 de nov) | N.º 51 a 53 | Sonnet 5.5, medio | 3,22 | — |
+| «Asistente de corrección de exámenes» (8 y 9 de nov) | — | Sonnet 5.5, medio | 11,29 | Documentación e informe: **no es costo de la herramienta** |
+
+- **Suma de las cinco sesiones de desarrollo: USD 56,13** (cota superior, porque las dos primeras incluyen trabajo ajeno a METSI). Las tres sesiones que solo tocan la herramienta suman USD 7,24.
+- Es el valor que informa la plataforma. Si se cobró efectivamente o está incluido en una suscripción: **[COMPLETAR]**.
 - **Alternativa justificada (ítem 2):** no consta una comparación. Hay que redactarla: por ejemplo, Apps Script sobre una planilla frente a una app web con lectura de fotos en el navegador. Esto es una decisión de diseño tuya y no se puede inferir del material.
 
 ## 3. Pedidos sugeridos para el cuerpo del informe
@@ -93,7 +105,7 @@ Resumen por tema (detalle en la lista C del bruto):
 | 0,33 como valor inicial del descuento | **Lo eligió la IA**, sin que dijeras un número |
 | 32 preguntas con 5 opciones o 48 con 4 (hoja V4) | Cálculo de la app (README) |
 | 115 pruebas automáticas, todas en verde | Corrida de `node tests/run.js` del 2026-11-08 con `npm install` hecho |
-| USD 39,33 de uso de IA | Consulta de la sesión; **incluye trabajo ajeno a la herramienta** |
+| Hasta USD 56,13 de uso de IA en las 5 sesiones de desarrollo (USD 7,24 en las tres que solo tocan la herramienta) | Datos de la plataforma, 2026-11-09; **cota superior**: incluye trabajo ajeno a la herramienta |
 | Tiempo de corrección a mano | **SIN ORIGEN**: solo dijiste que «lleva mucho tiempo». Hay que medirlo |
 | Unos 80 alumnos en el primer uso en serio | Tu indicación (N.º 47) |
 | Corrección a mano: 4 a 5 minutos por examen | Tu estimación del 2026-11-09 («debo estar tardando entre 4 y 5 minutos por examen»), **sin cronometrar**; no consta si es para 10 o 20 preguntas |
@@ -115,7 +127,7 @@ Resumen por tema (detalle en la lista C del bruto):
 | 8 Datos en tablas y diccionario | **Cubierto** (falta citarlo en el informe) | `docs/informe/diccionario-de-datos.md`: estado del examen, hoja, `resultados.csv`, `casos.json`, usuarios, reglas de validación y datos personales, con un ejemplo inventado | Resumirlo en la sección 4 del informe (tablas clave) y dejar el diccionario completo como anexo |
 | 9 Instalación en la organización | Parcial | N.º 6, 8, 10 a 12, 19, 28, 36, 37, 38, 44, 46, 48, 53; README; `docs/guia-de-uso.md` | Quién la mantiene y cómo se capacita; costo de Supabase y Vercel |
 | 10 Riesgos y datos personales | Parcial | N.º 7, 10, 13, 14, 17, 25, 37, 43, 51, 53 | Ley 25.326, quién responde si se equivoca, el acceso público de GitHub Pages (decisión pendiente con el profesor) |
-| 11 Uso de IA declarado | Casi completo | Los tres archivos brutos (N.º 1 a 53) | El modelo de cada sesión y al menos un pedido con PEDIR |
+| 11 Uso de IA declarado | Casi completo | Los tres archivos brutos (N.º 1 a 53) | Al menos un pedido con PEDIR (hecho con un equivalente; confirmar la sigla) |
 | 12 Valor estimado | **Parcial** | `docs/informe/valor-y-costo.md`: tiempo manual declarado (4 a 5 min por examen, ~80 alumnos = 5 h 20 min a 6 h 40 min por turno), costos y beneficios, con su origen | Falta medir el tiempo con la herramienta, los turnos por año, las horas de armado y los planes de Vercel, Supabase y GitHub |
 
 ## 9. Pendientes y dudas a resolver antes de citar
@@ -126,7 +138,7 @@ Resumen por tema (detalle en la lista C del bruto):
 4. **Umbral del «punto suelto»** (N.º 53): lo dejaste para revisar con ejemplos reales; va en limitaciones.
 5. **La guía para Windows: guardada** en `docs/guia-windows.md` (recortada a METSI).
 6. **Datos personales en el historial.** El bruto cuenta que se reescribió la historia de una rama por tu nombre y registro. Conviene que busques tu nombre y tu registro en todo el repositorio (`git log -p`, `tests/`, `docs/`) antes de entregar el `.zip`.
-7. **Modelo y versión** de cada sesión: completar a mano.
+7. ~~Modelo y versión de cada sesión~~ **Resuelto:** Claude Sonnet 5.5, esfuerzo medio, en todas (declarado y verificado el 2026-11-09).
 8. **Tiempo de corrección a mano y con la herramienta:** se mide el **2026-11-18** con el examen real (a mano con cronómetro y las mismas hojas con la herramienta); plantilla en `docs/informe/valor-y-costo.md`. Estimación actual, sin cronometrar: 4 a 5 minutos por examen.
 9. **Pedido con PEDIR** para el ítem 3.
 10. **GitHub Pages sin login:** decidiste dejarlo publicado y consultar al profesor. Anotá su respuesta y, según lo que diga, ajustá la sección 7 del informe (Riesgos y controles).

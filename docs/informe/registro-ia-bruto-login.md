@@ -4,7 +4,7 @@ Continúa `registro-ia-bruto.md` (N.º 1 a 36). Se extrajo de la propia sesión 
 
 Tapado como «[OMITIDO]»: email, URL del proyecto de Supabase e id del usuario. Las horas son UTC. Los mensajes con imagen traen una captura que no se transcribe.
 
-Sesión creada el 2026-11-07 19:12 UTC; plataforma: Claude Code en la nube. Modelo: completar a mano.
+Sesión creada el 2026-11-07 19:12 UTC; plataforma: Claude Code en la nube. Modelo: Claude Sonnet 5.5, esfuerzo medio (verificado el 2026-11-09).
 
 ### N.º 37 · 2026-11-07 19:13 y 19:16 UTC · Claude Code
 - **Etapa:** idea

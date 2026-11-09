@@ -16,7 +16,7 @@ El valor de METSI Corrector es el **tiempo que ahorra** corregir exámenes multi
 | Preguntas por examen | 10 (primer parcial) y 20 (segundo) | Declarado por el docente, 2026-10-01 (N.º 2) | Declaración |
 | Exámenes por año, recuperatorios | **SIN DATO** | — | Falta |
 | Horas de armado de la herramienta | **SIN DATO** | — | Falta (las sesiones de trabajo consta que fueron del 1 de octubre al 8 de noviembre de 2026, pero no las horas dedicadas) |
-| Costo de uso de IA | hasta USD 39,33 | Consulta de la sesión de la plataforma, 2026-11-08 (registro de IA) | **Cota superior**: incluye trabajo ajeno a la herramienta (armado de exámenes) y no incluye lo posterior al 8 de noviembre |
+| Costo de uso de IA | hasta USD 56,13 | Datos que informa la plataforma para las 5 sesiones de desarrollo, 2026-11-09 (detalle en `registro-ia.md` §2); modelo Claude Sonnet 5.5, esfuerzo medio | **Cota superior**: dos sesiones incluyen trabajo ajeno a la herramienta (armado de exámenes y otro proyecto). Solo las tres sesiones que tocan únicamente la herramienta suman USD 7,24. Falta aclarar si se cobró o está incluido en una suscripción |
 | Licencias de la app | Ver sección 5 | — | Parcial |
 
 **Qué no se sabe del 4 a 5 minutos** (hay que aclararlo en el informe): si es para el examen de 10 o el de 20 preguntas, y si incluye aplicar el puntaje parcial y el descuento por incorrecta, cargar la nota en la planilla y revisar casos dudosos.
@@ -53,7 +53,7 @@ El tiempo con la herramienta incluye sacar la foto, cargarla (o elegirla desde D
 | GitHub (repositorio y GitHub Pages) | **SIN DATO** | Verificar el plan de la cuenta |
 | Vercel (publicación con login) | **SIN DATO** | Verificar el plan y sus límites |
 | Supabase (usuarios y login) | **SIN DATO** | Verificar el plan y sus límites |
-| Uso de IA para construir la herramienta | hasta USD 39,33 | Cota superior (ver sección 2) |
+| Uso de IA para construir la herramienta | hasta USD 56,13 (USD 7,24 en las sesiones que solo tocan la herramienta) | Cota superior (ver sección 2); falta saber si se cobró o está incluido en una suscripción |
 | Horas de armado | **SIN DATO** | Falta |
 | Mantenimiento | **SIN DATO** | Tareas conocidas: correr `node tools/version.js` tras cada cambio, renovar la clave del selector si se rota, administrar usuarios, calibrar la lectura con hojas reales (tarea METSI-1 abierta) |
 | Impresión de las hojas | **SIN DATO** | Hoja A5, 2 por A4, la misma para todos los alumnos |

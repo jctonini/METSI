@@ -8,7 +8,7 @@ Continúa `registro-ia-bruto.md` (N.º 1 a 36) y `registro-ia-bruto-login.md` (N
 - **Horas:** UTC. Los mensajes con imagen traen una captura que no se transcribe.
 - **Tapado como [OMITIDO]:** la API key y el número de proyecto de Google Cloud que pegaste en el chat (el README dice que son públicos, pero no hace falta repetirlos).
 - **Fuera de alcance:** en la sesión del 1 de noviembre también se trabajó en otro proyecto (EjeZ3D). No se registra acá.
-- **Modelo de cada sesión:** completar a mano.
+- **Modelo de cada sesión:** Claude Sonnet 5.5, esfuerzo medio, en las tres (verificado el 2026-11-09).
 
 ---
 
