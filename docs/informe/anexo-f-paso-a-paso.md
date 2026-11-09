@@ -1,6 +1,6 @@
 # Anexo F · Cómo rehacer METSI Corrector, paso por paso (ítem 7)
 
-> **Para quién es:** una persona con conocimientos básicos de informática que quiere armar la herramienta desde cero, con o sin asistente de IA. Todo lo que figura acá sale del repositorio (`https://github.com/jctonini/METSI`) y se puede verificar contra el código; donde un dato depende de tu cuenta o de tus hojas, se aclara. **No incluye hojas de alumnos ni datos reales.** Versión de referencia: 115 pruebas automáticas en verde (2026-11-08).
+> **Para quién es:** una persona con conocimientos básicos de informática que quiere armar la herramienta desde cero, con o sin asistente de IA. Todo lo que figura acá sale del repositorio (`https://github.com/jctonini/METSI`) y se puede verificar contra el código; donde un dato depende de tu cuenta o de tus hojas, se aclara. **No incluye hojas de alumnos ni datos reales.** Versión de referencia: 115 pruebas automáticas en verde (2026-11-09).
 
 ---
 

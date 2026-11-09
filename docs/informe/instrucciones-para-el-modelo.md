@@ -1,6 +1,6 @@
 # Instrucciones para el modelo (ítem 3 de la lista de cumplimiento)
 
-> **Qué es este archivo:** los pedidos que se le dan al asistente de IA para construir METSI Corrector, reescritos con la estructura de siete partes de la **clase 5** de la diplomatura, junto con los pedidos **originales textuales**. Es el material para la sección «Registro de uso de IA» y el anexo del informe.
+> **Qué es este archivo:** los pedidos que se le dan al asistente de IA para construir METSI Corrector, reescritos con la estructura de siete partes de la **clase 5** de la diplomatura, junto con los pedidos **originales textuales**. Es el **Anexo D** del informe y respalda el ítem 3.
 
 ## 1. Estructura usada y de dónde sale
 
@@ -22,7 +22,7 @@ La clase 5 aclara que «no hace falta que estén las siete en todos los pedidos,
 
 ## 2. Aclaración importante: qué son estos pedidos
 
-Los pedidos de las secciones 3 y 4 **no son los que se usaron**: son una **reescritura hecha el 2026-11-09** con las decisiones que quedaron documentadas en el registro de uso de IA. Los pedidos reales fueron conversacionales y están transcriptos tal cual en `registro-ia-bruto.md` y `registro-ia-bruto-noviembre.md`. Se incluye la comparación para mostrar qué cambia al estructurar.
+Los pedidos de las secciones 3 y 4 **no son los que se usaron**: son una **reescritura hecha el 2026-11-09** con las decisiones que quedaron documentadas en el registro de uso de IA. Los pedidos reales fueron conversacionales y están transcriptos tal cual en los registros brutos (`registro-ia-bruto*.md`). Se incluye la comparación para mostrar qué cambia al estructurar.
 
 La app, cuando corre, **no usa ningún modelo de lenguaje** (la lectura de dígitos es una red neuronal chica que corre en el navegador). Por eso las «instrucciones para el modelo» son las que se le dieron al asistente para **construirla**.
 
@@ -37,7 +37,7 @@ Material: la hoja de respuestas es A5 (se imprimen 2 por hoja A4 apaisada y se c
 
 Formato: archivos separados por responsabilidad (geometría de la hoja, generador de la hoja imprimible, lectura de la foto, puntaje, exportación), con comentarios en castellano; pruebas automáticas con fotos sintéticas en un solo archivo; una pantalla con las pestañas Examen, Hoja, Corregir y Resultados; los resultados se descargan como CSV importable en Excel y Google Sheets. Antes de escribir código, proponé la estructura de archivos y esperá mi confirmación.
 
-Criterio: tiene que leer la foto aunque esté algo torcida. Cada pregunta tiene su puntaje, que se reparte en partes iguales entre sus respuestas correctas; se admite puntaje parcial; el descuento por cada incorrecta es un número de 0 a 1 que configuro yo. Lo importante es que yo pueda revisar todo lo dudoso antes de exportar.
+Criterio: tiene que leer la foto aunque esté algo torcida. Cada pregunta tiene su puntaje, que se reparte en partes iguales entre sus respuestas correctas; se admite puntaje parcial; las incorrectas restan solo por las marcas que exceden la cantidad de correctas, con un peso de 0 a 1 que configuro yo. Lo importante es que yo pueda revisar todo lo dudoso antes de exportar.
 
 Restricciones: no decidas quién aprueba (devolvé solo el puntaje); no inventes ni completes datos que no se puedan leer; no uses datos reales de alumnos en los ejemplos ni en las pruebas; no envíes imágenes a servicios externos; no cambies una versión de hoja que ya se imprimió.
 
@@ -50,7 +50,7 @@ Si falta un dato (cantidad de preguntas, opciones, formato de la hoja, qué hace
 | Parte del pedido | Decisión | Dónde consta |
 |---|---|---|
 | Material | 10 y 20 preguntas, 4 o 5 opciones; hoja A5; 7 casilleros de registro; modalidades | N.º 2, 7, 9 |
-| Criterio | Puntaje por pregunta repartido entre correctas; parcial; descuento 0 a 1 | N.º 3, 5, 22 |
+| Criterio | Puntaje por pregunta repartido entre correctas; parcial; peso de las incorrectas de 0 a 1, solo por las marcas en exceso | N.º 3, 5, 22 y 79 (METSI-12) |
 | Restricciones | La app no decide quién aprueba; hojas ya impresas no se cambian | N.º 4, 16 |
 | Restricciones | Sin datos reales de alumnos en pruebas | N.º 13 |
 | Ante la duda | Plan antes de cambios y confirmación | Práctica de las clases 12 y 13; N.º 14 |
@@ -124,7 +124,7 @@ Es exactamente lo que dice la clase 5: lo que no se escribe, el modelo lo comple
 ## 5. Cómo se verificó que los pedidos sirven
 
 La clase 5 pide verificar una consigna con casos de respuesta conocida, no con opinión («eso lo dice tu banco de pruebas»). En METSI la verificación es:
-- **Pruebas automáticas** (`node tests/run.js`, 115 pruebas, todas en verde el 2026-11-08) con fotos sintéticas de hojas V1 a V4, el puntaje y la lectura de dígitos.
+- **Pruebas automáticas** (`node tests/run.js`, 115 pruebas, todas en verde el 2026-11-09) con fotos sintéticas de hojas V1 a V4, el puntaje y la lectura de dígitos.
 - **Pruebas con hojas reales** del docente (N.º 13, 20, 23, 26, 29): detectaron fallas que las sintéticas no mostraron.
 - **Limitación honesta:** la lectura del registro se midió con dígitos de MNIST sobre fotos sintéticas (cerca del 99 %), que es una prueba optimista. Falta calibrar con hojas reales (tarea METSI-1, abierta).
 

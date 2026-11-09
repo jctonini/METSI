@@ -51,7 +51,7 @@ La app solo accede a los archivos que ella misma crea o que el docente elige en 
 | `numOptions` | entero | Opciones por pregunta | 4; de 2 a 6 |
 | `regDigits` | entero | Casilleros del número de registro | 7; de 1 a 9 |
 | `modalidades` | lista de textos | Modalidades de cursada | «Presencial» y «A distancia»; hasta 8 |
-| `penalty` | número | Descuento por cada opción incorrecta marcada, como fracción de lo que vale una opción correcta | 0,33 en un examen nuevo; de 0 a 1 |
+| `penalty` | número | Peso de las incorrectas: por cada marca que exceda la cantidad de correctas resta esta fracción de lo que vale una opción correcta (en la pantalla Examen se llama «descuento») | 0,33 en un examen nuevo; de 0 a 1 |
 | `threshold` | número | Sensibilidad de lectura de marcas | 0,085 (normal); 0,05 (alta) o 0,16 (baja) |
 | `thrVersion` | entero | Escala de la sensibilidad | 3; sirve para convertir exámenes guardados con escalas viejas |
 | `sheet` | objeto | Textos de la hoja impresa: `subtitle`, `nameLabel`, `regLabel`, `modLabel`, `instructions`, `legal`, `logo` | Vacíos; `logo` es una imagen en texto codificado |
