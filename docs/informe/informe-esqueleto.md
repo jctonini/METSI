@@ -69,11 +69,11 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 ## 4. Cómo se construyó · presupuesto ~700 palabras
 *Fuentes: `README.md` (mapa de archivos), `diccionario-de-datos.md`, `registro-ia.md` §2.*
 
-**Herramientas y por qué esas** (ítem 2; tabla completa en `seccion-04-como-se-construyo.md`). **Claude Code** (Claude Sonnet 5.5, esfuerzo medio), porque ya lo venía usando; la alternativa de la cursada era Codex. Una **app web** y no una planilla de Google con Apps Script, para usarla desde el celular y la PC con Drive. **Vercel** y **Supabase**, porque ya tenía cuentas, tienen plan gratuito para este uso y son las herramientas que se usan en la diplomatura (clase 13); **GitHub** también es de la cursada. **Google Drive** para ver fotos y resultados desde el celular y la PC. Una **red neuronal local** para sugerir el registro, para que ninguna imagen salga del dispositivo, en lugar de enviar recortes a la API de un modelo. **Backlog.md** para gestionar las tareas con el agente. Costos: Google Cloud sin facturación; planes gratuitos de Vercel y Supabase **[VALIDAR el plan exacto]**; uso de IA hasta USD 56,13 (cota superior). **Avisos de la clase 13:** el plan Hobby de Vercel es solo para uso personal y no comercial **[VALIDAR si una cátedra califica]**, y Supabase pausa un proyecto gratuito tras una semana sin actividad, lo que dejaría el login sin funcionar hasta reactivarlo.
+**Herramientas y por qué esas** (ítem 2; tabla completa en `seccion-04-como-se-construyo.md`). **Claude Code** (Claude Sonnet 5.5, esfuerzo medio), porque ya lo venía usando; la alternativa de la cursada era Codex. Una **app web** y no una planilla de Google con Apps Script, para usarla desde el celular y la PC con Drive. **Vercel** y **Supabase**, porque ya tenía cuentas, tienen plan gratuito para este uso y son las herramientas que se usan en la diplomatura (clase 13); **GitHub** también es de la cursada. **Google Drive** para ver fotos y resultados desde el celular y la PC. Una **red neuronal local** para sugerir el registro, para que ninguna imagen salga del dispositivo, en lugar de enviar recortes a la API de un modelo. **Backlog.md** para gestionar las tareas con el agente. Costos: Google Cloud sin facturación; planes gratuitos en GitHub, Vercel y Supabase (USD 0, según el autor); uso de IA hasta USD 56,13 (cota superior). **Avisos de la clase 13:** el plan Hobby de Vercel es solo para uso personal y no comercial **[VALIDAR si una cátedra califica]**, y Supabase pausa un proyecto gratuito tras una semana sin actividad, lo que dejaría el login sin funcionar hasta reactivarlo.
 
 **Estructura de la solución.** Todo el código vive en un repositorio. Resumen del mapa de archivos (`README.md`): lectura de la foto (`js/scanner.js`, `js/layout.js`, `js/sheet.js`), puntaje (`js/scoring.js`), identificación y repetidos (`js/identity.js`, `js/similar.js`), casos a revisar (`js/review.js`), exportación (`js/csv.js`), Drive y sesión (`js/drive.js`, `js/auth.js`, `js/picker.js`), lectura local del registro (`js/digits.js`, `js/digit-model.js`), interfaz (`js/app-*.js`), servidor del login (`api/`, `server/`).
 
-**Los datos y su diccionario.** Resumen en una tabla (estado del examen, hoja corregida, `resultados.csv`) y el diccionario completo en el Anexo B (`diccionario-de-datos.md`). Qué datos usa, de dónde salen y qué queda afuera: usa fotos de hojas, la clave de respuestas y datos de identificación que carga el docente; la lectura del registro nunca envía imágenes a servicios externos; los casos que se mandan a analizar van sin nombre, registro ni recortes. **[COMPLETAR qué queda afuera y por qué, por ejemplo: la app no decide aprobación y no guarda datos en un servidor propio]**
+**Los datos y su diccionario.** Resumen en una tabla (estado del examen, hoja corregida, `resultados.csv`) y el diccionario completo en el Anexo B (`diccionario-de-datos.md`). Qué datos usa, de dónde salen y qué queda afuera: usa fotos de hojas, la clave de respuestas y datos de identificación que carga el docente; la lectura del registro nunca envía imágenes a servicios externos; los casos que se mandan a analizar van sin nombre, registro ni recortes. Queda afuera, porque no es necesario para la herramienta: el enunciado de las preguntas (solo se carga la clave de respuestas), el listado de inscriptos y los datos académicos de los alumnos (carrera, comisión, mail). Tampoco se conecta con MiEcon.
 
 **Cómo se construyó, paso por paso** (ítem 7), en orden cronológico según el registro de IA:
 1. Idea y diseño de la hoja (1 de octubre): grilla A5, 7 casilleros de registro, puntaje parcial.
@@ -84,7 +84,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 6. Login con usuario y contraseña (7 de noviembre).
 7. Selector de Drive, selección múltiple y lectura local del registro (8 de noviembre).
 
-**Instalación en la organización** (ítem 9): quién la usa, quién la mantiene y cómo se capacita. Hay una guía de uso (`docs/guia-de-uso.md`) y una guía de instalación para Windows (`docs/guia-windows.md`). **[COMPLETAR quién la mantiene y cómo se capacita a otros docentes]**
+**Instalación en la organización** (ítem 9): quién la usa, quién la mantiene y cómo se capacita. Hay una guía de uso (`docs/guia-de-uso.md`) y una guía de instalación para Windows (`docs/guia-windows.md`). La mantiene el autor, que también se ocuparía de explicársela a otros docentes.
 
 ## 5. Registro de uso de IA · presupuesto ~600 palabras
 *Fuentes: `registro-ia.md`, `registro-ia-bruto*.md` (N.º 1 a 53), `instrucciones-para-el-modelo.md`.*
@@ -125,7 +125,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 
 - **Valor:** tiempo de corrección. Con 80 alumnos y 4 a 5 minutos por examen (estimación), un turno consume 5 h 20 min a 6 h 40 min a mano. **[COMPLETAR el 18/11: tiempo por hoja con la herramienta, ahorro por turno y turnos por año]**
 - **Beneficios no medidos en minutos:** criterio de puntaje uniforme, control de identificación y repetidos, trazabilidad con la foto de cada hoja.
-- **Costo:** licencias, horas de armado y mantenimiento. Google Cloud sin facturación (USD 0); uso de IA hasta USD 56,13 en las cinco sesiones de desarrollo (cota superior: incluye trabajo ajeno a la herramienta; USD 7,24 en las tres que solo la tocan). **[COMPLETAR planes de GitHub, Vercel y Supabase, horas de armado y mantenimiento]**
+- **Costo:** licencias, horas de armado y mantenimiento. Google Cloud sin facturación (USD 0); uso de IA hasta USD 56,13 en las cinco sesiones de desarrollo (cota superior: incluye trabajo ajeno a la herramienta; USD 7,24 en las tres que solo la tocan). Planes gratuitos en GitHub, Vercel y Supabase (USD 0, según el autor). **[COMPLETAR horas de armado y mantenimiento]**
 - **Todas las cifras con su origen y sus supuestos a la vista.** Las hipótesis de sensibilidad de `valor-y-costo.md` **no** se citan como resultados.
 
 ## 9. Conclusiones y próximos pasos · presupuesto ~300 palabras
@@ -152,14 +152,14 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 | # | Ítem | Sección | Estado | Qué falta |
 |---|---|---|---|---|
 | 1 | Problema real, quién lo sufre y cuánto pesa | 1 | Parcial | Medición del 18/11 y el peso en horas |
-| 2 | Herramienta justificada frente a otra, con costo | 4 y 8 | Casi cubierto | Confirmar los planes de Vercel, Supabase y GitHub y si el uso de IA se cobró |
+| 2 | Herramienta justificada frente a otra, con costo | 4 y 8 | Cubierto | Si el uso de IA se cobró o está incluido en una suscripción |
 | 3 | Instrucciones armadas con PEDIR o equivalente | 5 y Anexo D | Cubierto con equivalente | Confirmar la sigla PEDIR |
-| 4 | Datos o documentos que usa y qué queda afuera | 4 y Anexo B | Parcial | Qué queda afuera y por qué |
+| 4 | Datos o documentos que usa y qué queda afuera | 4 y Anexo B | Cubierto | — |
 | 5 | Verificación con casos de respuesta conocida | 6 | Cubierto | Confirmar la pregunta 8; resultados del 18/11 |
 | 6 | Nivel de autonomía | 3 | Cubierto | — |
 | 7 | Construcción paso por paso | 4 | Parcial | Paso a paso para que otro la rehaga |
 | 8 | Datos en tablas con diccionario | Anexo B | Cubierto | Resumirlo en la sección 4 |
-| 9 | Instalación: quién usa, mantiene y capacita | 4 | Parcial | Mantenimiento y capacitación |
+| 9 | Instalación: quién usa, mantiene y capacita | 4 | Cubierto | Validar si el mantenimiento seguirá con el asistente |
 | 10 | Riesgos, datos personales, secreto profesional, responsable | 7 | Parcial | Ley 25.326, secreto profesional |
 | 11 | Uso de IA declarado con pedidos textuales | 5 y Anexo C | Cubierto | Elegir los pedidos para el cuerpo |
 | 12 | Valor estimado con supuestos y conclusión | 8 | Parcial | Medición, planes y horas de armado |

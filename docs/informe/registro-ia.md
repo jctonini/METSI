@@ -118,14 +118,14 @@ Resumen por tema (detalle en la lista C del bruto):
 | Ítem | Estado hoy | Evidencia en el material | Qué falta |
 |---|---|---|---|
 | 1 Problema real | Parcial | N.º 1, 2 y 47 (unos 80 alumnos) | Cuánto pesa en horas: hay que medir la corrección a mano |
-| 2 Herramienta y costo | Parcial | N.º 6 y 8, lista de herramientas | Comparación con otra opción y costo real |
+| 2 Herramienta y costo | **Cubierto** | `docs/informe/seccion-04-como-se-construyo.md` §4.1 (motivos declarados, alternativas y costos); N.º 6 y 8 | Si el uso de IA se cobró o está incluido en una suscripción; validar si el plan Hobby de Vercel admite el uso en una cátedra |
 | 3 Instrucciones para el modelo (PEDIR) | **Cubierto con un equivalente** (confirmar la sigla) | `docs/informe/instrucciones-para-el-modelo.md`: dos pedidos de construcción reescritos con la consigna de siete partes de la clase 5, junto a los originales textuales y la comparación | PEDIR no aparece en las 16 clases del sitio; confirmar con el docente si es una sigla oral. Citar en el informe el pedido A (y el B si hay espacio) |
-| 4 Datos o documentos | Parcial | N.º 2, 3, 6, 7; README | Qué queda afuera y por qué (por ejemplo, nombres y registros en los casos a revisar) |
+| 4 Datos o documentos | **Cubierto** | `seccion-04-como-se-construyo.md` §4.3 y `diccionario-de-datos.md`; N.º 2, 3, 6, 7 | — |
 | 5 Verificación con casos conocidos | Bien cubierto | N.º 13, 21, 23, 26, 29, 31, 32; 115 pruebas | Resolver la duda de la pregunta 8 (ver sección 9) |
 | 6 Autonomía | Bien cubierto | N.º 4, 14, 25; README (el registro sugerido nunca se carga solo) | Redactarlo como tabla: hace sola / propone / aprueba una persona |
 | 7 Construcción paso a paso | Parcial | N.º 9, 12, 16 a 19, 24, 27, 28, 35, 45, 47, 49; README y mapa de archivos | Falta redactar un paso a paso para que otra persona la rehaga |
 | 8 Datos en tablas y diccionario | **Cubierto** (falta citarlo en el informe) | `docs/informe/diccionario-de-datos.md`: estado del examen, hoja, `resultados.csv`, `casos.json`, usuarios, reglas de validación y datos personales, con un ejemplo inventado | Resumirlo en la sección 4 del informe (tablas clave) y dejar el diccionario completo como anexo |
-| 9 Instalación en la organización | Parcial | N.º 6, 8, 10 a 12, 19, 28, 36, 37, 38, 44, 46, 48, 53; README; `docs/guia-de-uso.md` | Quién la mantiene y cómo se capacita; costo de Supabase y Vercel |
+| 9 Instalación en la organización | **Cubierto** | `seccion-04-como-se-construyo.md` §4.6 (usa: docentes de la cátedra; mantiene: el autor; capacita: el autor, con la guía de uso); `docs/guia-de-uso.md`, `docs/guia-windows.md` | Validar si el mantenimiento seguirá con el asistente de IA; recordar la pausa de Supabase y revisar los planes gratuitos antes de usar la app en serio |
 | 10 Riesgos y datos personales | Parcial | N.º 7, 10, 13, 14, 17, 25, 37, 43, 51, 53 | Ley 25.326, quién responde si se equivoca, el acceso público de GitHub Pages (decisión pendiente con el profesor) |
 | 11 Uso de IA declarado | Casi completo | Los tres archivos brutos (N.º 1 a 53) | Al menos un pedido con PEDIR (hecho con un equivalente; confirmar la sigla) |
 | 12 Valor estimado | **Parcial** | `docs/informe/valor-y-costo.md`: tiempo manual declarado (4 a 5 min por examen, ~80 alumnos = 5 h 20 min a 6 h 40 min por turno), costos y beneficios, con su origen | Falta medir el tiempo con la herramienta, los turnos por año, las horas de armado y los planes de Vercel, Supabase y GitHub |

@@ -52,12 +52,12 @@ El tiempo con la herramienta incluye sacar la foto, cargarla (o elegirla desde D
 | Concepto | Costo | Estado |
 |---|---|---|
 | Google Cloud (Drive API y selector de Drive) | USD 0 | El proyecto **no tiene cuenta de facturación**: no puede generar cargos (confirmado el 2026-11-09). Si se agotan las cuotas gratuitas, las llamadas fallan, no se cobran |
-| GitHub (repositorio y GitHub Pages) | **SIN DATO** | Verificar el plan de la cuenta (GitHub es una herramienta de la cursada, clase 13) |
-| Vercel (publicación con login) | Plan gratuito, según el autor (2026-11-09) | **Verificar el plan exacto.** Aviso de la clase 13: el plan Hobby es solo para uso personal y no comercial; si el uso en una cátedra lo excede, haría falta un plan pago |
-| Supabase (usuarios y login) | Plan gratuito, según el autor (2026-11-09) | **Verificar el plan exacto.** Aviso de la clase 13: pausa el proyecto tras una semana sin actividad (se reactiva desde el panel, con sus datos) |
+| GitHub (repositorio y GitHub Pages) | USD 0 | Plan gratuito, según el autor (2026-11-09). GitHub es una herramienta de la cursada (clase 13) |
+| Vercel (publicación con login) | USD 0 | Plan gratuito, según el autor (2026-11-09). Aviso de la clase 13: el plan Hobby es solo para uso personal y no comercial; si el uso en una cátedra lo excede, haría falta un plan pago |
+| Supabase (usuarios y login) | USD 0 | Plan gratuito, según el autor (2026-11-09). Aviso de la clase 13: pausa el proyecto tras una semana sin actividad (se reactiva desde el panel, con sus datos) |
 | Uso de IA para construir la herramienta | hasta USD 56,13 (USD 7,24 en las sesiones que solo tocan la herramienta) | Cota superior (ver sección 2); falta saber si se cobró o está incluido en una suscripción |
 | Horas de armado | **SIN DATO** | Falta |
-| Mantenimiento | **SIN DATO** | Tareas conocidas: correr `node tools/version.js` tras cada cambio, renovar la clave del selector si se rota, administrar usuarios, calibrar la lectura con hojas reales (tarea METSI-1 abierta) |
+| Mantenimiento | Lo hace el autor; horas: **SIN DATO** | Tareas conocidas: correr `node tools/version.js` tras cada cambio, administrar usuarios, entrar a la app antes de cada parcial (por la pausa de Supabase), revisar los planes gratuitos y calibrar la lectura con hojas reales (tarea METSI-1 abierta) |
 | Impresión de las hojas | **SIN DATO** | Hoja A5, 2 por A4, la misma para todos los alumnos |
 
 ## 6. Beneficios que no se miden en minutos
