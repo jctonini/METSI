@@ -161,7 +161,7 @@ Incluir un **diagrama simple del proceso de hoy** (una fila de cajas alcanza) y 
 | 12 | Valor estimado con supuestos y conclusión | 8 | Parcial | Medición, planes y horas de armado |
 
 ### Anexo B · Diccionario de datos → `diccionario-de-datos.md`
-### Anexo C · Pedidos textuales completos → `registro-ia-bruto.md`, `registro-ia-bruto-login.md`, `registro-ia-bruto-noviembre.md`
+### Anexo C · Pedidos textuales → `anexo-c-pedidos-textuales.md` (los 17 pedidos principales completos, más el índice de los 53); el texto de todos está en `registro-ia-bruto.md`, `registro-ia-bruto-login.md` y `registro-ia-bruto-noviembre.md`
 ### Anexo D · Instrucciones con la consigna de siete partes → `instrucciones-para-el-modelo.md`
 ### Anexo E · Evidencia de que funciona
 Video de hasta 3 minutos (enlace en el informe) **o** cinco capturas comentadas, **solo con datos inventados** y sin nombres de carpetas ni emails personales. **[COMPLETAR]**
