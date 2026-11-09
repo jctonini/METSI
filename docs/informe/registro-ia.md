@@ -96,6 +96,7 @@ Resumen por tema (detalle en la lista C del bruto):
 | USD 39,33 de uso de IA | Consulta de la sesión; **incluye trabajo ajeno a la herramienta** |
 | Tiempo de corrección a mano | **SIN ORIGEN**: solo dijiste que «lleva mucho tiempo». Hay que medirlo |
 | Unos 80 alumnos en el primer uso en serio | Tu indicación (N.º 47) |
+| Corrección a mano: 4 a 5 minutos por examen | Tu estimación del 2026-11-09 («debo estar tardando entre 4 y 5 minutos por examen»), **sin cronometrar**; no consta si es para 10 o 20 preguntas |
 | 11 fotos de la prueba con el selector de Drive; registros de 6 o 7 dígitos | Tu indicación (N.º 49 y 52) |
 | Redibujo con 80 hojas: 561 ms → 17 ms | Medición de la IA en Node, no en un celular (Backlog METSI-7) |
 | Exámenes por cuatrimestre | **NO CONSTA** |
@@ -115,7 +116,7 @@ Resumen por tema (detalle en la lista C del bruto):
 | 9 Instalación en la organización | Parcial | N.º 6, 8, 10 a 12, 19, 28, 36, 37, 38, 44, 46, 48, 53; README; `docs/guia-de-uso.md` | Quién la mantiene y cómo se capacita; costo de Supabase y Vercel |
 | 10 Riesgos y datos personales | Parcial | N.º 7, 10, 13, 14, 17, 25, 37, 43, 51, 53 | Ley 25.326, quién responde si se equivoca, el acceso público de GitHub Pages (decisión pendiente con el profesor) |
 | 11 Uso de IA declarado | Casi completo | Los tres archivos brutos (N.º 1 a 53) | El modelo de cada sesión y al menos un pedido con PEDIR |
-| 12 Valor estimado | **Ausente** | Solo el costo de IA (USD 39,33) | Medir tiempo de corrección a mano frente a la app, con supuestos |
+| 12 Valor estimado | **Parcial** | `docs/informe/valor-y-costo.md`: tiempo manual declarado (4 a 5 min por examen, ~80 alumnos = 5 h 20 min a 6 h 40 min por turno), costos y beneficios, con su origen | Falta medir el tiempo con la herramienta, los turnos por año, las horas de armado y los planes de Vercel, Supabase y GitHub |
 
 ## 9. Pendientes y dudas a resolver antes de citar
 
