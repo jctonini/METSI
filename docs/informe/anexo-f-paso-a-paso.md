@@ -13,7 +13,7 @@
 | Cuenta de **Vercel** | Publicar la app con login | Plan gratuito (el Hobby es para uso personal y no comercial) |
 | Cuenta de **Supabase** | Usuarios, contraseñas y roles | Plan gratuito (pausa el proyecto tras una semana sin actividad) |
 | Cuenta de **Google** y un proyecto de **Google Cloud** (sin facturación) | Sincronizar con Drive y elegir fotos desde Drive | Sin cargo dentro de las cuotas gratuitas |
-| **Python 3** con `numpy` y `scipy` | **Solo** si querés reentrenar el lector de dígitos | Gratis |
+| **Python 3** (el entrenamiento original corrió, muy probablemente, con 3.13.18; en la PC del autor hay 3.12.10 y **no se probó** reentrenar ahí) con `numpy` (se usó la 2.5.3) y `scipy` (1.18.1) | **Solo** si querés reentrenar el lector de dígitos | Gratis |
 | Un asistente de IA (opcional) | Escribir el código; ver el paso 12 | Según el servicio |
 
 ---
@@ -78,7 +78,7 @@ El lector recibe la imagen (conviene lado mayor de ~1600 px) y el layout, y hace
 2. Una **red neuronal chica (784 → 128 → 64 → 10)**, entrenada con MNIST más variaciones de una foto real (`tools/train-digits.py`), clasifica cada dígito. Los pesos van cuantizados en `js/digit-model.js` (~150 KB, generado: no se edita a mano).
 3. Un casillero **sin tinta queda vacío**; si la red duda, queda **dudoso**. Con 7 casilleros, los vacíos de los **extremos** no cuentan (los registros tienen 6 o 7 dígitos).
 4. El resultado es **una sugerencia**: el registro queda vacío hasta que el docente toca «Es correcto» o lo escribe. **Nunca se carga solo.**
-5. Para reentrenar: `python3 tools/train-digits.py --mnist <carpeta con los 4 archivos idx> --epochs 30`. Las semillas son fijas.
+5. Para reentrenar: bajar y descomprimir los cuatro archivos de MNIST (se usó `https://ossci-datasets.s3.amazonaws.com/mnist/<archivo>.gz` con `curl` y `gunzip`: `train-images-idx3-ubyte`, `train-labels-idx1-ubyte`, `t10k-images-idx3-ubyte` y `t10k-labels-idx1-ubyte`) y correr `python3 tools/train-digits.py --mnist <carpeta> --epochs 30`. Las semillas son fijas. Resultado de la corrida original: 98,9 % en MNIST limpio y 96,2 % con deformaciones fuertes.
 
 ---
 
