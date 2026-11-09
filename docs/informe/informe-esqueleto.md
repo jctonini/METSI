@@ -41,7 +41,7 @@ Hoy corrijo los exámenes completamente a mano, y no examen por examen sino por 
 5. Paso las notas a una planilla de Excel y verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ninguno haya quedado sin identificar.
 6. Comparto las notas con los alumnos.
 7. Subo las notas a MiEcon, la web de la facultad.
-8. Aplico el criterio de aprobación, fijado de antemano: hay que tener el 60 % del examen aprobado para obtener un 4 y a partir de ahí hay una correlación de puntajes hasta el 10 **[VALIDAR si es el 60 % del puntaje máximo y si la correlación es lineal; COMPLETAR en qué momento lo aplico]**.
+8. Aplico el criterio de aprobación, fijado de antemano: hay que tener el 60 % del examen aprobado para obtener un 4 y a partir de ahí hay una correlación de puntajes hasta el 10. La equivalencia, aproximada, es: 60 % → 4; 65 % → 5; 70 % → 6; 75 % → 7; 80 % → 8; 90 % → 9; 95 % → 10 **[VALIDAR: nota de los porcentajes intermedios (por ejemplo 62 %) y de los menores a 60 %; COMPLETAR en qué momento lo aplico]**.
 
 Como el trabajo es por lotes, el tiempo por examen no se mide directamente: se obtiene haciendo todo el proceso para el conjunto y dividiendo por la cantidad. No lo cronometré; mi estimación, sin medir, es de entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR si se mide el 18/11]**.
 
