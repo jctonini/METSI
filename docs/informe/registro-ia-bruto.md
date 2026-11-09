@@ -4,9 +4,9 @@ Material en bruto para la sección «Registro de uso de IA» del informe. Alcanc
 
 ## Cómo leer este archivo
 
-- **Límite importante:** el archivo de esta sesión empieza con un *resumen de contexto* que sustituye la parte inicial del chat. Los mensajes del usuario del 1 y 2 de octubre los pegó el usuario después y están copiados tal cual (Parte 1). **De los pedidos del 24 de octubre anteriores al resumen no hay texto completo** (Parte 2): ahí copio solo los fragmentos que el resumen reproduce entre comillas, marcados «(fragmento)», y lo que el resumen cuenta con palabras propias lo marco «(paráfrasis del resumen, no textual)». Los pedidos posteriores al resumen (Parte 3) están copiados del archivo de la sesión.
-- **Texto aportado por el usuario:** el pegado de los mensajes del 1 y 2 de octubre no traía las respuestas del asistente. El usuario indicó la fecha de cada tramo (1 y 2 de octubre). Un pegado anterior, con texto del asistente, permitió citar algunas frases suyas, siempre marcadas como texto del asistente.
-- **Fechas:** de los pedidos del 1 y 2 de octubre, la fecha la indicó el usuario. De los del 24 de octubre anteriores al resumen, la fecha del pedido NO CONSTA; indico los commits relacionados, marcados «(según git)», con su fecha de commit (solo el día). De los posteriores al resumen consta la hora (UTC) del archivo de la sesión.
+- **Origen del texto:** el archivo de esta sesión empieza con un *resumen de contexto* que sustituye la parte inicial del chat, así que los mensajes anteriores a ese resumen los pegó el usuario después (1 y 2 de octubre en la Parte 1, 24 de octubre en la Parte 2) y están copiados tal cual. Los posteriores al resumen (Parte 3) están copiados del archivo de la sesión.
+- **Límite:** los pegados traen solo los mensajes del usuario, sin las preguntas ni las respuestas del asistente. Por eso, en «Qué hizo la IA» solo escribo lo que consta en esos mensajes, en el historial de git («según git») o en el resumen de contexto («según el resumen de contexto»). Un mensaje del 24 de octubre (el pedido de la banda de ejemplos, N.º 27) no figura en el pegado y lo cito del resumen.
+- **Fechas:** de los pedidos del 1, 2 y 24 de octubre, la fecha la indicó el usuario. De los posteriores al resumen consta la hora (UTC) del archivo de la sesión. Los commits relacionados se citan «(según git)» con su fecha de commit (solo el día).
 - «NO CONSTA» significa que no hay dato en lo disponible. No rellené con suposiciones.
 - Se reemplazó por «[OMITIDO]» el ID de cliente de Google, y no se incluyen nombres ni registros de alumnos ni datos personales.
 - No registro aquí el nombre del modelo. **Completar a mano** en el informe: modelo y versión según el encabezado de la sesión en claude.ai.
@@ -17,7 +17,7 @@ Lista de cumplimiento (ítems 1 a 12) usada en el campo «Ítem(s)»: 1 Problema
 
 ## Parte 1 · Pedidos del 1 y 2 de octubre (texto pegado por el usuario)
 
-Los mensajes de esta parte son los que el usuario pegó, copiados tal cual. El pegado trae solo sus mensajes: no incluye las preguntas ni las respuestas del asistente. Por eso, en «Qué hizo la IA» solo escribo lo que consta en esos mensajes o en el historial de git («según git»). Los mensajes del 1 de octubre sobre subir la skill de armado de exámenes a otro repositorio quedan fuera por el alcance de este registro.
+Los mensajes de esta parte son los que el usuario pegó, copiados tal cual. El pegado trae solo sus mensajes: no incluye las preguntas ni las respuestas del asistente (salvo el contexto de la N.º 22, que viene de un pegado previo que sí traía texto del asistente). Por eso, en «Qué hizo la IA» solo escribo lo que consta en esos mensajes o en el historial de git («según git»). Los mensajes del 1 de octubre sobre subir la skill de armado de exámenes a otro repositorio quedan fuera por el alcance de este registro.
 
 ### N.º 1 · 2026-10-01 (indicado por el usuario) · Claude Code
 - **Etapa:** idea
@@ -373,92 +373,85 @@ Los mensajes de esta parte son los que el usuario pegó, copiados tal cual. El p
 
 ---
 
-## Parte 2 · Pedidos del 24 de octubre anteriores al resumen de contexto (texto completo NO CONSTA)
+## Parte 2 · Pedidos del 24 de octubre anteriores al resumen de contexto (texto pegado por el usuario)
 
-Del tramo del 24 de octubre anterior al resumen de contexto el usuario no pegó los mensajes. Siguen los fragmentos que reproduce el resumen, con la misma regla de la Parte 1 anterior: lo entrecomillado es textual; lo marcado como paráfrasis no lo es.
+Los mensajes de esta parte los pegó el usuario y están copiados tal cual. El pegado trae solo sus mensajes, sin las respuestas del asistente, así que «Qué hizo la IA» se apoya en el historial de git y en el resumen de contexto, marcados como tales. Un mensaje del tramo (el pedido de la banda de ejemplos, N.º 27) no figura en el pegado; lo cito del resumen de contexto y lo indico.
 
-### N.º 23 · NO CONSTA · Claude Code
+### N.º 23 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** pruebas
-- **Pedido (textual, fragmento):**
-  > Acabo de hacer una prueba y los resultados no fueron buenos...
-
-  Siguieron fotos y listas de fallas (paráfrasis del resumen, no textual): respuestas mal leídas en las preguntas 4, 11, 15, 18 y 20, y no leídas en la 12, 13, 14 y 17; más fotos donde las hojas fueron rechazadas por no encontrar las esquinas.
+- **Pedido (textual, mensajes consecutivos):**
+  > Acabo de hacer una prueba y los resultados no fueron buenos, hay varias cosas para revisar.
+  > Te paso la foto de la corrección y la foto de lo detectado. 
+  > Fallos detectados en respuestas: 4,11,15,18,20
+  > Fallos no detectados en la detección: en respuestas en la 12,13,14,17
+  > Cuando subi estas hojas con correcciones, el sistema me la rechazaba por no encontrar las esquinas de lectura
 - **Qué hizo la IA:** corrigió la lectura de hojas con muchas marcas con una línea base robusta («Corrige la lectura de hojas con muchas marcas (nivel base robusto)», según git, 2026-10-24) y reconoció la hoja correcta cuando la foto trae la hoja vecina («Reconoce la hoja correcta cuando la foto trae la hoja vecina», según git, 2026-10-24).
-- **Qué hubo que corregir:** la lectura en fotos con más de la mitad de las burbujas marcadas, y la elección de la hoja cuando aparece la vecina.
-- **Qué inventó o erró la IA (según el resumen de contexto):** la línea base se inflaba cuando más de la mitad de las burbujas estaban marcadas; se pasó a una línea base solo de burbujas vacías, por columna y ventana local, con una prueba de regresión. Con fotos con la hoja vecina, la lectura salía corrida; una prueba mostró que cuatro burbujas rellenas formaban un cuadrilátero falso, y se agregó un control de tamaño físico.
-- **Decisión mía (no delegada):** probar con fotos reales y reportar qué preguntas fallaron.
+- **Qué hubo que corregir:** la lectura de las preguntas 4, 11, 15, 18 y 20 (mal detectadas), de la 12, 13, 14 y 17 (no detectadas) y el rechazo de hojas por no encontrar las esquinas.
+- **Qué inventó o erró la IA (según el resumen de contexto):** la línea base se inflaba cuando más de la mitad de las burbujas estaban marcadas; se pasó a una línea base solo de burbujas vacías, por columna y ventana local, con una prueba de regresión. Con fotos con la hoja vecina, la lectura salía corrida; una prueba mostró que cuatro burbujas rellenas formaban un cuadrilátero falso y se agregó un control de tamaño físico.
+- **Decisión mía (no delegada):** probar con fotos reales y reportar con precisión qué preguntas se detectaron mal y cuáles no se detectaron.
 - **Sección del informe donde encaja:** 6 Pruebas
 - **Ítem(s):** 5
 
-### N.º 24 · NO CONSTA · Claude Code
+### N.º 24 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** diseño
-- **Pedido (textual, fragmento):**
-  > En una foto no voy a subir dos hojas de corrección completas... podría ser un círculo o bien, un rectángulo y un cuadrado, lo que vos prefieras pero que la identificación sea inequívoca
-
-  (Los puntos suspensivos son los del resumen; lo omitido NO CONSTA.) Paráfrasis del resumen, no textual: el usuario sugirió cambiar la forma de las marcas de esquina (cuadrados a la izquierda y triángulos a la derecha).
+- **Pedido (textual, mensajes consecutivos):**
+  > Y no podes cambiarle la forma a las marcas de la derecha de la hoja? por ejemplo esperar un cuadrado negro a la izquierda y un triangulo a la derecha? eso seria inequivoco.
+  > En una foto no voy a subir dos hojas de correcciòn completas, parte del proceso es cortarla para entregarlas a los alumnos. Si no es un triangulo, podrìa ser un circulo o bien, un rectangulo y un cuadrado, lo que vos prefieras pero que la identificacion sea inequivoca
 - **Qué hizo la IA:** diseñó la hoja V3 con marcas de esquina de forma propia: cuadrados a la izquierda y barras a la derecha, con la orientación deducida de las formas («Hoja V3: marcas de esquina con forma propia», según git, 2026-10-24).
 - **Qué hubo que corregir:** NO CONSTA
 - **Qué inventó o erró la IA:** NO CONSTA
-- **Decisión mía (no delegada):** que las marcas de esquina se distingan sin ambigüedad (dejé la forma al criterio de la IA).
+- **Decisión mía (no delegada):** que las marcas de esquina se distingan sin ambigüedad; propuse cuadrado a la izquierda y triángulo a la derecha y dejé la forma final al criterio de la IA, con la precisión de que en una foto no suben dos hojas completas.
 - **Sección del informe donde encaja:** 3 Solución
 - **Ítem(s):** 5, 7
 
-### N.º 25 · NO CONSTA · Claude Code
+### N.º 25 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** construcción
-- **Pedido (textual, fragmentos de mensajes separados):**
+- **Pedido (textual, mensajes consecutivos):**
   > Otra cosa, agrega la posibilidad de marcar como dudosas o a revisar con un flag las correcciones para que luego puedas analizarlas y corregir la tool
-
   > hace el merge
-- **Qué hizo la IA:** agregó banderas por hoja y por pregunta, notas y registro de correcciones manuales, descarga en JSON y subida a Drive de los casos a revisar con las fotos sin el nombre, el registro ni la fecha («Casos a revisar: banderas, correcciones a mano y análisis en Drive», según git, 2026-10-24); luego se fusionó a `main`.
+- **Qué hizo la IA:** agregó banderas por hoja y por pregunta, notas y registro de correcciones manuales, descarga en JSON y subida a Drive de los casos a revisar con las fotos sin el nombre, el registro ni la fecha («Casos a revisar: banderas, correcciones a mano y análisis en Drive», según git, 2026-10-24); luego se fusionó a `main` (pull request n.º 4, según git, 2026-10-24).
 - **Qué hubo que corregir:** NO CONSTA
 - **Qué inventó o erró la IA:** NO CONSTA
 - **Decisión mía (no delegada):** que los casos dudosos se marquen para que la IA los analice y corrija la herramienta; autorizar la fusión.
 - **Sección del informe donde encaja:** 3 Solución (y 7 Riesgos y controles, por el enmascarado de datos personales)
 - **Ítem(s):** 5, 6, 10
 
-### N.º 26 · NO CONSTA · Claude Code
+### N.º 26 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** pruebas
-- **Pedido (textual, fragmentos de mensajes separados):**
+- **Pedido (textual, mensajes consecutivos):**
   > Esta hoja se detectò bien y todas las respuestas marcadas se detectaron bien
-
   > lo hice a proposito para ver que pasaba, esta bien no detectarlo, PERO si el punto fuera lo suficientemente grande como para ser una respuesta entonces si tiene que contemplarlo.
-
   > Hice otra prueba y marquè con el flag la pregunta de algo que no quedó bien.
-
-  Envió además la foto original de la hoja con la bandera.
-- **Qué hizo la IA:** analizó la foto marcada con la bandera y ajustó la medición: mide la tinta más cerca del centro de la burbuja («Mide la tinta más cerca del centro para leer mejor las cruces finas», según git, 2026-10-24) y recentró la sensibilidad normal en 0,085 («Centra el umbral de sensibilidad normal en 0,085», según git, 2026-10-24); un punto de al menos 1 mm cuenta como respuesta.
+- **Qué hizo la IA:** analizó la foto marcada con la bandera y ajustó la medición: mide la tinta más cerca del centro de la burbuja («Mide la tinta más cerca del centro para leer mejor las cruces finas», según git, 2026-10-24) y recentró la sensibilidad normal en 0,085 («Centra el umbral de sensibilidad normal en 0,085», según git, 2026-10-24); un punto de al menos 1 mm cuenta como respuesta (según el README del proyecto).
 - **Qué hubo que corregir:** el umbral de lectura de cruces finas.
 - **Qué inventó o erró la IA (según el resumen de contexto):** las pruebas de tamaño de punto fallaron al cambiar el radio de medición y hubo que actualizarlas; las cruces quedaban en el borde del umbral y se recentró con un análisis de ventanas sobre seis fotos reales.
-- **Decisión mía (no delegada):** hice la prueba del punto a propósito y fijé el criterio: un punto lo bastante grande debe contar como respuesta.
+- **Decisión mía (no delegada):** hice a propósito la prueba con un punto y fijé el criterio: un punto lo bastante grande debe contar como respuesta; marqué con la bandera la pregunta que no quedó bien.
 - **Sección del informe donde encaja:** 6 Pruebas
 - **Ítem(s):** 5
 
-### N.º 27 · NO CONSTA · Claude Code
+### N.º 27 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** diseño
-- **Pedido (textual, fragmentos de mensajes separados):**
-  > Quiero que agregues al pie, separado del espacio para marcar las respuestas, dos ejemplos en una misma fila, uno que indique como es la forma correcta de identificar una respuesta, y otro que indique como no es una forma correcta de marcar una respuesta.
-
+- **Pedido (textual):**
   > mostrame alternativas
+  >
+  > me gusta la opción A PERO el correcto lo haría pintando todo el circulo, asi como esta parece que hay que hacer rayitas, y del lado incorrecto, pondría los 4 ejemplos incorrectos.
 
-  > me gusta la opción A PERO el correcto lo haría pintando todo el circulo... y del lado incorrecto, pondría los 4 ejemplos incorrectos.
+  El primer mensaje del pedido («Quiero que agregues al pie, separado del espacio para marcar las respuestas, dos ejemplos en una misma fila, uno que indique como es la forma correcta de identificar una respuesta, y otro que indique como no es una forma correcta de marcar una respuesta.») no figura en el pegado; el texto es el que reproduce el resumen de contexto.
 - **Qué hizo la IA:** mostró alternativas y creó la hoja V4 con una banda de ejemplos al pie: correcto con el círculo pintado por completo y cuatro formas incorrectas (tilde, cruz, punto y medio relleno) («Hoja V4: banda de ejemplos de cómo marcar al pie», según git, 2026-10-24).
-- **Qué hubo que corregir:** NO CONSTA
+- **Qué hubo que corregir:** el ejemplo correcto de la alternativa A parecía mostrar rayitas en lugar del círculo pintado.
 - **Qué inventó o erró la IA:** NO CONSTA
-- **Decisión mía (no delegada):** elegir la alternativa A y definir qué mostrar en cada lado (círculo pintado y cuatro incorrectos).
+- **Decisión mía (no delegada):** pedir ejemplos de marcado correcto e incorrecto al pie; elegir la alternativa A con el círculo correcto pintado por completo y los cuatro incorrectos del otro lado.
 - **Sección del informe donde encaja:** 3 Solución
 - **Ítem(s):** 3, 7
 
-### N.º 28 · NO CONSTA · Claude Code
+### N.º 28 · 2026-10-24 (indicado por el usuario) · Claude Code
 - **Etapa:** construcción
-- **Pedido (textual, fragmentos de mensajes separados):**
-  > Creo que podemos quitar la leyenda que dice 'Rellena el circulo por completo con Birome' con lo ultimo agregado, se vuelve redundante
-
+- **Pedido (textual, mensajes consecutivos):**
+  > Creo que podemos quitar la leyenda que dice "Rellena el circulo por completo con Birome" con lo ultimo agregado, se vuelve redundante
   > quitala y baja un poco más esto que agregamos de correcto / incorrecto. Si, pone lo de la birome en la parte de correcto.
-
   > Centra en cada espacio los textos Correcto / Incorrecto.
-
   > hace el merge
-- **Qué hizo la IA:** quitó la línea redundante, bajó la banda, puso «con birome» en el lado correcto y centró los títulos («V4: sin la línea de instrucción, banda más abajo y títulos centrados», según git, 2026-10-24); creó el pull request n.º 5 y lo fusionó a `main`.
+- **Qué hizo la IA:** quitó la línea redundante, bajó la banda, puso «con birome» en el lado correcto y centró los títulos («V4: sin la línea de instrucción, banda más abajo y títulos centrados», según git, 2026-10-24); creó el pull request n.º 5 y lo fusionó a `main` (según git, 2026-10-24).
 - **Qué hubo que corregir:** NO CONSTA
 - **Qué inventó o erró la IA:** NO CONSTA
 - **Decisión mía (no delegada):** el diseño final de la banda y autorizar la fusión.
@@ -585,7 +578,7 @@ Del tramo del 24 de octubre anterior al resumen de contexto el usuario no pegó 
 3. (N.º 19) La clave de respuestas se veía distinta en la PC (de a pares) y en el celular (de a una).
 4. (N.º 20) La app fallaba con el error de orientación en una foto que ya había leído bien; el navegador tenía una copia vieja del código, y al actualizarlo la leyó. Motivó el número de versión en los archivos (N.º 22).
 5. (N.º 21) Con la clave de la pregunta 8 (A, B, C, D) y todas las opciones marcadas, la app daba 0 puntos; pedí que diera algún puntaje.
-6. (Según el resumen, N.º 23 y 24) La lectura fallaba con hojas con más de la mitad de las burbujas marcadas y con la hoja vecina en la foto.
+6. (N.º 23) En la prueba del 24 de octubre, las preguntas 4, 11, 15, 18 y 20 se detectaron mal, las 12, 13, 14 y 17 no se detectaron y varias hojas se rechazaron por no encontrar las esquinas; según el resumen, la lectura fallaba con hojas con más de la mitad de las burbujas marcadas y con la hoja vecina en la foto.
 7. (N.º 30) El criterio «descuento solo por marcas por encima de la cantidad de correctas» daba resultados que señalé como raros (casos 7, 9, 21 y 24: la primera incorrecta salía gratis); además, las descripciones de las opciones en el formulario traían una cuenta mal armada.
 8. (N.º 34) La regla «marcar todas las opciones vale 0» no distinguía cuántas correctas había; con 4 correctas de 5 daba 0 por una sola incorrecta.
 9. (N.º 30) La IA hizo un commit con una prueba fallando y con valores esperados mal calculados.
@@ -626,7 +619,7 @@ Del tramo del 24 de octubre anterior al resumen de contexto el usuario no pegó 
 - Sensibilidad normal 0,085 (alta 0,05, baja 0,16): calibrada por la IA con fotos reales (según el resumen: seis fotos). Origen: pruebas de la IA con fotos del usuario.
 - Capacidad de la hoja V4: 32 preguntas con 5 opciones o 48 con 4 opciones. Origen: cálculo de la app.
 - Pruebas automáticas: 60 el 2026-10-02, 82 al inicio del tramo posterior al resumen y 83 al final. Origen: salida de `node tests/run.js`.
-- Fallas reportadas: respuestas 4 y 6 no leídas en la primera foto real (N.º 13); mal leídas 4, 11, 15, 18 y 20 y no leídas 12, 13, 14 y 17 en la prueba del 24 de octubre (N.º 23). Origen: usuario (esta última, según el resumen).
+- Fallas reportadas: respuestas 4 y 6 no leídas en la primera foto real (N.º 13); mal leídas 4, 11, 15, 18 y 20 y no leídas 12, 13, 14 y 17 en la prueba del 24 de octubre (N.º 23). Origen: usuario (texto pegado).
 - Costo acumulado de la sesión: USD 39,33 hasta el 2026-11-08, según la consulta de la sesión de la plataforma. **Incluye también el trabajo fuera del alcance de este registro** (armado del examen); no es solo el costo de la herramienta. Origen: la consulta de la sesión hecha en este chat.
 - Tiempo de corrección a mano: SIN ORIGEN. El usuario solo dijo «lleva mucho tiempo corregirlos»; no hay cifra.
 - Cantidad de alumnos o de exámenes por cuatrimestre: NO CONSTA.
