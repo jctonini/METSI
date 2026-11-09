@@ -69,7 +69,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 ## 4. Cómo se construyó · presupuesto ~700 palabras
 *Fuentes: `README.md` (mapa de archivos), `diccionario-de-datos.md`, `registro-ia.md` §2.*
 
-**Herramientas y por qué esas.** Claude Code (asistente de IA que escribió el código y corrió las pruebas), GitHub (repositorio y GitHub Pages), Vercel (publicación con login), Supabase (usuarios y roles), Google Drive y Google Picker (sincronización y carga de fotos desde Drive), Backlog.md (gestión de tareas). **[COMPLETAR por qué cada una y frente a qué alternativa; por ejemplo, planilla de Google con Apps Script frente a una app web que lee fotos en el navegador]** Esto responde el ítem 2.
+**Herramientas y por qué esas** (ítem 2; tabla completa en `seccion-04-como-se-construyo.md`). **Claude Code** (Claude Sonnet 5.5, esfuerzo medio), porque ya lo venía usando; la alternativa de la cursada era Codex. Una **app web** y no una planilla de Google con Apps Script, para usarla desde el celular y la PC con Drive. **Vercel** y **Supabase**, porque ya tenía cuentas, tienen plan gratuito para este uso y son las herramientas que se usan en la diplomatura (clase 13); **GitHub** también es de la cursada. **Google Drive** para ver fotos y resultados desde el celular y la PC. Una **red neuronal local** para sugerir el registro, para que ninguna imagen salga del dispositivo, en lugar de enviar recortes a la API de un modelo. **Backlog.md** para gestionar las tareas con el agente. Costos: Google Cloud sin facturación; planes gratuitos de Vercel y Supabase **[VALIDAR el plan exacto]**; uso de IA hasta USD 56,13 (cota superior). **Avisos de la clase 13:** el plan Hobby de Vercel es solo para uso personal y no comercial **[VALIDAR si una cátedra califica]**, y Supabase pausa un proyecto gratuito tras una semana sin actividad, lo que dejaría el login sin funcionar hasta reactivarlo.
 
 **Estructura de la solución.** Todo el código vive en un repositorio. Resumen del mapa de archivos (`README.md`): lectura de la foto (`js/scanner.js`, `js/layout.js`, `js/sheet.js`), puntaje (`js/scoring.js`), identificación y repetidos (`js/identity.js`, `js/similar.js`), casos a revisar (`js/review.js`), exportación (`js/csv.js`), Drive y sesión (`js/drive.js`, `js/auth.js`, `js/picker.js`), lectura local del registro (`js/digits.js`, `js/digit-model.js`), interfaz (`js/app-*.js`), servidor del login (`api/`, `server/`).
 
@@ -117,6 +117,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 - **Secreto profesional:** **[COMPLETAR si aplica a las calificaciones y a quién tiene acceso]**.
 - **Qué pasa si se equivoca y quién responde:** la app solo calcula el puntaje; el docente revisa lo dudoso, confirma el registro y decide la aprobación. Si la lectura falla, la hoja queda marcada y se corrige a mano. **Responde el docente.** **[VALIDAR la redacción]**
 - **Incidente real, para mostrar el control:** la API key del selector de Drive quedó en un repositorio público y Google la detectó a los 10 segundos (`LEAKED_CREDENTIALS`, solo notificó). Se restringió a los dos sitios de la app y solo a la API del selector; el proyecto no tiene facturación, así que no puede generar cargos. Cronología y evidencia en `registro-ia.md` (pendiente 12).
+- **Riesgos de los planes gratuitos (clase 13):** Supabase pausa el proyecto tras una semana sin actividad y el login dejaría de funcionar hasta reactivarlo; el plan Hobby de Vercel es para uso personal y no comercial.
 - **Riesgos abiertos:** GitHub Pages sigue publicado **sin login** (decisión pendiente con el profesor); al dar de baja a un usuario su sesión vale hasta una hora; el token de sesión se guarda en una cookie que escribe el navegador; la nota libre de «casos a revisar» y el nombre del archivo de la foto pueden contener datos personales.
 
 ## 8. Valor y costo · presupuesto ~350 palabras
@@ -151,7 +152,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 | # | Ítem | Sección | Estado | Qué falta |
 |---|---|---|---|---|
 | 1 | Problema real, quién lo sufre y cuánto pesa | 1 | Parcial | Medición del 18/11 y el peso en horas |
-| 2 | Herramienta justificada frente a otra, con costo | 4 y 8 | Parcial | Comparación y costos reales |
+| 2 | Herramienta justificada frente a otra, con costo | 4 y 8 | Casi cubierto | Confirmar los planes de Vercel, Supabase y GitHub y si el uso de IA se cobró |
 | 3 | Instrucciones armadas con PEDIR o equivalente | 5 y Anexo D | Cubierto con equivalente | Confirmar la sigla PEDIR |
 | 4 | Datos o documentos que usa y qué queda afuera | 4 y Anexo B | Parcial | Qué queda afuera y por qué |
 | 5 | Verificación con casos de respuesta conocida | 6 | Cubierto | Confirmar la pregunta 8; resultados del 18/11 |
