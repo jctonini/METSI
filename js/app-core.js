@@ -85,7 +85,7 @@
   const letters = (arr) => arr.map((i) => LETTERS[i]).join('');
 
   function scoreOf(sheet) {
-    return scoreSheet(sheet.answers, state.key, state.cfg.penalty, state.cfg.numOptions);
+    return scoreSheet(sheet.answers, state.key, state.cfg.penalty);
   }
 
   // Reemplaza el contenido del estado sin cambiar el objeto (los demás archivos guardan la referencia).

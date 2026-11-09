@@ -79,7 +79,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 1. Idea y diseño de la hoja (1 de octubre): grilla A5, 7 casilleros de registro, puntaje parcial.
 2. Sincronización con Drive y publicación (1 de octubre).
 3. Primeras pruebas con hojas reales, identificación obligatoria y control de repetidos (2 de octubre).
-4. Hojas V3 y V4, banderas de casos dudosos y regla de puntaje de «marcar todas» (24 de octubre).
+4. Hojas V3 y V4, banderas de casos dudosos y regla de puntaje de «marcar todas» (24 de octubre; el 9 de noviembre se volvió a la regla de las marcas en exceso, tarea METSI-12).
 5. Backlog.md, reintentos de Drive y módulos (1 de noviembre).
 6. Login con usuario y contraseña (7 de noviembre).
 7. Selector de Drive, selección múltiple y lectura local del registro (8 de noviembre).

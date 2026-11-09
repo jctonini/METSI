@@ -82,20 +82,20 @@ El docente corrige **uno de los parciales a mano y toma el tiempo**. Para poder 
 
 **Comparar también los puntajes.** Para el ítem 5 (verificación con casos de respuesta conocida) conviene anotar cuántas hojas obtienen **un puntaje distinto** con la herramienta que a mano, porque tus puntajes manuales son la respuesta conocida. La regla de las incorrectas de la app es configurable (valor inicial 0,33, que **eligió el asistente** y no vos, N.º 22): si difiere de tu cálculo manual, hay que ajustar el valor antes de comparar.
 
-**Tu regla manual, según lo declarado el 2026-11-09:** si en una pregunta de dos correctas el alumno marca una correcta y una incorrecta, le das solo el puntaje de la correcta. En la app eso equivale a poner el valor de las incorrectas en **0**. Con el valor inicial de 0,33 (que eligió el asistente) daría 0,335 en vez de 0,5. Puntajes de la app para otros casos, calculados con `scoreQuestion` (pregunta de 1 punto, 4 opciones), para que anotes qué hacés vos en cada uno:
+**Tu criterio manual, según lo declarado el 2026-11-09:** cinco casos, con el puntaje que das en cada uno (tabla de abajo). El valor inicial de las incorrectas (0,33) lo eligió el asistente y no vos (N.º 22); aquí se compara contra tu criterio.
 
-| Caso (pregunta de 1 punto, 4 opciones) | **Tu criterio a mano** (declarado 2026-11-09) | App actual, valor 0,33 | App del 24/10 (commit `78d0f53`), valor 0,33 |
+| Caso (pregunta de 1 punto, 4 opciones) | **Tu criterio a mano** (declarado 2026-11-09) | App desde el 2026-11-09, valor 0,33 (regla del 24/10, METSI-12) | App hasta el 2026-11-09, valor 0,33 (cada incorrecta resta) |
 |---|---|---|---|
-| 2 correctas (A y B): marcó A y C | 0,5 | 0,335 ✗ | 0,5 ✓ |
+| 2 correctas (A y B): marcó A y C | 0,5 | 0,5 ✓ | 0,335 ✗ |
 | 1 correcta (A): marcó A y C | 0,67 | 0,67 ✓ | 0,67 ✓ |
 | 2 correctas (A y B): marcó A, B y C | 0,835 | 0,835 ✓ | 0,835 ✓ |
-| 2 correctas (A y B): marcó las 4 opciones | 0,5 | 0 ✗ | 0,67 ✗ |
+| 2 correctas (A y B): marcó las 4 opciones | 0,5 | 0,67 ✗ | 0 ✗ |
 | 3 correctas (A, B y C): marcó las 4 opciones | 0,89 | 0,89 ✓ | 0,89 ✓ |
 | 2 correctas (A y B): marcó solo C | no consultado | 0 | 0 |
 
-**Lectura:** con el valor 0,33, tu criterio coincide en **4 de 5 casos con la regla que tenía la app el 24 de octubre** («las incorrectas solo restan por las marcas que exceden la cantidad de correctas»: marcar tantas opciones como correctas hay no resta) y en **3 de 5 con la regla actual** («cada incorrecta resta siempre»). La regla actual difiere de tu criterio cuando marca tantas opciones como correctas hay (0,335 contra tu 0,5). El caso de marcar las cuatro opciones con dos correctas no coincide con ninguna: tu 0,5 contra 0,67 (regla anterior) y 0 (regla actual, que aceptaste el 24/10 con el N.º 34). Ese último valor puede ser una aproximación tuya; **confirmarlo**. Los valores de la regla actual salen de `js/scoring.js` y los de la anterior de `git show 78d0f53:js/scoring.js`, ambos evaluados con `scoreQuestion`.
+**Decisión del autor (2026-11-09): volver a la regla del 24 de octubre** («las incorrectas solo restan por las marcas que exceden la cantidad de correctas»), implementada en la tarea METSI-12 con `scoreQuestion` en `js/scoring.js`. Con el valor 0,33 la app coincide con tu criterio en **4 de 5 casos**. La regla anterior («cada incorrecta resta siempre; marcar todas vale 0 si las correctas son la mitad o menos», aceptada el 24/10, N.º 34) coincidía en 3 de 5. **Diferencia abierta:** marcar las cuatro opciones con dos correctas da 0,67 con la regla y vos declaraste 0,5 (puede ser una aproximación; **confirmarlo**). Los valores se evaluaron con la propia función de puntaje y quedan fijados en `tests/run.js`.
 
-Antes de la corrida del 18 de noviembre hay que decidir qué regla usa la app para que coincida con tu criterio manual. Ningún valor del descuento lo logra con la regla actual: la diferencia no es de valor, es de forma de la regla. Eso es un hallazgo para el informe (sección 6) y una decisión tuya.
+Para la corrida del 18 de noviembre, dejar el valor de las incorrectas en **0,33** (es el que reproduce tus valores). Si en la comparación aparecen hojas con puntaje distinto al manual, anotar el caso: puede ser la diferencia abierta.
 
 Plantilla para anotar (solo tiempos y cantidades, **sin nombres ni registros de alumnos**):
 

@@ -85,8 +85,7 @@ El lector recibe la imagen (conviene lado mayor de ~1600 px) y el layout, y hace
 ## 6. Puntaje (`js/scoring.js`)
 
 - El puntaje de cada pregunta se **reparte en partes iguales** entre sus respuestas correctas; cada correcta marcada suma su parte (puntaje parcial).
-- Cada incorrecta marcada resta `penalty` × el valor de una correcta (`penalty` va de 0 a 1; vale 0,33 en un examen nuevo). **Una pregunta nunca baja de 0.**
-- **Marcar todas** las opciones vale 0 cuando las correctas son la mitad o menos de las opciones.
+- Las incorrectas **solo restan por las marcas que exceden la cantidad de correctas**: cada marca de más resta `penalty` × el valor de una correcta (`penalty` va de 0 a 1; vale 0,33 en un examen nuevo). Marcar tantas opciones como correctas hay no resta. **Una pregunta nunca baja de 0.** No hay una regla especial para «marcar todas».
 - Sin correctas definidas, la pregunta se anula y da el puntaje completo a todos.
 - Devuelve puntaje, máximo y porcentaje. **No convierte el puntaje en nota ni decide quién aprueba.**
 
@@ -156,7 +155,7 @@ Se hizo en siete tramos, cada uno con un pedido al asistente, un plan antes de l
 | 1 | 1 oct | Hoja A5, lectura de la foto, puntaje con parcial, exportación | `layout.js`, `sheet.js`, `scanner.js`, `scoring.js`, `csv.js` |
 | 2 | 1 oct | Sincronización con Drive y publicación | `drive.js`, `app-drive.js` |
 | 3 | 2 oct | Identificación obligatoria, repetidos, hoja V2 | `identity.js`, `similar.js` |
-| 4 | 24 oct | Hojas V3 y V4, banderas, regla de «marcar todas» | `layout.js`, `review.js`, `scoring.js` |
+| 4 | 24 oct | Hojas V3 y V4, banderas, regla de «marcar todas» (reemplazada el 9 de nov por la de marcas en exceso, METSI-12) | `layout.js`, `review.js`, `scoring.js` |
 | 5 | 1 nov | Backlog.md, reintentos, módulos, guía de uso | `retry.js`, `auth.js`, `photostore.js`, `app-*.js` |
 | 6 | 7 nov | Login con roles | `api/`, `server/`, `public/login.*`, `account.js`, `app-users.js` |
 | 7 | 8 nov | Selector de Drive, selección múltiple, lectura del registro | `picker.js`, `selection.js`, `digits.js`, `digit-model.js` |

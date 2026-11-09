@@ -82,9 +82,8 @@
   function renderPenaltyExample() {
     const f = state.cfg.penalty;
     const key = { correct: [1, 2], points: 1 }; // ejemplo: correctas B y C, vale 1 punto
-    const p = (marked) => fmt(scoreQuestion(marked, key, f, state.cfg.numOptions).earned);
-    $('penalty-example').textContent = `Ejemplo con el descuento actual (${fmt(f)}): en una pregunta de 1 punto con correctas B y C, si el alumno marca solo B y C recibe ${p([1, 2])}; si marca B, C y una incorrecta recibe ${p([1, 2, 0])}; si marca las cinco opciones (A–E) recibe ${p([0, 1, 2, 3, 4])}.`
-      + (state.cfg.numOptions === 5 ? ' (marcar todas vale 0 porque las correctas son la mitad o menos de las opciones)' : '');
+    const p = (marked) => fmt(scoreQuestion(marked, key, f).earned);
+    $('penalty-example').textContent = `Ejemplo con el descuento actual (${fmt(f)}): en una pregunta de 1 punto con correctas B y C, si el alumno marca solo B y C recibe ${p([1, 2])}; si marca B y una incorrecta (tantas marcas como correctas) recibe ${p([1, 0])}; si marca B, C y una incorrecta recibe ${p([1, 2, 0])}; si marca las cinco opciones (A–E) recibe ${p([0, 1, 2, 3, 4])}.`;
   }
   $('cfg-penalty').addEventListener('change', (e) => {
     const v = Number(String(e.target.value).replace(',', '.'));

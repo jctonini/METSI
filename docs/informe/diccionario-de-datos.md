@@ -129,8 +129,7 @@ La app solo accede a los archivos que ella misma crea o que el docente elige en 
 ### Cálculo del puntaje (`scoring.js`)
 - Puntaje de la pregunta ÷ cantidad de correctas = valor de cada opción correcta.
 - Cada correcta marcada suma ese valor, aunque no se marquen todas.
-- Cada incorrecta marcada resta `penalty` × ese valor. Una pregunta nunca baja de 0.
-- Marcar **todas** las opciones vale 0 cuando las correctas son la mitad o menos de las opciones.
+- Las incorrectas **solo restan por las marcas que exceden la cantidad de correctas**: cada una de esas marcas en exceso resta `penalty` × ese valor. Marcar tantas opciones como correctas hay no resta, aunque alguna sea incorrecta. Una pregunta nunca baja de 0. No hay una regla especial para «marcar todas». (Regla vigente desde el 2026-11-09, tarea METSI-12; vuelve a la del 24 de octubre.)
 - Sin correctas definidas, la pregunta se anula y da el puntaje completo a todos.
 - `percent` = puntaje total ÷ puntaje máximo × 100. En pantalla y en el CSV, hasta 3 decimales.
 
