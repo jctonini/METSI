@@ -13,7 +13,7 @@ Hoy corrijo los exámenes completamente a mano, y no examen por examen sino **po
 5. **Paso las notas a una planilla de Excel**, con los datos de cada alumno, y verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ningún examen haya quedado sin identificar.
 6. **Comparto las notas con los alumnos.**
 7. **Subo las notas a MiEcon**, la web de la facultad.
-8. **Aplico el criterio de aprobación** sobre la planilla **[VALIDAR en qué momento]**. Eso lo decido yo después de ver los puntajes.
+8. **Aplico el criterio de aprobación**, que está **fijado de antemano**: hay que tener el 60 % del examen aprobado para obtener un 4 y a partir de ahí hay una correlación de puntajes hasta el 10 **[VALIDAR si es el 60 % del puntaje máximo y si la correlación es lineal; COMPLETAR en qué momento lo aplico, por ejemplo en Excel antes de compartir las notas]**.
 
 Como el trabajo se hace por lotes, **el tiempo por examen no se puede medir directamente**: se obtiene haciendo todo el proceso para el conjunto de exámenes y dividiendo por la cantidad. No lo cronometré. Mi estimación, sin medir, es de entre 4 y 5 minutos por examen, con unos 80 alumnos por turno. Los pasos que más consumen son corregir por carillas, sumar, ordenar los exámenes y volver a tipear los datos en la planilla, y todos dependen de mi atención.
 
@@ -28,11 +28,12 @@ Como el trabajo se hace por lotes, **el tiempo por examen no se puede medir dire
 | 5. Pasar a Excel y verificar contra el listado de inscriptos | Tipeo cada dato y cada nota; verifico a ojo contra el listado | **Exporta un CSV** para Excel o Google Sheets. Lo escrito que la app identifica no se vuelve a tipear (marcas, modalidad, puntaje; el registro como **sugerencia** que se confirma); el **nombre** se escribe mirando el recorte. La app **frena repetidos y hojas sin identificar**, pero **no compara con el listado de inscriptos** |
 | 6. Compartir con los alumnos | Manual | **Sigue manual** |
 | 7. Subir a MiEcon | Manual | **Sigue manual** (la app no se conecta con MiEcon) |
-| 8. Criterio de aprobación | Lo aplico yo | **Lo sigo aplicando yo**: la app solo calcula el puntaje |
+| 8. Criterio de aprobación (60 % del examen = 4; correlación de puntajes hasta el 10, fijado de antemano) | Lo aplico yo sobre el puntaje | **Lo sigo aplicando yo**: la app calcula el puntaje y el **porcentaje** de cada alumno (columna `Porcentaje` del CSV), que sirven de base para aplicarlo en la planilla, pero **no lo convierte en nota** |
 
 ## Observaciones útiles para el resto del informe
 - **Qué cambia de verdad:** corregir, sumar, ordenar y gran parte de pasar a Excel. Es lo que el autor describe como ahorro: lo que está escrito y la herramienta identifica no se vuelve a tipear (2026-11-09).
 - **Qué sigue igual:** compartir las notas, subirlas a MiEcon y el control contra el listado de inscriptos. Mejora posible para la sección 9: comparar el CSV exportado con el listado de inscriptos.
+- **El criterio de aprobación no lo decide la app:** está fijado de antemano (60 % del examen = nota 4, correlación de puntajes hasta el 10) y lo aplico yo. El 1 de octubre se discutió que la app lo hiciera y se decidió que no (N.º 3 y 4). **Mejora posible para la sección 9:** aplicar esa escala en la app, que hoy no lo hace; es una decisión de diseño del autor.
 - **Límites del ahorro:** el nombre sigue siendo manual; el registro es una sugerencia que hay que confirmar y su precisión con hojas reales **no está medida**; si la lectura falla, corregir cuesta tiempo.
 - **Cambio de proceso para los alumnos:** pasan de marcar en el examen de cuatro carillas a usar una hoja de respuestas aparte. La hoja aclara que, en caso de diferencias, **prevalecen las respuestas marcadas en la hoja** (decisión del autor, N.º 17).
 - **Cómo se mide el tiempo, en ambos métodos:** proceso completo de un lote dividido por la cantidad de exámenes del lote (ver `valor-y-costo.md`).

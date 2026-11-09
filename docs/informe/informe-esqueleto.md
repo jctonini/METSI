@@ -41,7 +41,7 @@ Hoy corrijo los exámenes completamente a mano, y no examen por examen sino por 
 5. Paso las notas a una planilla de Excel y verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ninguno haya quedado sin identificar.
 6. Comparto las notas con los alumnos.
 7. Subo las notas a MiEcon, la web de la facultad.
-8. Aplico el criterio de aprobación sobre la planilla **[VALIDAR en qué momento]**.
+8. Aplico el criterio de aprobación, fijado de antemano: hay que tener el 60 % del examen aprobado para obtener un 4 y a partir de ahí hay una correlación de puntajes hasta el 10 **[VALIDAR si es el 60 % del puntaje máximo y si la correlación es lineal; COMPLETAR en qué momento lo aplico]**.
 
 Como el trabajo es por lotes, el tiempo por examen no se mide directamente: se obtiene haciendo todo el proceso para el conjunto y dividiendo por la cantidad. No lo cronometré; mi estimación, sin medir, es de entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR si se mide el 18/11]**.
 
@@ -64,7 +64,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 | Calcular el puntaje de cada pregunta y el total | Marcar como dudosas respuestas, dígitos o fotos | Revisar y corregir lo dudoso |
 | Detectar hojas sin nombre ni registro y bloquear la exportación | Avisar de posibles repetidos (mismo registro o mismo nombre) | Resolver cada repetido: personas distintas, misma hoja o dato a corregir |
 | Avisar si se cargó dos veces la misma foto o el mismo papel | — | Decidir si se carga igual |
-| — | — | **Decidir quién aprueba**: la app solo calcula el puntaje |
+| — | — | **Convertir el puntaje en nota**: el criterio está fijado de antemano (60 % = 4, correlación hasta el 10) y lo aplico yo; la app solo calcula el puntaje y el porcentaje |
 | — | — | Autorizar publicar y administrar usuarios |
 
 ## 4. Cómo se construyó · presupuesto ~700 palabras
@@ -95,7 +95,7 @@ Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso
 - **Instrucciones armadas con la consigna de siete partes de la clase 5** (equivalente de PEDIR **[confirmar]**): el Pedido A y el Pedido B de `instrucciones-para-el-modelo.md`, con la aclaración de que son una reescritura y no los pedidos usados.
 - **Qué tuve que corregir:** la lectura de hojas reales (orientación, cruces finas, hojas con muchas marcas, hoja vecina en la foto), la regla de puntaje de «marcar todas» (un primer criterio daba resultados raros y otro daba 0 con 4 correctas de 5), el selector de Drive que abría en una carpeta que no era la raíz, y el README que decía que solo se publicaba en Vercel.
 - **Qué inventó o erró el asistente:** usó mis datos reales como ejemplo de prueba (N.º 13); indicó un paso de Vercel que no existía (N.º 39); un commit con una prueba fallando (N.º 30); propuso mostrar «?» en registros de 6 dígitos (N.º 52); propuso enviar recortes de letra a la API de un modelo (N.º 51). **[COMPLETAR si recordás otras]**
-- **Decisiones que no le delegué:** que la app no decida quién aprueba, el puntaje parcial, la identificación obligatoria y qué es un repetido, no enviar imágenes a servicios externos, restringir y probar en producción, dejar GitHub Pages abierto hasta consultar al profesor.
+- **Decisiones que no le delegué:** que la app no convierta el puntaje en nota ni decida quién aprueba (el criterio está fijado de antemano y lo aplico yo), el puntaje parcial, la identificación obligatoria y qué es un repetido, no enviar imágenes a servicios externos, restringir y probar en producción, dejar GitHub Pages abierto hasta consultar al profesor.
 - **Cifras y normas:** cada cifra de este informe tiene su origen en el diccionario o en `valor-y-costo.md`. **La cita de la Ley 25.326 hay que verificarla contra el texto oficial antes de ponerla.**
 
 ## 6. Pruebas · presupuesto ~600 palabras

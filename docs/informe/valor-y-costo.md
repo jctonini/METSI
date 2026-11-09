@@ -19,7 +19,7 @@ El valor de METSI Corrector es el **tiempo que ahorra** corregir exámenes multi
 | Costo de uso de IA | hasta USD 56,13 | Datos que informa la plataforma para las 5 sesiones de desarrollo, 2026-11-09 (detalle en `registro-ia.md` §2); modelo Claude Sonnet 5.5, esfuerzo medio | **Cota superior**: dos sesiones incluyen trabajo ajeno a la herramienta (armado de exámenes y otro proyecto). Solo las tres sesiones que tocan únicamente la herramienta suman USD 7,24. Falta aclarar si se cobró o está incluido en una suscripción |
 | Licencias de la app | Ver sección 5 | — | Parcial |
 
-**Qué no se sabe del 4 a 5 minutos** (hay que aclararlo en el informe): si es para el examen de 10 o el de 20 preguntas, si incluye ordenar los exámenes por registro, pasar las notas a Excel y el control contra el listado de inscriptos, y si incluye compartir las notas y subirlas a MiEcon.
+**Qué no se sabe del 4 a 5 minutos** (hay que aclararlo en el informe): si es para el examen de 10 o el de 20 preguntas, si incluye ordenar los exámenes por registro, pasar las notas a Excel y el control contra el listado de inscriptos, y si incluye convertir el puntaje en nota con el criterio de aprobación, compartir las notas y subirlas a MiEcon.
 
 ## 3. Tiempo de corrección a mano (con el dato declarado)
 
