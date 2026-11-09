@@ -111,7 +111,7 @@ Resumen por tema (detalle en la lista C del bruto):
 | 5 Verificación con casos conocidos | Bien cubierto | N.º 13, 21, 23, 26, 29, 31, 32; 115 pruebas | Resolver la duda de la pregunta 8 (ver sección 9) |
 | 6 Autonomía | Bien cubierto | N.º 4, 14, 25; README (el registro sugerido nunca se carga solo) | Redactarlo como tabla: hace sola / propone / aprueba una persona |
 | 7 Construcción paso a paso | Parcial | N.º 9, 12, 16 a 19, 24, 27, 28, 35, 45, 47, 49; README y mapa de archivos | Falta redactar un paso a paso para que otra persona la rehaga |
-| 8 Datos en tablas y diccionario | **Ausente** | — | Documentar `datos.json`, `resultados.csv` y `casos.json` |
+| 8 Datos en tablas y diccionario | **Cubierto** (falta citarlo en el informe) | `docs/informe/diccionario-de-datos.md`: estado del examen, hoja, `resultados.csv`, `casos.json`, usuarios, reglas de validación y datos personales, con un ejemplo inventado | Resumirlo en la sección 4 del informe (tablas clave) y dejar el diccionario completo como anexo |
 | 9 Instalación en la organización | Parcial | N.º 6, 8, 10 a 12, 19, 28, 36, 37, 38, 44, 46, 48, 53; README; `docs/guia-de-uso.md` | Quién la mantiene y cómo se capacita; costo de Supabase y Vercel |
 | 10 Riesgos y datos personales | Parcial | N.º 7, 10, 13, 14, 17, 25, 37, 43, 51, 53 | Ley 25.326, quién responde si se equivoca, el acceso público de GitHub Pages (decisión pendiente con el profesor) |
 | 11 Uso de IA declarado | Casi completo | Los tres archivos brutos (N.º 1 a 53) | El modelo de cada sesión y al menos un pedido con PEDIR |
