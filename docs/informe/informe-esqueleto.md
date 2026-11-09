@@ -31,17 +31,20 @@
 - **Qué pasa si no se resuelve:** **[COMPLETAR en una o dos frases]**
 
 ## 2. La situación actual · presupuesto ~350 palabras
-*No hay un registro del proceso actual en el repositorio: esta sección la tenés que escribir o validar vos. Dejo un borrador a corregir.*
+*Fuente: respuestas del autor del 2026-11-09. Texto completo y tabla «hoy / propuesto» en `seccion-02-situacion-actual.md`.*
 
-Proceso de hoy, paso por paso **[VALIDAR cada paso]**:
-1. Los alumnos rinden en papel y marcan sus respuestas **[COMPLETAR cómo: en el mismo examen o en una hoja aparte]**.
-2. Anotan nombre, número de registro y modalidad de cursada.
-3. Corrijo cada examen comparando con la clave de respuestas.
-4. Calculo el puntaje de cada examen, aplicando puntaje parcial cuando hay más de una respuesta correcta y el descuento por respuestas incorrectas **[COMPLETAR cómo lo hacés hoy]**.
-5. Cargo las notas en una planilla **[COMPLETAR cuál]** y aplico después el criterio de aprobación.
-6. Identifico a cada alumno por nombre y registro y verifico que no haya repetidos **[COMPLETAR cómo]**.
+Hoy corrijo los exámenes completamente a mano, uno por uno. El proceso, paso por paso:
+1. Los alumnos rinden en papel. Marcan sus respuestas directamente en el examen impreso y anotan nombre, número de registro y modalidad de cursada.
+2. Corrijo cada examen con la clave de respuestas impresa, comparando pregunta por pregunta.
+3. Calculo el puntaje a mano, también pregunta por pregunta: el puntaje se reparte entre las respuestas correctas y se reconoce puntaje parcial **[VALIDAR si hoy también descontás las incorrectas y cómo]**.
+4. Paso las notas a una planilla de Excel, con los datos de cada alumno.
+5. Verifico contra el listado de inscriptos que estén todos, que no haya repetidos y que ningún examen haya quedado sin identificar.
+6. Cargo las notas en MiEcon, la web de la facultad.
+7. Aplico el criterio de aprobación sobre la planilla; lo decido yo después de ver los puntajes.
 
-Incluir un **diagrama simple del proceso de hoy** (una fila de cajas alcanza) y otro del proceso propuesto (sección 3).
+Los pasos 2 y 3 consumen el tiempo: según mi estimación, entre 4 y 5 minutos por examen, con unos 80 alumnos por turno **[COMPLETAR el 18/11 con la medición]**. Además dependen de mi atención en cada pregunta, en el puntaje parcial y en el control de repetidos y de exámenes sin identificar.
+
+Incluir un **diagrama del proceso de hoy** y otro del propuesto; la tabla «Paso / Hoy / Con METSI Corrector» de `seccion-02-situacion-actual.md` es el insumo. **Sigue igual con la herramienta:** MiEcon y el control contra el listado de inscriptos.
 
 ## 3. La solución · presupuesto ~500 palabras
 *Fuentes: `README.md`, `diccionario-de-datos.md`, `registro-ia-bruto.md` N.º 2 a 7, 14 y 51.*
