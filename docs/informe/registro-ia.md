@@ -30,7 +30,7 @@ Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, de
 | Selector de archivos de Google (Picker), Google Identity Services y Drive API | Cargar fotos desde Drive y sincronizar | Costo (hoy gratuito con los límites de cuota; verificar) |
 | Red neuronal chica entrenada con MNIST (`tools/train-digits.py`) | Sugerir el número de registro, dentro del navegador | Sin costo; no usa servicios externos |
 | Pruebas propias (`tests/run.js`) | Verificación | — |
-| Python 3 con `numpy` 2.5.3 y `scipy` 1.18.1; datos MNIST (`ossci-datasets.s3.amazonaws.com`) | Entrenar el lector de dígitos con MNIST (`tools/train-digits.py`, 30 épocas); no se usa cuando la app corre | Sugerencia del asistente, aceptada por el autor. Versión de Python 3: no consta |
+| Python 3 con `numpy` 2.5.3 y `scipy` 1.18.1; datos MNIST (`ossci-datasets.s3.amazonaws.com`) | Entrenar el lector de dígitos con MNIST (`tools/train-digits.py`, 30 épocas); no se usa cuando la app corre | Sugerencia del asistente, aceptada por el autor. Python 3.13.18 (inferido de un entorno con las mismas versiones de numpy y Pillow; no quedó registrado). La PC del autor tiene 3.12.10 y el reentrenamiento no se probó ahí |
 | Playwright con Chromium | Probar la app real (cargar fotos, confirmar el registro); lo hizo el asistente | Scripts fuera del repositorio; versión no consta |
 
 **Modelo y costo por sesión** (datos que informa la plataforma el 2026-11-09; el modelo configurado y el último modelo servido coinciden en todas):

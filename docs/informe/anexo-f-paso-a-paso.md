@@ -13,7 +13,7 @@
 | Cuenta de **Vercel** | Publicar la app con login | Plan gratuito (el Hobby es para uso personal y no comercial) |
 | Cuenta de **Supabase** | Usuarios, contraseñas y roles | Plan gratuito (pausa el proyecto tras una semana sin actividad) |
 | Cuenta de **Google** y un proyecto de **Google Cloud** (sin facturación) | Sincronizar con Drive y elegir fotos desde Drive | Sin cargo dentro de las cuotas gratuitas |
-| **Python 3** con `numpy` (se usó la 2.5.3) y `scipy` (1.18.1) | **Solo** si querés reentrenar el lector de dígitos | Gratis |
+| **Python 3** (el entrenamiento original corrió, muy probablemente, con 3.13.18; en la PC del autor hay 3.12.10 y **no se probó** reentrenar ahí) con `numpy` (se usó la 2.5.3) y `scipy` (1.18.1) | **Solo** si querés reentrenar el lector de dígitos | Gratis |
 | Un asistente de IA (opcional) | Escribir el código; ver el paso 12 | Según el servicio |
 
 ---
