@@ -127,7 +127,7 @@ Resumen por tema (detalle en la lista C del bruto):
 5. **La guía para Windows: guardada** en `docs/guia-windows.md` (recortada a METSI).
 6. **Datos personales en el historial.** El bruto cuenta que se reescribió la historia de una rama por tu nombre y registro. Conviene que busques tu nombre y tu registro en todo el repositorio (`git log -p`, `tests/`, `docs/`) antes de entregar el `.zip`.
 7. **Modelo y versión** de cada sesión: completar a mano.
-8. **Tiempo de corrección a mano:** medirlo (por ejemplo, cronometrar la corrección manual de 20 hojas de prueba) y registrar el supuesto.
+8. **Tiempo de corrección a mano y con la herramienta:** se mide el **2026-11-18** con el examen real (a mano con cronómetro y las mismas hojas con la herramienta); plantilla en `docs/informe/valor-y-costo.md`. Estimación actual, sin cronometrar: 4 a 5 minutos por examen.
 9. **Pedido con PEDIR** para el ítem 3.
 10. **GitHub Pages sin login:** decidiste dejarlo publicado y consultar al profesor. Anotá su respuesta y, según lo que diga, ajustá la sección 7 del informe (Riesgos y controles).
 11. **Capturas o video** con hojas inventadas, sin datos reales.

@@ -75,6 +75,18 @@ Con 10 a 20 hojas **inventadas o de prueba**, sin datos de alumnos reales, crono
 
 Con eso se reemplazan las hipótesis de la sección 4 por una medición propia y se puede escribir la conclusión.
 
+### Plan acordado: examen del 18 de noviembre de 2026
+El docente corrige **uno de los parciales a mano y toma el tiempo**. Para poder calcular un ahorro, la comparación tiene que ser contra la herramienta sobre **las mismas hojas** (o una muestra del mismo parcial), no contra otro grupo. Sugerencia de orden: primero a mano con cronómetro; después pasar las mismas hojas (o una muestra de 10 a 20) por la herramienta con cronómetro. Así, además, se obtiene la primera calibración con hojas reales (tarea METSI-1) y la precisión real de la lectura del registro.
+
+Plantilla para anotar (solo tiempos y cantidades, **sin nombres ni registros de alumnos**):
+
+| Parcial | Hojas | Preguntas | Método | Tiempo total | Min. por hoja | Hojas que pidieron revisión | Observaciones |
+|---|---|---|---|---|---|---|---|
+| _completar_ | | | A mano | | | — | Qué incluye el tiempo: puntaje parcial, descuento, volcar la nota |
+| _completar_ | | | Herramienta | | | | Celular o PC; con o sin Drive; foto, carga, revisión y exportación |
+
+Datos reales de alumnos: las hojas y las capturas de esa corrida **no van al repositorio ni al informe**. Para calibrar, la herramienta genera `casos.json` sin nombres ni registros.
+
 ## 8. Conclusión provisoria
 
 Con la estimación del docente, **la corrección manual de un turno de 80 alumnos cuesta entre 5 h 20 min y 6 h 40 min**. La herramienta conviene si por hoja ahorra más minutos de los que cuestan armarla y mantenerla repartidos en los turnos en que se use. Hoy **no se puede afirmar que conviene** porque faltan tres datos: el tiempo por hoja con la herramienta, la cantidad de turnos por año y las horas de armado. Si el resultado fuera que no conviene, también es un resultado válido para el informe.
