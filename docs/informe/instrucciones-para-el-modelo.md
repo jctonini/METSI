@@ -130,7 +130,7 @@ La clase 5 pide verificar una consigna con casos de respuesta conocida, no con o
 
 ## 6. Instrucciones permanentes del proyecto
 
-Las clases 12 y 13 recomiendan un archivo con las reglas de la casa que el agente lee antes de cada tarea. En este repositorio, `CLAUDE.md` hoy solo contiene el flujo de Backlog.md. **Mejora posible:** sumarle las reglas de METSI que hoy se repiten en cada pedido (no usar datos reales de alumnos, no enviar imágenes a servicios externos, correr `node tools/version.js` después de cambiar código o estilos, no editar a mano `js/digit-model.js` ni `js/version.js`).
+Las clases 12 y 13 recomiendan un archivo con las reglas de la casa que el agente lee antes de cada tarea. En este repositorio, `CLAUDE.md` contiene el flujo de Backlog.md y remite a `AGENTS.md`, en la raíz del repositorio, que sigue la estructura de la clase 13: problema, roles, datos, reglas del negocio, permisos, pantallas, fuera de alcance, tecnología, reglas técnicas y reglas de trabajo. Ahí quedaron las reglas que antes se repetían en cada pedido (no usar datos reales de alumnos, no enviar imágenes a servicios externos, correr `node tools/version.js` después de cambiar código o estilos, no editar a mano `js/digit-model.js` ni `js/version.js`). Una persona ajena puede arrancar con ese archivo.
 
 ## 7. Fuentes
 - Clase 5, «El arte de pedir bien: contexto e instrucciones», `diploiafceuba.vercel.app/05` (consultada el 2026-11-09); las siete partes figuran en el código de la propia página (`clase05.js`).

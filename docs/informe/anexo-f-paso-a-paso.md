@@ -160,6 +160,8 @@ Se hizo en siete tramos, cada uno con un pedido al asistente, un plan antes de l
 | 6 | 7 nov | Login con roles | `api/`, `server/`, `public/login.*`, `account.js`, `app-users.js` |
 | 7 | 8 nov | Selector de Drive, selección múltiple, lectura del registro | `picker.js`, `selection.js`, `digits.js`, `digit-model.js` |
 
+**Instrucciones permanentes:** antes de pedir cambios, el asistente lee `AGENTS.md` (raíz del repositorio), que resume el problema, las reglas del negocio, los permisos y las reglas técnicas y de trabajo; `CLAUDE.md` remite a él.
+
 **Método que funcionó:** pedir **el plan primero y esperar la aprobación**, hacer **un tramo por vez**, correr `node tests/run.js` después de cada cambio, probar con **hojas reales** y reportar los errores con el mensaje exacto. Después de cambiar código o estilos, correr `node tools/version.js` (una prueba falla si se olvida).
 
 ---

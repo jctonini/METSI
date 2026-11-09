@@ -166,7 +166,7 @@ El entrenamiento corrió con 30 épocas y dio **98,9 % en MNIST limpio y 96,2 % 
 
 - **Lo que aprendí:** **[COMPLETAR en tus palabras]**. Ideas con respaldo en el registro: lo que no se escribe en un pedido, el asistente lo completa con lo más probable (la restricción de privacidad, los registros de 6 o 7 dígitos); una clave pública se detecta en segundos, así que se restringe antes de subirla; los casos de respuesta conocida detectaron errores que el asistente no vio.
 - **Limitaciones:** lectura del registro sin calibrar con hojas reales; el nombre solo se muestra como recorte; GitHub Pages sin login; costos y tiempos sin medir hasta el 18 de noviembre.
-- **Qué haría después:** calibrar con hojas reales (METSI-1); aplicar la escala de equivalencias dentro de la app; comparar el CSV con el listado de inscriptos; sumar las reglas del proyecto a `CLAUDE.md`; decidir lo de GitHub Pages según el profesor; medir el ahorro en más de un turno.
+- **Qué haría después:** calibrar con hojas reales (METSI-1); aplicar la escala de equivalencias dentro de la app; comparar el CSV con el listado de inscriptos; decidir lo de GitHub Pages según el profesor; medir el ahorro en más de un turno.
 - **¿Conviene?** **[COMPLETAR según la medición del 18/11; si no conviene, decilo: es un resultado válido]**.
 
 ## 10. Fuentes · ~150 palabras

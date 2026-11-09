@@ -22,3 +22,7 @@ Do not edit Backlog task, draft, document, decision, or milestone markdown files
 
 </CRITICAL_INSTRUCTION>
 <!-- BACKLOG.MD GUIDELINES END -->
+
+## Reglas del proyecto
+
+Las reglas permanentes de METSI (problema, reglas del negocio, permisos, reglas técnicas y de trabajo) están en `AGENTS.md`. Leelo antes de cada tarea.
