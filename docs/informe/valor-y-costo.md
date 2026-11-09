@@ -78,12 +78,14 @@ Con eso se reemplazan las hipótesis de la sección 4 por una medición propia y
 ### Plan acordado: examen del 18 de noviembre de 2026
 El docente corrige **uno de los parciales a mano y toma el tiempo**. Para poder calcular un ahorro, la comparación tiene que ser contra la herramienta sobre **las mismas hojas** (o una muestra del mismo parcial), no contra otro grupo. Sugerencia de orden: primero a mano con cronómetro; después pasar las mismas hojas (o una muestra de 10 a 20) por la herramienta con cronómetro. Así, además, se obtiene la primera calibración con hojas reales (tarea METSI-1) y la precisión real de la lectura del registro.
 
+**Comparar también los puntajes.** Para el ítem 5 (verificación con casos de respuesta conocida) conviene anotar cuántas hojas obtienen **un puntaje distinto** con la herramienta que a mano, porque tus puntajes manuales son la respuesta conocida. La regla de las incorrectas de la app es configurable (valor inicial 0,33, que **eligió el asistente** y no vos, N.º 22): si difiere de tu cálculo manual, hay que ajustar el valor antes de comparar.
+
 Plantilla para anotar (solo tiempos y cantidades, **sin nombres ni registros de alumnos**):
 
-| Parcial | Hojas | Preguntas | Método | Tiempo total | Min. por hoja | Hojas que pidieron revisión | Observaciones |
-|---|---|---|---|---|---|---|---|
-| _completar_ | | | A mano | | | — | Qué incluye el tiempo: puntaje parcial, descuento, volcar la nota |
-| _completar_ | | | Herramienta | | | | Celular o PC; con o sin Drive; foto, carga, revisión y exportación |
+| Parcial | Hojas | Preguntas | Método | Tiempo total | Min. por hoja | Hojas que pidieron revisión | Hojas con puntaje distinto al manual | Observaciones |
+|---|---|---|---|---|---|---|---|---|
+| _completar_ | | | A mano | | | — | — | Qué incluye el tiempo: puntaje parcial, incorrectas, volcar la nota |
+| _completar_ | | | Herramienta | | | | | Celular o PC; con o sin Drive; foto, carga, revisión y exportación; valor de las incorrectas usado |
 
 Datos reales de alumnos: las hojas y las capturas de esa corrida **no van al repositorio ni al informe**. Para calibrar, la herramienta genera `casos.json` sin nombres ni registros.
 
