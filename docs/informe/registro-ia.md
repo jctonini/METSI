@@ -121,9 +121,9 @@ Resumen por tema (detalle en la lista C del bruto):
 
 1. **Pregunta 8 (N.º 21).** El bruto señala una diferencia: con la clave A, B, C, D, marcar las cinco opciones daría 0,75 y no 0; el 0 coincide con una clave B y C. Confirmá cuál era tu clave real antes de usar el caso como ejemplo.
 2. **Backlog desactualizado.** METSI-6 (login) sigue «In Progress» con 4 de 6 criterios sin marcar, aunque dijiste que probaste y funciona (N.º 40). METSI-1 (calibrar) sigue en curso por falta de casos reales. Conviene cerrar o aclarar METSI-6 antes de entregar, con el comando `backlog` y no editando el archivo.
-3. **Causa del error de autenticación de Drive** en la versión publicada (N.º 48): no consta cómo se resolvió. Anotala si la recordás.
+3. **Error de autenticación de Drive: resuelto (N.º 48).** Fue `origin_mismatch`: abrías la app desde la dirección de vista previa de una rama de Vercel, que no figuraba en los orígenes autorizados del ID de cliente de Google. Se resolvió probando en producción. Sirve de ejemplo en el informe de un error de configuración que no era de código.
 4. **Umbral del «punto suelto»** (N.º 53): lo dejaste para revisar con ejemplos reales; va en limitaciones.
-5. **La guía para Windows** (N.º 46) no está en el repositorio: se entregó como archivo suelto en la sesión. Si la querés citar en el informe, hay que guardarla.
+5. **La guía para Windows: guardada** en `docs/guia-windows.md` (recortada a METSI).
 6. **Datos personales en el historial.** El bruto cuenta que se reescribió la historia de una rama por tu nombre y registro. Conviene que busques tu nombre y tu registro en todo el repositorio (`git log -p`, `tests/`, `docs/`) antes de entregar el `.zip`.
 7. **Modelo y versión** de cada sesión: completar a mano.
 8. **Tiempo de corrección a mano:** medirlo (por ejemplo, cronometrar la corrección manual de 20 hojas de prueba) y registrar el supuesto.
