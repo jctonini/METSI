@@ -106,7 +106,7 @@ Resumen por tema (detalle en la lista C del bruto):
 |---|---|---|---|
 | 1 Problema real | Parcial | N.º 1, 2 y 47 (unos 80 alumnos) | Cuánto pesa en horas: hay que medir la corrección a mano |
 | 2 Herramienta y costo | Parcial | N.º 6 y 8, lista de herramientas | Comparación con otra opción y costo real |
-| 3 Instrucciones para el modelo (PEDIR) | **Ausente** | Ninguna | Ningún pedido está escrito con PEDIR. El bruto marcó el ítem 3 en varias entradas, pero allí se refiere a reglas de negocio, no a instrucciones para un modelo. Hay que escribir al menos un pedido de construcción con PEDIR y justificar que la app, al ejecutarse, no usa un modelo de lenguaje |
+| 3 Instrucciones para el modelo (PEDIR) | **Cubierto con un equivalente** (confirmar la sigla) | `docs/informe/instrucciones-para-el-modelo.md`: dos pedidos de construcción reescritos con la consigna de siete partes de la clase 5, junto a los originales textuales y la comparación | PEDIR no aparece en las 16 clases del sitio; confirmar con el docente si es una sigla oral. Citar en el informe el pedido A (y el B si hay espacio) |
 | 4 Datos o documentos | Parcial | N.º 2, 3, 6, 7; README | Qué queda afuera y por qué (por ejemplo, nombres y registros en los casos a revisar) |
 | 5 Verificación con casos conocidos | Bien cubierto | N.º 13, 21, 23, 26, 29, 31, 32; 115 pruebas | Resolver la duda de la pregunta 8 (ver sección 9) |
 | 6 Autonomía | Bien cubierto | N.º 4, 14, 25; README (el registro sugerido nunca se carga solo) | Redactarlo como tabla: hace sola / propone / aprueba una persona |
