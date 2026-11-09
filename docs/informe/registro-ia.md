@@ -30,6 +30,7 @@ Este archivo ordena el material en bruto (`registro-ia-bruto.md`, 36 pedidos, de
 | Selector de archivos de Google (Picker), Google Identity Services y Drive API | Cargar fotos desde Drive y sincronizar | Costo (hoy gratuito con los límites de cuota; verificar) |
 | Red neuronal chica entrenada con MNIST (`tools/train-digits.py`) | Sugerir el número de registro, dentro del navegador | Sin costo; no usa servicios externos |
 | Pruebas propias (`tests/run.js`) | Verificación | — |
+| Python 3 con `numpy` y `scipy` | Entrenar el lector de dígitos con MNIST (`tools/train-digits.py`); no se usa cuando la app corre | Versiones y origen de MNIST: no constan |
 
 **Modelo y costo por sesión** (datos que informa la plataforma el 2026-11-09; el modelo configurado y el último modelo servido coinciden en todas):
 
