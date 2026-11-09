@@ -13,7 +13,21 @@
 | **GitHub** y **GitHub Pages** | Código, historial y una copia publicada sin login | GitHub es la herramienta de la cursada (clase 13); la publicación en Pages la propuso el asistente cuando le pediste que te indicara qué era más conveniente (N.º 8) | — | Plan gratuito (USD 0), según el autor |
 | **Google Drive** y selector de Google (Picker) | Guardar fotos y resultados; cargar las fotos desde una carpeta | Ver los resultados y las fotos desde el celular y la PC (N.º 6) | Guardar solo en el navegador | Sin cargo: el proyecto de Google Cloud no tiene facturación |
 | **Red neuronal local** entrenada con MNIST | Sugerir el número de registro leyendo los casilleros | Que **ninguna imagen salga del dispositivo** (decisión del autor, N.º 51) | Enviar los recortes a la API de un modelo de lenguaje: tendría costo por uso y sacaría datos de alumnos del dispositivo | Sin costo por uso |
+| **Python 3** con `numpy` y `scipy` | Entrenar el lector de dígitos (`tools/train-digits.py`); **no se usa cuando la app corre** | Lo propuso el asistente al diseñar la lectura local, que el autor eligió (N.º 51). **[COMPLETAR el motivo del autor, si lo hay]** | Un framework de aprendizaje automático (el script no usa ninguno) | Gratuito |
+| **Node.js** (20 o más) | Pruebas (`node tests/run.js`), herramientas (`tools/version.js`, `tools/calibrar.js`) y funciones del login en Vercel | Es una de las herramientas de la cursada (clase 13) | — | Gratuito |
 | **Backlog.md** | Gestión de tareas con el agente | Adoptado por el autor el 2026-11-01 (N.º 44) | — | Gratuito (código abierto) |
+
+### Lenguajes y librerías (qué usa cada parte)
+
+| Parte | Lenguaje y entorno | Librerías | Versiones |
+|---|---|---|---|
+| App del navegador (`js/`, `index.html`) | JavaScript, HTML y CSS | **Ninguna.** Usa lo que trae el navegador (Canvas, `localStorage`, IndexedDB) | — |
+| Funciones del login (`api/`, `server/`) | Node.js 20 o más | `@supabase/supabase-js` y `jose` | 2.45.4 y 5.9.6 (`package.json`, `package-lock.json`) |
+| Pruebas y herramientas (`tests/`, `tools/*.js`) | Node.js | Solo módulos que trae Node (`node:assert`, `fs`, `path`, `crypto`) | — |
+| Entrenamiento del lector de dígitos (`tools/train-digits.py`) | Python 3 | **`numpy`**: la red neuronal (784 → 128 → 64 → 10) está escrita con numpy, sin un framework de aprendizaje automático; **`scipy.ndimage`** (`affine_transform`, `gaussian_filter`, `maximum_filter`): genera las variaciones de imagen de entrenamiento (desplazamientos y rotaciones, trazo fino o grueso). También usa módulos estándar de Python (`argparse`, `base64`, `json`, `os`, `struct`, `sys`) | **No registradas** |
+| Datos de entrenamiento | MNIST (dígitos manuscritos): cuatro archivos `idx` sin comprimir | — | Origen de la descarga: **no consta en el repositorio [COMPLETAR]** |
+
+El resultado del entrenamiento es un archivo de JavaScript con los pesos cuantizados a 8 bits (`js/digit-model.js`, unos 150 KB, generado), así que **la app no necesita Python ni ninguna librería para leer el registro**: Python solo hace falta para reentrenar el modelo. Las semillas son fijas: con los mismos datos da el mismo modelo.
 
 **Sobre salirse del camino recomendado:** la consigna recomienda una planilla de Google con Apps Script, pero también admite «una app hecha con Codex u otra herramienta de la cursada», y las preguntas frecuentes permiten otras herramientas de IA «nombrándolas en el informe y explicando por qué». Claude Code no es la herramienta de la clase 12 y 13; por eso se nombra y se justifica acá.
 
