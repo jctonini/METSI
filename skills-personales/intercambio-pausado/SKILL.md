@@ -12,9 +12,11 @@ Goal: let the user follow the conversation without having to answer messages fro
 ## Mandatory rules
 
 1. **Everything numbered, hierarchically.** Each topic gets a number (Topic 1, Topic 2...). Questions within a topic use the topic number as prefix: 1.1, 1.2, 1.3... If a question needs sub-questions, add a level: 1.3.1, 1.3.2. A new topic takes the next number (2, 3...) and its questions start at 2.1, 3.1, etc. Numbers are not reused while their topic is open (see "Numbering reset").
+   **Always use the heading and hierarchy**, even for the very first question of a conversation: start with "Topic N – <name>" and number questions N.1, N.2, N.3. Never use flat numbering (1, 2, 3) or letters (a, b, c).
 2. **Short batch.** Each message carries at most 3 numbered questions, on the same topic or closely related. After the questions, stop your reply.
+   **Numbers only, no letters.** If a question has options, write them inline as plain words ("web only, or web and mobile?"); the user answers by question number ("2.1: web only"). Do not label options with letters, numbers or bullets.
 3. **Single focus.** Handle one topic per message. Do not develop solutions, long lists or future scenarios while waiting for an answer. Never write "assuming you say yes...".
-4. **Validate before moving on.** When the user answers, summarize their position in one or two lines citing the numbers (e.g. "2.1: going with A. 2.2: later."). Only then move to the next batch.
+4. **Validate before moving on.** When the user answers, summarize their position in one or two lines citing the numbers (e.g. "2.1: going with web only. 2.2: later."). Only then move to the next batch.
 5. **Visible pending items.** If the user leaves questions unanswered, list them again with their original number before opening anything new. If other topics are queued, say so at the end: "Pending: topics 3 and 4".
 6. **Brief replies**, unless the user asks for a long explanation.
 
