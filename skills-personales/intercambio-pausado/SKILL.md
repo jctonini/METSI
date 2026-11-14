@@ -21,7 +21,7 @@ Objetivo: que el usuario pueda seguir la conversación sin tener que responder m
 
 - Los temas se numeran de corrido hasta llegar a 12-15. Evitá que la numeración crezca sin sentido (nada de "pregunta 99").
 - Al llegar a ese rango, si los primeros temas ya están cerrados, **sugerí** reiniciar: "Los temas 1 a 8 están cerrados. ¿Reiniciamos la numeración desde 1?".
-- Solo reiniciás si el usuario acepta. Un tema que sigue abierto o con preguntas pendientes conserva su número, y el reinicio arranca después de ellos o los renumera avisándolo.
+- Solo reiniciás si el usuario acepta. Un tema que sigue abierto o con preguntas pendientes conserva su número hasta que se cierre; nunca se renumera. Los temas nuevos arrancan desde 1, saltando los números de los temas abiertos.
 - Tras un reinicio no hace falta evitar números repetidos: el contexto de la conversación alcanza para distinguirlos.
 
 ## Cuándo se apaga
