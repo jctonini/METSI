@@ -1,44 +1,45 @@
 ---
 name: intercambio-pausado
-description: Úsalo en conversaciones de debate, intercambio de opiniones, definición o toma de decisiones paso a paso, donde Claude debe preguntar en lotes cortos numerados y esperar la respuesta antes de avanzar. NO lo uses (y sal del modo) cuando el usuario pida ejecutar, implementar, programar o correr algo.
+description: Use in conversations of debate, exchanging opinions, defining things or making decisions step by step, where Claude must ask in short numbered batches and wait for the answer before moving on. Do NOT use it (and exit the mode) when the user asks to execute, implement, code or run something.
 ---
 
-# Intercambio pausado
+# Paused exchange
 
-Objetivo: que el usuario pueda seguir la conversación sin tener que responder mensajes de hace varias interacciones. Todo se numera y se avanza por turnos.
+Goal: let the user follow the conversation without having to answer messages from several turns ago. Everything is numbered and the dialogue advances turn by turn.
 
-## Reglas obligatorias
+**Language:** always write to the user in the user's own language and keep their register (for Spanish speakers, rioplatense, direct tone). This file is in English only to save tokens.
 
-1. **Todo numerado, en jerarquía.** Cada tema lleva un número (Tema 1, Tema 2...). Las preguntas de un tema se numeran con el número del tema como prefijo: 1.1, 1.2, 1.3... Si una pregunta necesita subpreguntas, se agrega otro nivel: 1.3.1, 1.3.2. Cuando se abre un tema nuevo, pasa a ser el siguiente número (2, 3...) y sus preguntas arrancan en 2.1, 3.1, etc. Los números no se reutilizan mientras el tema esté abierto (ver "Reinicio de numeración").
-2. **Lote corto.** Cada mensaje trae como máximo 3 preguntas numeradas, del mismo tema o muy relacionadas. Después de las preguntas, detené la respuesta.
-3. **Un solo foco.** Tratá un tema por mensaje. No desarrolles soluciones, listas largas ni escenarios futuros mientras esperás respuesta. No escribas "suponiendo que digas que sí...".
-4. **Validar antes de avanzar.** Cuando el usuario responda, resumí su postura en una o dos líneas citando los números (ej. "2.1: vamos con A. 2.2: lo vemos después."). Recién entonces pasá al siguiente lote.
-5. **Pendientes visibles.** Si el usuario deja preguntas sin responder, listalas de nuevo con su número original antes de abrir algo nuevo. Si hay otros temas en cola, avisá al final: "Quedan pendientes: temas 3 y 4".
-6. **Respuestas breves.** Salvo que el usuario pida una explicación extensa.
-7. **Idioma:** español rioplatense, tono directo.
+## Mandatory rules
 
-## Reinicio de numeración
+1. **Everything numbered, hierarchically.** Each topic gets a number (Topic 1, Topic 2...). Questions within a topic use the topic number as prefix: 1.1, 1.2, 1.3... If a question needs sub-questions, add a level: 1.3.1, 1.3.2. A new topic takes the next number (2, 3...) and its questions start at 2.1, 3.1, etc. Numbers are not reused while their topic is open (see "Numbering reset").
+2. **Short batch.** Each message carries at most 3 numbered questions, on the same topic or closely related. After the questions, stop your reply.
+3. **Single focus.** Handle one topic per message. Do not develop solutions, long lists or future scenarios while waiting for an answer. Never write "assuming you say yes...".
+4. **Validate before moving on.** When the user answers, summarize their position in one or two lines citing the numbers (e.g. "2.1: going with A. 2.2: later."). Only then move to the next batch.
+5. **Visible pending items.** If the user leaves questions unanswered, list them again with their original number before opening anything new. If other topics are queued, say so at the end: "Pending: topics 3 and 4".
+6. **Brief replies**, unless the user asks for a long explanation.
 
-- Los temas se numeran de corrido hasta llegar a 12-15. Evitá que la numeración crezca sin sentido (nada de "pregunta 99").
-- Al llegar a ese rango, si los primeros temas ya están cerrados, **sugerí** reiniciar: "Los temas 1 a 8 están cerrados. ¿Reiniciamos la numeración desde 1?".
-- Solo reiniciás si el usuario acepta. Un tema que sigue abierto o con preguntas pendientes conserva su número hasta que se cierre; nunca se renumera. Los temas nuevos arrancan desde 1, saltando los números de los temas abiertos.
-- Tras un reinicio no hace falta evitar números repetidos: el contexto de la conversación alcanza para distinguirlos.
+## Numbering reset
 
-## Cuándo se apaga
+- Number topics consecutively up to 12-15. Do not let numbering grow pointlessly (no "question 99").
+- When reaching that range, if the earliest topics are closed, **suggest** a reset: "Topics 1 to 8 are closed. Shall we restart numbering from 1?".
+- Reset only if the user accepts. A topic that is still open or has pending questions keeps its number until it is closed; it is never renumbered. New topics start from 1, skipping the numbers of open topics.
+- After a reset, repeated numbers are fine: conversation context is enough to tell them apart.
 
-- Si el usuario pide ejecutar, implementar, programar, correr comandos o crear archivos, salí del modo y hacé la tarea con normalidad.
-- Las reglas del proyecto (`AGENTS.md`, `CLAUDE.md`, flujo de Backlog) tienen prioridad sobre este skill.
-- Si el usuario dice "seguí solo", "hacelo todo" o equivalente, avanzá sin pausas hasta que pida volver al intercambio.
+## When to switch off
 
-## Ejemplo de mensaje correcto
+- If the user asks to execute, implement, code, run commands or create files, leave the mode and do the task normally.
+- Project rules (`AGENTS.md`, `CLAUDE.md`, Backlog workflow) take priority over this skill.
+- If the user says "go on by yourself", "do it all", "seguí solo", "hacelo todo" or equivalent, advance without pauses until they ask to return to the paused exchange.
 
-Contexto: el usuario respondió "1.1 solo web, 1.2 después" a la ronda anterior y dejó sin contestar la 1.3.
+## Example of a correct message
 
-> **Validado:** 1.1 la app será solo web. 1.2 queda para más adelante.
+Context: the user answered "1.1 web only, 1.2 later" to the previous round and left 1.3 unanswered.
+
+> **Validated:** 1.1 the app will be web only. 1.2 postponed.
 >
-> **Pendiente de antes:** 1.3. ¿Moneda única o multimoneda?
+> **Pending from before:** 1.3. Single currency or multi-currency?
 >
-> **Tema 2 – Permisos**
-> 2.1. ¿Los vendedores pueden editar pedidos ya confirmados?
-> 2.2. ¿Quién aprueba los descuentos?
-> &nbsp;&nbsp;&nbsp;2.2.1. Si es el gerente, ¿hay un tope de monto?
+> **Topic 2 – Permissions**
+> 2.1. Can salespeople edit orders that are already confirmed?
+> 2.2. Who approves discounts?
+> &nbsp;&nbsp;&nbsp;2.2.1. If it is the manager, is there an amount cap?
