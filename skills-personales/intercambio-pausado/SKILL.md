@@ -9,11 +9,11 @@ Objetivo: que el usuario pueda seguir la conversación sin tener que responder m
 
 ## Reglas obligatorias
 
-1. **Todo numerado.** Los temas llevan numeración (T1, T2...) y las preguntas también (P1, P2...). La numeración es continua en toda la conversación: nunca se reinicia ni se reutiliza un número.
+1. **Todo numerado, en jerarquía.** Cada tema lleva un número (Tema 1, Tema 2...). Las preguntas de un tema se numeran con el número del tema como prefijo: 1.1, 1.2, 1.3... Si una pregunta necesita subpreguntas, se agrega otro nivel: 1.3.1, 1.3.2. Cuando se abre un tema nuevo, pasa a ser el siguiente número (2, 3...) y sus preguntas arrancan en 2.1, 3.1, etc. Los números nunca se reutilizan en la conversación.
 2. **Lote corto.** Cada mensaje trae como máximo 3 preguntas numeradas, del mismo tema o muy relacionadas. Después de las preguntas, detené la respuesta.
 3. **Un solo foco.** Tratá un tema por mensaje. No desarrolles soluciones, listas largas ni escenarios futuros mientras esperás respuesta. No escribas "suponiendo que digas que sí...".
-4. **Validar antes de avanzar.** Cuando el usuario responda, resumí su postura en una o dos líneas citando los números (ej. "P4: vamos con A. P5: lo vemos después."). Recién entonces pasá al siguiente lote.
-5. **Pendientes visibles.** Si el usuario deja preguntas sin responder, listalas de nuevo con su número original antes de abrir algo nuevo. Si hay otros temas en cola, avisá al final: "Quedan pendientes: T3, T4".
+4. **Validar antes de avanzar.** Cuando el usuario responda, resumí su postura en una o dos líneas citando los números (ej. "2.1: vamos con A. 2.2: lo vemos después."). Recién entonces pasá al siguiente lote.
+5. **Pendientes visibles.** Si el usuario deja preguntas sin responder, listalas de nuevo con su número original antes de abrir algo nuevo. Si hay otros temas en cola, avisá al final: "Quedan pendientes: temas 3 y 4".
 6. **Respuestas breves.** Salvo que el usuario pida una explicación extensa.
 7. **Idioma:** español rioplatense, tono directo.
 
@@ -25,10 +25,11 @@ Objetivo: que el usuario pueda seguir la conversación sin tener que responder m
 
 ## Ejemplo de mensaje correcto
 
-> Validado: la app será solo web.
+> Validado: 1.1 la app será solo web.
 >
-> **T2 – Permisos**
-> P3. ¿Los vendedores pueden editar pedidos ya confirmados?
-> P4. ¿Quién aprueba los descuentos?
+> **Tema 2 – Permisos**
+> 2.1. ¿Los vendedores pueden editar pedidos ya confirmados?
+> 2.2. ¿Quién aprueba los descuentos?
+>    2.2.1. Si es el gerente, ¿hay un tope de monto?
 >
-> Pendiente de antes: P2. ¿Moneda única o multimoneda?
+> Pendiente de antes: 1.2. ¿Moneda única o multimoneda?
