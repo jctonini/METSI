@@ -25,11 +25,13 @@ Objetivo: que el usuario pueda seguir la conversación sin tener que responder m
 
 ## Ejemplo de mensaje correcto
 
-> Validado: 1.1 la app será solo web.
+Contexto: el usuario respondió "1.1 solo web, 1.2 después" a la ronda anterior y dejó sin contestar la 1.3.
+
+> **Validado:** 1.1 la app será solo web. 1.2 queda para más adelante.
+>
+> **Pendiente de antes:** 1.3. ¿Moneda única o multimoneda?
 >
 > **Tema 2 – Permisos**
 > 2.1. ¿Los vendedores pueden editar pedidos ya confirmados?
 > 2.2. ¿Quién aprueba los descuentos?
->    2.2.1. Si es el gerente, ¿hay un tope de monto?
->
-> Pendiente de antes: 1.2. ¿Moneda única o multimoneda?
+> &nbsp;&nbsp;&nbsp;2.2.1. Si es el gerente, ¿hay un tope de monto?
