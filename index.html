@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>METSI · Corrector de multiple choice</title>
-  <link rel="stylesheet" href="css/style.css?v=a0c33825">
+  <link rel="stylesheet" href="css/style.css?v=2ad9563e">
 </head>
 <body>
   <header class="top">
@@ -42,6 +42,10 @@
       </div>
 
       <h3>Clave de respuestas y puntajes</h3>
+      <div class="grid">
+        <label class="wide">Archivo de examen (.json): preguntas, opciones, respuestas correctas, puntos y descuento
+          <span class="inline"><button id="exam-import" type="button">⬆ Importar examen</button><button id="exam-export" type="button">⬇ Exportar examen</button><input id="exam-file" type="file" accept=".json,application/json" hidden></span></label>
+      </div>
       <p class="hint">Tocá las letras correctas de cada pregunta (puede haber más de una). El puntaje de la pregunta se reparte en partes iguales entre sus respuestas correctas, y quien marca solo algunas recibe la parte proporcional. Una pregunta sin ninguna correcta se considera <b>anulada</b> y suma sus puntos a todos.</p>
       <div class="grid">
         <label>Puntos por pregunta (aplicar a todas)
@@ -188,33 +192,34 @@
   <div id="print-area"></div>
   <style id="page-style"></style>
 
-  <script src="js/version.js?v=a0c33825"></script>
-  <script src="js/config.js?v=a0c33825"></script>
-  <script src="js/layout.js?v=a0c33825"></script>
-  <script src="js/scoring.js?v=a0c33825"></script>
-  <script src="js/csv.js?v=a0c33825"></script>
-  <script src="js/sheet.js?v=a0c33825"></script>
-  <script src="js/scanner.js?v=a0c33825"></script>
-  <script src="js/merge.js?v=a0c33825"></script>
-  <script src="js/review.js?v=a0c33825"></script>
-  <script src="js/identity.js?v=a0c33825"></script>
-  <script src="js/similar.js?v=a0c33825"></script>
-  <script src="js/digit-model.js?v=a0c33825"></script>
-  <script src="js/digits.js?v=a0c33825"></script>
-  <script src="js/photostore.js?v=a0c33825"></script>
-  <script src="js/storage.js?v=a0c33825"></script>
-  <script src="js/picker.js?v=a0c33825"></script>
-  <script src="js/selection.js?v=a0c33825"></script>
-  <script src="js/retry.js?v=a0c33825"></script>
-  <script src="js/auth.js?v=a0c33825"></script>
-  <script src="js/drive.js?v=a0c33825"></script>
-  <script src="js/app-core.js?v=a0c33825"></script>
-  <script src="js/app-exam.js?v=a0c33825"></script>
-  <script src="js/app-scan.js?v=a0c33825"></script>
-  <script src="js/app-results.js?v=a0c33825"></script>
-  <script src="js/app-drive.js?v=a0c33825"></script>
-  <script src="js/account.js?v=a0c33825"></script>
-  <script src="js/app-users.js?v=a0c33825"></script>
-  <script src="js/app.js?v=a0c33825"></script>
+  <script src="js/version.js?v=2ad9563e"></script>
+  <script src="js/config.js?v=2ad9563e"></script>
+  <script src="js/layout.js?v=2ad9563e"></script>
+  <script src="js/scoring.js?v=2ad9563e"></script>
+  <script src="js/examfile.js?v=2ad9563e"></script>
+  <script src="js/csv.js?v=2ad9563e"></script>
+  <script src="js/sheet.js?v=2ad9563e"></script>
+  <script src="js/scanner.js?v=2ad9563e"></script>
+  <script src="js/merge.js?v=2ad9563e"></script>
+  <script src="js/review.js?v=2ad9563e"></script>
+  <script src="js/identity.js?v=2ad9563e"></script>
+  <script src="js/similar.js?v=2ad9563e"></script>
+  <script src="js/digit-model.js?v=2ad9563e"></script>
+  <script src="js/digits.js?v=2ad9563e"></script>
+  <script src="js/photostore.js?v=2ad9563e"></script>
+  <script src="js/storage.js?v=2ad9563e"></script>
+  <script src="js/picker.js?v=2ad9563e"></script>
+  <script src="js/selection.js?v=2ad9563e"></script>
+  <script src="js/retry.js?v=2ad9563e"></script>
+  <script src="js/auth.js?v=2ad9563e"></script>
+  <script src="js/drive.js?v=2ad9563e"></script>
+  <script src="js/app-core.js?v=2ad9563e"></script>
+  <script src="js/app-exam.js?v=2ad9563e"></script>
+  <script src="js/app-scan.js?v=2ad9563e"></script>
+  <script src="js/app-results.js?v=2ad9563e"></script>
+  <script src="js/app-drive.js?v=2ad9563e"></script>
+  <script src="js/account.js?v=2ad9563e"></script>
+  <script src="js/app-users.js?v=2ad9563e"></script>
+  <script src="js/app.js?v=2ad9563e"></script>
 </body>
 </html>

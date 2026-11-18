@@ -845,6 +845,30 @@ test('calibración: el barrido de umbrales incluye el umbral por defecto sin err
   } else console.log('  --  calibración con casos reales omitida (tests/fixtures/real/ está vacía)');
 }
 
+// ---------- archivo de examen (.json) ----------
+const ExamFile = require('../js/examfile.js');
+test('archivo de examen: exportar e importar da lo mismo (ida y vuelta)', () => {
+  const cfg = { title: '2do Parcial', numQuestions: 3, numOptions: 5, penalty: 0.5 };
+  const key = [{ correct: [1, 3], points: 5 }, { correct: [2], points: 2.5 }, { correct: [], points: 5 }];
+  const file = ExamFile.build(cfg, key);
+  assert.deepEqual(file.clave[0], { correctas: ['B', 'D'], puntos: 5 });
+  const r = ExamFile.parse(JSON.stringify(file), { maxQuestions: () => 32 });
+  assert.ok(r.ok, r.errors.join(' | '));
+  assert.deepEqual(r.exam, { title: '2do Parcial', numQuestions: 3, numOptions: 5, penalty: 0.5, key });
+});
+test('archivo de examen: acepta correctas como texto y coma decimal, y avisa todos los errores juntos', () => {
+  const ok = ExamFile.parse(JSON.stringify({ formato: 'metsi-examen', preguntas: 2, opciones: '4', penalizacion: '0,25', clave: [{ correctas: 'b, d', puntos: '1,5' }, { correctas: ['A'], puntos: 1 }] }));
+  assert.ok(ok.ok, ok.errors.join(' | '));
+  assert.deepEqual(ok.exam.key, [{ correct: [1, 3], points: 1.5 }, { correct: [0], points: 1 }]);
+  assert.equal(ok.exam.penalty, 0.25);
+  const bad = ExamFile.parse(JSON.stringify({ formato: 'otro', preguntas: 3, opciones: 4, penalizacion: 2, clave: [{ correctas: ['E'], puntos: 1 }, { correctas: ['AB'], puntos: -1 }] }), { maxQuestions: () => 2 });
+  assert.equal(bad.ok, false);
+  const txt = bad.errors.join('\n');
+  for (const frag of ['formato', 'hasta 2 preguntas', 'penalizacion', 'trae 2 entradas', 'Pregunta 1', '"E"', 'Pregunta 2', '"AB"', 'puntos']) assert.ok(txt.includes(frag), 'falta el aviso sobre ' + frag + ' en:\n' + txt);
+  assert.equal(ExamFile.parse('no es json').ok, false);
+  assert.equal(ExamFile.parse('[]').ok, false);
+});
+
 // ---------- reintentos y renovación de sesión ----------
 const { withRetry, isRetryable } = require('../js/retry.js');
 const { createTokenManager } = require('../js/auth.js');
