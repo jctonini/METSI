@@ -304,7 +304,7 @@
   const dist = (a, b) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
 
   // Forma de una mancha por su elongación: cuadrado (~1) o barra (~4). Sirve aunque esté girada.
-  const SQUARE_MAX = 1.5, BAR_MIN = 2.2;
+  const SQUARE_MAX = 1.8, BAR_MIN = 2.2; // 1,8: una grampa o un tachón sobre el cuadrado lo alarga (medido 1,6 en una hoja real); las barras reales miden 3,9 o más
   const shapeOf = (c) => (c.elong <= SQUARE_MAX ? 'sq' : c.elong >= BAR_MIN ? 'bar' : '?');
 
   // Devuelve { H, rotated, version, layout, fit } o { error }.
@@ -431,7 +431,7 @@
   // su propio nivel base porque la luz puede cambiar de un lado al otro de la hoja.
   // `threshold`: cuánto más oscura que el fondo tiene que estar una burbuja para contar como
   // marcada. Las que quedan apenas por debajo se señalan como dudosas para revisar a mano.
-  const DEFAULT_THRESHOLD = 0.085; // centro del rango que lee bien las fotos reales de prueba (0,065-0,155; 0,045-0,105 degradadas)
+  const DEFAULT_THRESHOLD = 0.16; // centro del rango que lee bien 14 hojas reales de un examen (0,155-0,165; 6 errores en 269 preguntas); con 0,085 eran 75
   const MIN_CLUSTER_GAP = 0.15; // diferencia mínima entre burbujas vacías y marcadas
   const BASE_QUANTILE = 0.3;
   const WINDOW_BEFORE = 4, WINDOW_AFTER = 4; // filas vecinas que se usan para el nivel base

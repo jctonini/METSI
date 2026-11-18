@@ -44,11 +44,12 @@
     if (before !== after && !confirmClearIfNeeded()) {
       state.cfg = prev;
       fillConfig();
-      return;
+      return false;
     }
     syncKeyToConfig();
     save();
     renderKey();
+    return true;
   }
 
   function syncKeyToConfig() {
@@ -97,6 +98,37 @@
     if (!(p >= 0)) return;
     state.key.forEach((k) => { k.points = p; });
     save(); renderKey();
+  });
+
+  // Importar / exportar el examen (preguntas, opciones, clave, puntos y descuento) en el archivo que también arma la skill de exámenes.
+  $('exam-export').addEventListener('click', () => {
+    const text = JSON.stringify(MetsiExamFile.build(state.cfg, state.key), null, 2);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const name = (state.cfg.title || 'examen').replace(/[^\w\-áéíóúñÁÉÍÓÚÑ ]+/g, '').trim().replace(/\s+/g, '_');
+    a.download = `${name || 'examen'}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  $('exam-import').addEventListener('click', () => $('exam-file').click());
+  $('exam-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const r = MetsiExamFile.parse(await file.text(), { maxQuestions: (opts) => maxQuestionsFor(opts, state.cfg.modalidades.length) });
+    if (!r.ok) { alert('No se pudo importar el examen:\n\n' + r.errors.slice(0, 12).map((x) => '• ' + x).join('\n') + (r.errors.length > 12 ? '\n… y ' + (r.errors.length - 12) + ' más' : '')); return; }
+    const x = r.exam;
+    const changes = state.cfg.numQuestions !== x.numQuestions || state.cfg.numOptions !== x.numOptions;
+    if (!changes && !confirm('Se reemplazan la clave, los puntos y el descuento de este examen por los del archivo. ¿Seguir?')) return;
+    const prevKey = JSON.parse(JSON.stringify(state.key));
+    const done = structuralChange(() => {
+      if (x.title) state.cfg.title = x.title;
+      state.cfg.numQuestions = x.numQuestions; state.cfg.numOptions = x.numOptions; state.cfg.penalty = x.penalty;
+      state.key = x.key;
+    });
+    if (done === false) { state.key = prevKey; fillConfig(); renderKey(); return; } // canceló: queda todo como estaba
+    fillConfig(); renderKey(); rescoreEverything();
+    alert(`Examen importado: ${x.numQuestions} preguntas, ${x.numOptions} opciones, descuento ${fmt(x.penalty)}.`);
   });
 
   function renderKey() {

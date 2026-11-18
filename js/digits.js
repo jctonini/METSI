@@ -135,6 +135,9 @@
       if (c.miny < miny) miny = c.miny; if (c.maxy > maxy) maxy = c.maxy;
     }
     const bw = maxx - minx + 1, bh = maxy - miny + 1;
+    // Un casillero tachado con una X (alumnos que escriben 6 dígitos en 7 casilleros) o con una raya no tiene dígito:
+    // cuenta como vacío (si no, la red lo lee como un 8, un 4 o un 7).
+    if (isCrossedOut(label, keep, minx, miny, bw, bh, w, h) || isDash(bw, bh, w, h)) return { empty: true, ink: inkPx / n, crossed: true };
     const f = BOX / Math.max(bw, bh);
     const tw = Math.max(1, Math.round(bw * f)), th = Math.max(1, Math.round(bh * f));
     // Reducción por promedio de área, usando solo los píxeles de componentes que se conservan.
@@ -171,6 +174,37 @@
     return { empty: false, vec, ink: inkPx / n };
   }
 
+  // X: un trazo recto por cada diagonal de la caja de la tinta y los cuatro puntos medios de los bordes VACÍOS (los brazos
+  // de la X van a las esquinas). Ningún dígito cumple las dos cosas: el 2, el 8, el 0, el 7... tocan algún punto medio.
+  function isCrossedOut(label, keep, minx, miny, bw, bh, w, h) {
+    if (bw < 0.7 * w || bh < 0.7 * h) return false;
+    const ink = (x0, y0, x1, y1) => {
+      let c = 0, n = 0;
+      for (let y = Math.round(y0); y < Math.round(y1); y++) for (let x = Math.round(x0); x < Math.round(x1); x++) { n++; if (keep[label[y * w + x]]) c++; }
+      return n ? c / n : 0;
+    };
+    const mid = 0.06;
+    const midEdgesEmpty = ink(minx + 0.4 * bw, miny, minx + 0.6 * bw, miny + 0.15 * bh) < mid
+      && ink(minx + 0.4 * bw, miny + 0.85 * bh, minx + 0.6 * bw, miny + bh) < mid
+      && ink(minx, miny + 0.4 * bh, minx + 0.15 * bw, miny + 0.6 * bh) < mid
+      && ink(minx + 0.85 * bw, miny + 0.4 * bh, minx + bw, miny + 0.6 * bh) < mid;
+    if (!midEdgesEmpty) return false;
+    const r = Math.max(2, Math.round(0.07 * Math.min(bw, bh)));
+    const inked = (cx, cy) => {
+      for (let y = Math.max(0, cy - r); y <= Math.min(h - 1, cy + r); y++) for (let x = Math.max(0, cx - r); x <= Math.min(w - 1, cx + r); x++) if (keep[label[y * w + x]]) return true;
+      return false;
+    };
+    let d1 = 0, d2 = 0; const N = 24;
+    for (let k = 0; k <= N; k++) {
+      const t = k / N;
+      if (inked(Math.round(minx + t * (bw - 1)), Math.round(miny + t * (bh - 1)))) d1++;
+      if (inked(Math.round(minx + (1 - t) * (bw - 1)), Math.round(miny + t * (bh - 1)))) d2++;
+    }
+    return d1 >= 0.7 * (N + 1) && d2 >= 0.7 * (N + 1);
+  }
+  // Raya horizontal: muy ancha y muy baja.
+  function isDash(bw, bh, w, h) { return bw >= 0.5 * w && bh <= 0.16 * h; }
+
   // Un píxel sin etiqueta pero pegado a tinta conservada (el borde suave del trazo) también cuenta.
   function nearKept(label, keep, x, y, w, h) {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -192,19 +226,71 @@
     return { ch: String(a), empty: false, uncertain: !sure, conf: Math.round(p[a] * 1000) / 1000, alt: String(b) };
   }
 
+  // ---------- ubicar el casillero impreso ----------
+  // Con la foto sacada con el celular el casillero impreso sale corrido y torcido (hasta ~3 mm) respecto de donde
+  // lo calcula la geometría de la hoja, y el recorte le corta el dibujo al dígito (un 9 cortado parece un 4 o un 2).
+  // Se busca el marco impreso en una ventana más grande: el desplazamiento donde las cuatro líneas del marco son
+  // más oscuras que el papel que tienen al lado.
+  const SEARCH = 3;           // mm que se busca hacia cada lado
+  const STEP = 2;             // px entre posiciones probadas (0,2 mm)
+  const LINE_MIN = 18;        // oscurecimiento mínimo (0-255) del marco para fiarse de la posición encontrada
+
+  // `win`: recorte gris de la ventana; (fx, fy) es el marco esperado dentro de la ventana, en px; (fw, fh) su tamaño.
+  function locateFrame(win, fx, fy, fw, fh) {
+    const W = win.width, H = win.height, d = win.data;
+    const g = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 255 : d[(y * W + x) * 4]);
+    const off = Math.round(0.6 * PPM);
+    // oscurecimiento de un punto de la línea frente al papel a ambos lados (perpendicular a la línea)
+    const side = (x, y, horiz) => {
+      const c = g(x, y);
+      const a = horiz ? g(x, y - off) : g(x - off, y), b = horiz ? g(x, y + off) : g(x + off, y);
+      return Math.max(0, (a + b) / 2 - c);
+    };
+    let best = null;
+    const R = Math.round(SEARCH * PPM);
+    for (let oy = -R; oy <= R; oy += STEP) {
+      for (let ox = -R; ox <= R; ox += STEP) {
+        let tot = 0, n = 0;
+        const x0 = Math.round(fx) + ox, y0 = Math.round(fy) + oy, x1 = x0 + Math.round(fw), y1 = y0 + Math.round(fh);
+        for (let t = Math.round(0.15 * fw); t < Math.round(0.85 * fw); t += 2) { tot += side(x0 + t, y0, true) + side(x0 + t, y1, true); n += 2; }
+        for (let t = Math.round(0.15 * fh); t < Math.round(0.85 * fh); t += 2) { tot += side(x0, y0 + t, false) + side(x1, y0 + t, false); n += 2; }
+        const sc = tot / n;
+        if (!best || sc > best.sc) best = { sc, ox, oy };
+      }
+    }
+    return best && best.sc >= LINE_MIN ? best : null;
+  }
+
+  // Recorta de `win` el rectángulo (x, y, w, h) en px, en gris RGBA.
+  function subCrop(win, x, y, w, h) {
+    const out = new Uint8ClampedArray(w * h * 4);
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const X = x + i, Y = y + j;
+      const v = X < 0 || Y < 0 || X >= win.width || Y >= win.height ? 255 : win.data[(Y * win.width + X) * 4];
+      const k = (j * w + i) * 4; out[k] = out[k + 1] = out[k + 2] = v; out[k + 3] = 255;
+    }
+    return { width: w, height: h, data: out };
+  }
+
+  // Recorte del interior del casillero `i`, ya con el marco impreso ubicado (ver arriba).
+  function cellCrop(regBoxes, i, crop) {
+    const bx = regBoxes.x + i * regBoxes.pitch, by = regBoxes.y;
+    // Ventana más grande que el casillero, para encontrar el marco impreso aunque salga corrido.
+    const win = crop({ x: bx - SEARCH, y: by - SEARCH, w: regBoxes.w + 2 * SEARCH, h: regBoxes.h + 2 * SEARCH }, PPM);
+    const loc = locateFrame(win, SEARCH * PPM, SEARCH * PPM, regBoxes.w * PPM, regBoxes.h * PPM);
+    const dx = loc ? loc.ox : 0, dy = loc ? loc.oy : 0;
+    const m = Math.round(MARGIN * PPM);
+    return subCrop(win, Math.round(SEARCH * PPM) + dx + m, Math.round(SEARCH * PPM) + dy + m,
+      Math.round(regBoxes.w * PPM) - 2 * m, Math.round(regBoxes.h * PPM) - 2 * m);
+  }
+
   // Lee todos los casilleros de la hoja. `crop(rect, ppm)` recorta una zona de la hoja (en mm) de la foto.
   // Los registros pueden tener menos dígitos que casilleros (6 o 7 en 7 casilleros): los casilleros vacíos de los
   // extremos son normales y no se cuentan. Un vacío ENTRE dígitos sí es un dato que falta («?»).
   // opts.minDigits: cuántos dígitos se esperan como mínimo (por defecto, uno menos que casilleros).
   function readRegistro(regBoxes, crop, opts) {
     const cells = [];
-    for (let i = 0; i < regBoxes.n; i++) {
-      const rect = {
-        x: regBoxes.x + i * regBoxes.pitch + MARGIN, y: regBoxes.y + MARGIN,
-        w: regBoxes.w - 2 * MARGIN, h: regBoxes.h - 2 * MARGIN,
-      };
-      cells.push(readCell(crop(rect, PPM)));
-    }
+    for (let i = 0; i < regBoxes.n; i++) cells.push(readCell(cellCrop(regBoxes, i, crop)));
     const minDigits = opts && opts.minDigits != null ? opts.minDigits : Math.max(1, regBoxes.n - 1);
     let lo = 0, hi = cells.length - 1;
     while (lo <= hi && cells[lo].empty) lo++;
@@ -220,5 +306,5 @@
     };
   }
 
-  return { readRegistro, readCell, prepare, classify, constants: { SIZE, BOX, PPM, MARGIN, SURE, GAP } };
+  return { readRegistro, readCell, cellCrop, prepare, classify, constants: { SIZE, BOX, PPM, MARGIN, SURE, GAP } };
 });

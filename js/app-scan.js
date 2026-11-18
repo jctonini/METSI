@@ -85,7 +85,7 @@
   // Zonas que se recortan de la foto para que el docente lea nombre y registro.
   function displayRects(L) {
     return {
-      name: L.version >= 2 ? { x: 16, y: 26.2, w: 116, h: 10.2 } : L.fields.name,
+      name: L.version >= 2 ? { x: 16, y: 24, w: 120, h: 14 } : L.fields.name, // más alto y ancho que el campo impreso: la letra sube sobre la línea y la foto sale corrida (hojas reales del 18/11)
       reg: L.fields.reg,
     };
   }
@@ -450,7 +450,28 @@
     App.renderResults();
   });
 
+  // Redibuja las tarjetas sin quitarle el foco a quien está escribiendo: cuando Drive termina de sincronizar (o se
+  // cambia otra cosa) se rehacen todas las tarjetas, y el cursor, el texto a medio escribir y el scroll se perdían.
   function renderCards() {
+    const ae = document.activeElement, box = $('cards');
+    const card = ae && box && box.contains(ae) ? ae.closest('.card') : null;
+    const cls = card && ['f-name', 'f-reg', 'f-mod', 'f-note', 'f-comment'].find((c) => ae.classList.contains(c));
+    const saved = cls ? { id: card.dataset.sheet, cls, value: ae.value, a: ae.selectionStart, b: ae.selectionEnd } : null;
+    const y = window.scrollY;
+    renderCardsNow();
+    if (saved) {
+      const el = [...box.querySelectorAll('.card')].find((c) => c.dataset.sheet === saved.id);
+      const f = el && el.querySelector('.' + saved.cls);
+      if (f) {
+        if (f.value !== saved.value) f.value = saved.value; // lo escrito y todavía no confirmado
+        f.focus({ preventScroll: true });
+        try { if (saved.a != null) f.setSelectionRange(saved.a, saved.b); } catch (e) { /* los select no tienen selección */ }
+      }
+    }
+    window.scrollTo(0, y);
+  }
+
+  function renderCardsNow() {
     renderBulkBar();
     const box = $('cards');
     box.innerHTML = '';
@@ -534,6 +555,7 @@
         <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
         <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
           L.modalidades.map((m, i) => `<option value="${i}" ${sheet.modalidad === i ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></label>
+        <label class="wide">Comentario <input type="text" class="f-comment" maxlength="300" list="comment-ideas" placeholder="para vos (opcional): por ejemplo, corregida a mano" value="${escapeHtml(sheet.comentario || '')}"></label>
         <div class="score">Puntaje <b>${fmt(score.total)}</b> / ${fmt(score.max)}</div>`;
       card.appendChild(fields);
       const afterIdChange = async () => {
@@ -550,6 +572,7 @@
         clearAck(sheet); touch(sheet);
         afterIdChange().then(() => { if (!sure) focusSheet(sheet.id); }); // con dudas: deja el cursor en el campo para revisar
       });
+      fields.querySelector('.f-comment').addEventListener('change', (e) => { sheet.comentario = e.target.value.trim(); touch(sheet); });
       fields.querySelector('.f-mod').addEventListener('change', (e) => {
         sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); touch(sheet);
       });
@@ -617,7 +640,7 @@
         card.appendChild(det);
       }
       const warn = [];
-      if (r && r.modalidadProblem) warn.push('revisá la modalidad');
+      if (r && r.modalidadProblem) warn.push(r.modalidad === null ? 'modalidad sin marcar bien (¿tilde o cruz?): elegila vos' : 'revisá la modalidad');
       const nr = sheet.answers.filter((a) => a.length === 0).length;
       if (nr) warn.push(`${nr} pregunta(s) sin marcar`);
       const nd = r ? r.flags.filter((f) => f.dubious).length : 0;

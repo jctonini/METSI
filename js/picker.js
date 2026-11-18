@@ -19,6 +19,16 @@
     return out;
   }
 
+  // Carpeta donde están las fotos elegidas (la más repetida): el selector de Google no avisa cuál fue la última carpeta
+  // que se visitó, pero sí la carpeta (`parentId`) de cada archivo elegido. '' si no se puede saber.
+  function folderOf(docs) {
+    const count = new Map();
+    for (const d of docs || []) if (isImage(d) && d.parentId) count.set(d.parentId, (count.get(d.parentId) || 0) + 1);
+    let best = '', n = 0;
+    for (const [id, c] of count) if (c > n) { best = id; n = c; }
+    return best;
+  }
+
   // Qué falta configurar (js/config.js) para poder usar el selector; [] si está todo.
   function missingConfig(cfg) {
     const m = [];
@@ -45,12 +55,14 @@
   }
 
   // Abre el selector. Devuelve una promesa con las imágenes elegidas ([] si se cancela).
-  async function pickImages(cfg, token) {
+  // `startFolder`: carpeta donde abrir (la última de la que se eligieron fotos); sin ella, «Mi unidad».
+  // `onFolder(id)`: se llama con la carpeta de las fotos elegidas para recordarla.
+  async function pickImages(cfg, token, startFolder, onFolder) {
     await loadPicker();
     const g = window.google.picker;
     return new Promise((resolve) => {
       // Primero «Mi unidad» (la raíz del Drive, con sus carpetas, mostrando solo imágenes) y, en otra pestaña, todas las imágenes de la cuenta.
-      const root = new g.DocsView(g.ViewId.DOCS).setParent('root').setIncludeFolders(true).setSelectFolderEnabled(false).setMimeTypes(IMAGE_TYPES);
+      const root = new g.DocsView(g.ViewId.DOCS).setParent(startFolder || 'root').setIncludeFolders(true).setSelectFolderEnabled(false).setMimeTypes(IMAGE_TYPES);
       const all = new g.DocsView(g.ViewId.DOCS_IMAGES).setIncludeFolders(true).setSelectFolderEnabled(false);
       new g.PickerBuilder()
         .setDeveloperKey(cfg.apiKey)
@@ -62,7 +74,11 @@
         .addView(root)
         .addView(all)
         .setCallback((data) => {
-          if (data.action === g.Action.PICKED) resolve(imagesFrom(data.docs));
+          if (data.action === g.Action.PICKED) {
+            const f = folderOf(data.docs);
+            if (f && onFolder) onFolder(f);
+            resolve(imagesFrom(data.docs));
+          }
           else if (data.action === g.Action.CANCEL) resolve([]);
         })
         .build()
@@ -70,5 +86,5 @@
     });
   }
 
-  return { isImage, imagesFrom, missingConfig, pickImages };
+  return { isImage, imagesFrom, folderOf, missingConfig, pickImages };
 });

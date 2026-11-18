@@ -13,6 +13,11 @@ Uso (necesita numpy y scipy; MNIST se descarga a mano o con `curl`):
 La carpeta tiene que traer train-images-idx3-ubyte, train-labels-idx1-ubyte, t10k-images-idx3-ubyte y
 t10k-labels-idx1-ubyte (sin comprimir). Escribe js/digit-model.js y tests/fixtures/digits-sample.json.
 El entrenamiento usa semillas fijas: con los mismos datos da el mismo modelo.
+
+Opcional: `--real <archivo.json>` suma dígitos reales de hojas fotografiadas (lista de objetos con `sheet`, `label` y
+`vec`: 784 valores 0-255 en base64, como los deja el lector de la app). Con `--cv N` no escribe nada: entrena N veces
+dejando hojas afuera y mide la precisión sobre las hojas que quedaron afuera (así se ve si ayuda de verdad o si solo
+memoriza).
 """
 import argparse
 import base64
@@ -131,7 +136,7 @@ def softmax(z):
     return e / e.sum(1, keepdims=True)
 
 
-def train(x, y, xt, yt, xa, ya, epochs, rng, log):
+def train(x, y, xt, yt, xa, ya, epochs, rng, log, real=None):
     ws, bs = init_net([784, 128, 64, 10], rng)
     mw = [np.zeros_like(w) for w in ws]; vw = [np.zeros_like(w) for w in ws]
     mb = [np.zeros_like(b) for b in bs]; vb = [np.zeros_like(b) for b in bs]
@@ -139,10 +144,15 @@ def train(x, y, xt, yt, xa, ya, epochs, rng, log):
     for ep in range(epochs):
         lr = 1.5e-3 * (0.5 * (1 + np.cos(np.pi * ep / epochs))) + 5e-5
         xe = augment_batch(x, y, rng)
+        ye = y
+        if real is not None and len(real[0]):
+            # los dígitos reales entran muchas veces por época, cada vez con otra deformación leve
+            xr = np.repeat(real[0], real[2], axis=0); yr = np.repeat(real[1], real[2])
+            xe = np.concatenate([xe, augment_batch(xr, yr, rng, clean_frac=0.2)]); ye = np.concatenate([y, yr])
         idx = rng.permutation(len(xe))
         for s in range(0, len(idx), bsz):
             bi = idx[s:s + bsz]
-            xb, yb = xe[bi], y[bi]
+            xb, yb = xe[bi], ye[bi]
             acts = forward(ws, bs, xb, keep=True)
             g = softmax(acts[-1]); g[np.arange(len(bi)), yb] -= 1; g /= len(bi)
             t += 1
@@ -196,10 +206,44 @@ def write_model_js(path, model):
         f.write(';\n});\n')
 
 
+def load_real(path):
+    with open(path) as f:
+        rows = json.load(f)
+    xs, ys, gs = [], [], []
+    for r in rows:
+        if r.get('label') is None or r.get('vec') is None:
+            continue
+        xs.append(np.frombuffer(base64.b64decode(r['vec']), dtype=np.uint8).astype(np.float32) / 255)
+        ys.append(int(r['label'])); gs.append(r['sheet'])
+    return np.array(xs, np.float32), np.array(ys, np.int64), np.array(gs)
+
+
+def cross_validate(x, y, xt, yt, xa, real, folds, epochs, reps, log):
+    """Entrena `folds` veces dejando afuera hojas enteras y mide sobre lo que quedó afuera (con y sin dígitos reales)."""
+    xr, yr, gr = real
+    sheets = sorted(set(gr))
+    # una misma persona puede haber escrito dos hojas: las que comparten registro se agrupan en main() con el mismo nombre
+    res = {'con reales': [0, 0], 'solo MNIST': [0, 0]}
+    for f in range(folds):
+        out = {s for i, s in enumerate(sheets) if i % folds == f}
+        te = np.isin(gr, list(out))
+        for name, use in (('con reales', True), ('solo MNIST', False)):
+            rng = np.random.default_rng(1000 + f)
+            ws, bs = train(x, y, xt, yt, xa, yt, epochs, rng, lambda _s: None, real=(xr[~te], yr[~te], reps) if use else None)
+            hit = int((forward(ws, bs, xr[te]).argmax(1) == yr[te]).sum())
+            res[name][0] += hit; res[name][1] += int(te.sum())
+            log(f'bloque {f + 1}/{folds} {name}: {hit}/{int(te.sum())}')
+    for name, (h, n) in res.items():
+        log(f'TOTAL {name}: {h}/{n} = {h / n:.3f}')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--mnist', required=True)
     ap.add_argument('--epochs', type=int, default=18)
+    ap.add_argument('--real', help='JSON con dígitos reales (ver arriba)')
+    ap.add_argument('--reps', type=int, default=120, help='veces que entra cada dígito real por época')
+    ap.add_argument('--cv', type=int, default=0, help='validación cruzada por hoja con N bloques (no escribe archivos)')
     ap.add_argument('--out', default=os.path.join(ROOT, 'js', 'digit-model.js'))
     ap.add_argument('--fixture', default=os.path.join(ROOT, 'tests', 'fixtures', 'digits-sample.json'))
     a = ap.parse_args()
@@ -214,7 +258,11 @@ def main():
     rng = np.random.default_rng(20261108)
     # Prueba "con variaciones": el test de MNIST pasado por las mismas deformaciones (semilla distinta).
     xa = augment_batch(xt, yt, np.random.default_rng(777), clean_frac=0.0)
-    ws, bs = train(x, y, xt, yt, xa, yt, a.epochs, rng, log)
+    real = load_real(a.real) if a.real else None
+    if a.cv:
+        cross_validate(x, y, xt, yt, xa, real, a.cv, a.epochs, a.reps, log)
+        return 0
+    ws, bs = train(x, y, xt, yt, xa, yt, a.epochs, rng, log, real=(real[0], real[1], a.reps) if real else None)
 
     layers = quantize(ws, bs)
     qws, qbs = dequant(layers)

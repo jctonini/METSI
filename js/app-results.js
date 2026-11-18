@@ -54,12 +54,14 @@
     const n = (v) => formatNumber(v, comma);
     const header = ['Registro', 'Nombre y apellido', 'Modalidad', 'Puntaje', 'Puntaje máximo', 'Porcentaje']
       .concat(Array.from({ length: L.numQuestions }, (_, i) => 'P' + (i + 1)))
-      .concat(Array.from({ length: L.numQuestions }, (_, i) => 'Puntos P' + (i + 1)));
+      .concat(Array.from({ length: L.numQuestions }, (_, i) => 'Puntos P' + (i + 1)))
+      .concat(['Comentario']); // al final, para no mover las columnas que ya usás en Excel
     const body = rows.map(({ s, score }) => [
       s.registro, s.nombre || '', s.modalidad == null ? '' : L.modalidades[s.modalidad] || '',
       n(score.total), n(score.max), n(score.percent),
       ...s.answers.map(letters),
       ...score.perQuestion.map((p) => n(p.earned)),
+      s.comentario || '',
     ]);
     return [header, ...body];
   }

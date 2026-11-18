@@ -52,7 +52,9 @@
   });
   let rootFolderId = null;
   const ensureRoot = async () => rootFolderId || (rootFolderId = await drive.ensureRootFolder());
-  const folderName = () => `${state.cfg.title || 'Examen'} · ${new Date(state.examCreatedAt).toISOString().slice(0, 10)}`;
+  const autoFolderName = () => `${state.cfg.title || 'Examen'} · ${new Date(state.examCreatedAt).toISOString().slice(0, 10)}`;
+  // Si el docente le puso un nombre propio a la carpeta, se respeta: la sincronización no lo pisa con el automático.
+  const folderName = () => state.driveFolderCustom || autoFolderName();
 
   // ¿Hay algo que todavía no está en Drive?
   function pendingCount() {
@@ -134,6 +136,7 @@
       if (!folderId) folderId = await drive.createExamFolder(root, state.examId, folderName());
       else if (state.driveFolderName && state.driveFolderName !== folderName()) await drive.renameFolder(folderId, folderName());
 
+      state.driveFolderId = folderId; // para el botón «Abrir carpeta del examen en Drive»
       const remote = await drive.readJson(folderId, 'datos.json');
       if (remote && remote.examId === state.examId) {
         const before = state.cfgUpdatedAt;
@@ -217,7 +220,10 @@
         const btn = document.createElement('button');
         btn.textContent = cur ? 'Actualizar' : 'Abrir';
         btn.addEventListener('click', () => openFromDrive(ex));
-        row.appendChild(btn);
+        const ren = document.createElement('button');
+        ren.textContent = 'Renombrar'; ren.title = 'Cambiar el nombre de la carpeta en Drive';
+        ren.addEventListener('click', () => renameExamFolder(ex));
+        row.appendChild(btn); row.appendChild(ren);
         box.appendChild(row);
       });
     } catch (e) {
@@ -225,6 +231,22 @@
     }
   }
   $('drive-list').addEventListener('click', renderDriveExams);
+
+  // Cambia el nombre de la carpeta del examen en Drive. Vacío = volver al nombre automático (título + fecha, solo del examen abierto).
+  async function renameExamFolder(ex) {
+    const cur = ex.examId === state.examId;
+    const typed = prompt('Nuevo nombre de la carpeta en Drive' + (cur ? ' (vacío: nombre automático con el título y la fecha)' : ''), ex.name);
+    if (typed === null) return;
+    const name = typed.trim();
+    if (!name && !cur) { alert('Para volver al nombre automático, abrí primero ese examen.'); return; }
+    const final = name || autoFolderName();
+    if (final === ex.name) return;
+    try {
+      await drive.renameFolder(ex.folderId, final);
+      if (cur) { state.driveFolderCustom = name; state.driveFolderName = final; save(); }
+      await renderDriveExams();
+    } catch (e) { alert('No se pudo renombrar la carpeta: ' + (e.message || e)); }
+  }
 
   async function openFromDrive(ex) {
     if (ex.examId === state.examId) { await runSync(); refreshAll(); return; }
@@ -236,6 +258,7 @@
       memory.clear();
       replaceState(fixCfg(Object.assign(defaults(), remote, { lastSync: Date.now(), driveFolderName: ex.name })));
       state.sheets.forEach((sh) => { sh.id = String(sh.id); });
+      state.driveFolderCustom = ex.name !== autoFolderName() ? ex.name : ''; // una carpeta con otro nombre se respeta
       save();
       refreshAll();
       App.showTab('results');
@@ -262,13 +285,26 @@
     if (!clientId()) { alert('Primero conectá Google Drive en la pestaña Drive.'); App.showTab('drive'); return; }
     if (missing.length) { alert('Falta configurar ' + missing.join(' y ') + ' en js/config.js (ver README, sección «Elegir fotos desde Drive»).'); return; }
     try {
-      const picked = await MetsiPicker.pickImages(cfg, await getToken());
+      const settings = App.loadSettings();
+      const picked = await MetsiPicker.pickImages(cfg, await getToken(), settings.pickFolder, (id) => App.saveSettings(Object.assign(App.loadSettings(), { pickFolder: id })));
       if (!picked.length) return;
       await App.processFiles(picked.map((p) => ({
         name: p.name,
         load: async () => new File([await drive.downloadBlob(p.id)], p.name, { type: p.mimeType }),
       })), 'Bajando y procesando');
     } catch (e) { alert('No se pudo abrir Drive: ' + (e.message || e)); }
+  });
+
+  // Abrir una carpeta de Drive en una pestaña nueva (la del examen, con las hojas y los casos, o la de las últimas fotos elegidas).
+  const openFolder = (id) => window.open('https://drive.google.com/drive/folders/' + encodeURIComponent(id), '_blank', 'noopener');
+  $('open-drive-exam').addEventListener('click', () => {
+    if (!state.driveFolderId) { alert('Todavía no hay carpeta de este examen en Drive: conectá Drive en la pestaña Drive y sincronizá una vez.'); return; }
+    openFolder(state.driveFolderId);
+  });
+  $('open-drive-photos').addEventListener('click', () => {
+    const f = loadSettings().pickFolder;
+    if (!f) { alert('Todavía no elegiste fotos desde Drive: usá «Elegir fotos desde Drive» y acá se abre esa carpeta.'); return; }
+    openFolder(f);
   });
 
   Object.assign(App, { drive, hasToken, setStatus, updateSyncBar, fetchPhoto, loadGis, syncNow });
