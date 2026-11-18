@@ -1,2 +1,2 @@
 // Generado por tools/version.js (no editar a mano).
-window.METSI_VERSION = '7525ecc7';
+window.METSI_VERSION = 'bfe60e86';
