@@ -1023,6 +1023,21 @@ test('dígitos: el modelo tiene la forma esperada y clasifica dígitos sueltos',
   assert.ok(ok >= dimgs.length * 0.95, `acertó ${ok} de ${dimgs.length}`);
 });
 
+test('registro: un casillero tachado con X o con una raya cuenta como vacío (no se lee como dígito)', () => {
+  const W = 66, H = 76;
+  const cell = (draw) => {
+    const data = new Uint8ClampedArray(W * H * 4).fill(255);
+    const dot = (x, y) => { for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const X = Math.round(x) + dx, Y = Math.round(y) + dy; if (X >= 0 && Y >= 0 && X < W && Y < H) { const k = (Y * W + X) * 4; data[k] = data[k + 1] = data[k + 2] = 30; } } };
+    const line = (x0, y0, x1, y1) => { for (let t = 0; t <= 1; t += 0.005) dot(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t); };
+    draw(line);
+    return { width: W, height: H, data };
+  };
+  assert.equal(DIGITS.readCell(cell((l) => { l(4, 4, 62, 72); l(62, 4, 4, 72); })).empty, true, 'la X es un casillero vacío');
+  assert.equal(DIGITS.readCell(cell((l) => l(6, 38, 60, 38))).empty, true, 'la raya es un casillero vacío');
+  assert.equal(DIGITS.readCell(cell((l) => { l(12, 12, 54, 12); l(54, 12, 28, 70); })).empty, false, 'un 7 sí es un dígito');
+  assert.equal(DIGITS.readCell(cell((l) => l(33, 8, 33, 68))).empty, false, 'un 1 sí es un dígito');
+});
+
 // Lee el registro de una hoja sintética con dígitos escritos en los casilleros.
 function readSynthRegistro(version, seed, digitIdx, extra) {
   const cfg = { numQuestions: 10, numOptions: 4, modalidades: ['A', 'B'], regDigits: 7 };

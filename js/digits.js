@@ -135,6 +135,9 @@
       if (c.miny < miny) miny = c.miny; if (c.maxy > maxy) maxy = c.maxy;
     }
     const bw = maxx - minx + 1, bh = maxy - miny + 1;
+    // Un casillero tachado con una X (alumnos que escriben 6 dígitos en 7 casilleros) o con una raya no tiene dígito:
+    // cuenta como vacío (si no, la red lo lee como un 8, un 4 o un 7).
+    if (isCrossedOut(label, keep, minx, miny, bw, bh, w, h) || isDash(bw, bh, w, h)) return { empty: true, ink: inkPx / n, crossed: true };
     const f = BOX / Math.max(bw, bh);
     const tw = Math.max(1, Math.round(bw * f)), th = Math.max(1, Math.round(bh * f));
     // Reducción por promedio de área, usando solo los píxeles de componentes que se conservan.
@@ -170,6 +173,37 @@
     }
     return { empty: false, vec, ink: inkPx / n };
   }
+
+  // X: un trazo recto por cada diagonal de la caja de la tinta y los cuatro puntos medios de los bordes VACÍOS (los brazos
+  // de la X van a las esquinas). Ningún dígito cumple las dos cosas: el 2, el 8, el 0, el 7... tocan algún punto medio.
+  function isCrossedOut(label, keep, minx, miny, bw, bh, w, h) {
+    if (bw < 0.7 * w || bh < 0.7 * h) return false;
+    const ink = (x0, y0, x1, y1) => {
+      let c = 0, n = 0;
+      for (let y = Math.round(y0); y < Math.round(y1); y++) for (let x = Math.round(x0); x < Math.round(x1); x++) { n++; if (keep[label[y * w + x]]) c++; }
+      return n ? c / n : 0;
+    };
+    const mid = 0.06;
+    const midEdgesEmpty = ink(minx + 0.4 * bw, miny, minx + 0.6 * bw, miny + 0.15 * bh) < mid
+      && ink(minx + 0.4 * bw, miny + 0.85 * bh, minx + 0.6 * bw, miny + bh) < mid
+      && ink(minx, miny + 0.4 * bh, minx + 0.15 * bw, miny + 0.6 * bh) < mid
+      && ink(minx + 0.85 * bw, miny + 0.4 * bh, minx + bw, miny + 0.6 * bh) < mid;
+    if (!midEdgesEmpty) return false;
+    const r = Math.max(2, Math.round(0.07 * Math.min(bw, bh)));
+    const inked = (cx, cy) => {
+      for (let y = Math.max(0, cy - r); y <= Math.min(h - 1, cy + r); y++) for (let x = Math.max(0, cx - r); x <= Math.min(w - 1, cx + r); x++) if (keep[label[y * w + x]]) return true;
+      return false;
+    };
+    let d1 = 0, d2 = 0; const N = 24;
+    for (let k = 0; k <= N; k++) {
+      const t = k / N;
+      if (inked(Math.round(minx + t * (bw - 1)), Math.round(miny + t * (bh - 1)))) d1++;
+      if (inked(Math.round(minx + (1 - t) * (bw - 1)), Math.round(miny + t * (bh - 1)))) d2++;
+    }
+    return d1 >= 0.7 * (N + 1) && d2 >= 0.7 * (N + 1);
+  }
+  // Raya horizontal: muy ancha y muy baja.
+  function isDash(bw, bh, w, h) { return bw >= 0.5 * w && bh <= 0.16 * h; }
 
   // Un píxel sin etiqueta pero pegado a tinta conservada (el borde suave del trazo) también cuenta.
   function nearKept(label, keep, x, y, w, h) {

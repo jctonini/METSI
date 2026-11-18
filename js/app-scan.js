@@ -85,7 +85,7 @@
   // Zonas que se recortan de la foto para que el docente lea nombre y registro.
   function displayRects(L) {
     return {
-      name: L.version >= 2 ? { x: 16, y: 26.2, w: 116, h: 10.2 } : L.fields.name,
+      name: L.version >= 2 ? { x: 16, y: 24, w: 120, h: 14 } : L.fields.name, // más alto y ancho que el campo impreso: la letra sube sobre la línea y la foto sale corrida (hojas reales del 18/11)
       reg: L.fields.reg,
     };
   }
@@ -617,7 +617,7 @@
         card.appendChild(det);
       }
       const warn = [];
-      if (r && r.modalidadProblem) warn.push('revisá la modalidad');
+      if (r && r.modalidadProblem) warn.push(r.modalidad === null ? 'modalidad sin marcar bien (¿tilde o cruz?): elegila vos' : 'revisá la modalidad');
       const nr = sheet.answers.filter((a) => a.length === 0).length;
       if (nr) warn.push(`${nr} pregunta(s) sin marcar`);
       const nd = r ? r.flags.filter((f) => f.dubious).length : 0;
