@@ -385,6 +385,17 @@ test('manchas negras chicas y hoja vecina no confunden las esquinas', () => {
   assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
 });
 
+test('una grampa o un tachón pegado a la marca de la esquina no impide leer la hoja (hoja real del 18/11)', () => {
+  // La marca (cuadrado de 8 mm) queda alargada ~1,6 por un trazo pegado: antes se rechazaba como «forma inesperada».
+  const exam = makeExam(CFG20, 560);
+  const tl = exam.L.markerShapes[0];
+  for (const s of [1, 2, 3]) {
+    const ink = [{ x: tl.x + tl.w / 2, y: tl.y - tl.h / 2, w: 4.8, h: 2 }];
+    const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, ink }), exam.layoutFor);
+    assert.ok(scan.ok, scan.error);
+    assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+  }
+});
 test('V3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha)', () => {
   const L = buildLayout(CFG10, 3);
   assert.deepEqual(L.markerShapes.map((m) => [m.w, m.h]), [[8, 8], [16, 4], [8, 8], [16, 4]]);
@@ -446,13 +457,13 @@ test('un punto cuenta como respuesta si es lo bastante grande (y un puntito suel
     assert.deepEqual(counts.slice(4), [true, true, true], 'los puntos de 1,6 mm o más deben contar');
   }
 });
-test('las cruces finas se leen aunque la foto tenga las burbujas vacías más oscuras (borrosa)', () => {
+test('las cruces finas se leen con sensibilidad Alta aunque la foto tenga las burbujas vacías más oscuras (borrosa)', () => {
   // Foto de peor calidad: papel más oscuro y mucho ruido; las cruces finas tienen que seguir contando.
   for (let s = 1; s <= 3; s++) {
     const exam = makeExam(CFG20, 600 + s, { kind: 'thincross' });
     const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed: s, paper: 140, lighting: 0.35, noise: 30, jitter: 100 }), exam.layoutFor);
     assert.ok(scan.ok, scan.error);
-    assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
+    assert.deepEqual(interpret(scan, 0.1, groupsOf(scan.layout)).answers, exam.answers); // con «Alta» (0,10): el valor «Normal» (0,16) se calibró con hojas rellenadas, no con cruces
   }
 });
 

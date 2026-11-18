@@ -99,11 +99,11 @@ function main(argv) {
     console.log('No hay casos reales para evaluar. Poné archivos casos.json en tests/fixtures/real/ (ver README) o indicá la ruta.');
     return;
   }
-  const ref = 0.085;
+  const ref = 0.16;
   const now = evaluate(sheets, ref, ref);
   console.log(`${sheets.length} hoja(s), ${now.total} pregunta(s) evaluables. Con el umbral por defecto (${ref}): ${now.wrong} mal leída(s).`);
   now.detail.slice(0, 20).forEach((d) => console.log(`  ${d.file} hoja ${d.id} pregunta ${d.q}: esperado [${d.esperado.map((i) => LETTERS[i])}], leyó [${d.leyo.map((i) => LETTERS[i])}]`));
-  const rows = sweep(sheets, 0.03, 0.2, 0.005, ref);
+  const rows = sweep(sheets, 0.03, 0.3, 0.005, ref);
   const best = Math.min(...rows.map((r) => r.wrong));
   console.log('\numbral  errores');
   rows.forEach((r) => console.log(`${r.threshold.toFixed(3)}   ${String(r.wrong).padStart(4)}${r.wrong === best ? '  ← mínimo' : ''}`));
