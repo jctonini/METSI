@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-18T22:56:00Z'
-updated_date: '2026-11-18T22:56:00Z'
+updated_date: '2026-11-18T23:18:00Z'
 labels:
   - lectura
 dependencies: []
@@ -37,3 +37,9 @@ Primer uso con 15 exámenes reales (20 preguntas, 5 opciones, hoja V4): la app m
 5. Nombre: recorte más alto/ancho.
 6. Modalidad: aviso claro, la elige el docente.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sensibilidad 0,16, esquina con grampa, fixtures reales, ubicación de casilleros, X/raya vacías, nombre y aviso de modalidad hechos. Lector reentrenado con --reps 40 (CV por hoja: 88,1% -> 94,0% por dígito). Falta probar en navegador real.
+<!-- SECTION:NOTES:END -->
