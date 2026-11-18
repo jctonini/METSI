@@ -612,6 +612,14 @@ test('selector de Drive: deja solo imágenes sin repetir y avisa qué falta conf
   assert.deepEqual(P.missingConfig({ apiKey: '', appId: ' ' }), ['METSI_GOOGLE_API_KEY', 'METSI_GOOGLE_APP_ID']);
   assert.deepEqual(P.missingConfig({ apiKey: 'k', appId: '1' }), []);
 });
+test('selector de Drive: recuerda la carpeta de las fotos elegidas para abrir ahí la próxima vez', () => {
+  const P = require('../js/picker.js');
+  const img = (id, parentId) => ({ id, name: id, mimeType: 'image/jpeg', parentId });
+  assert.equal(P.folderOf([img('a', 'F1'), img('b', 'F2'), img('c', 'F2')]), 'F2');
+  assert.equal(P.folderOf([{ id: 'p', mimeType: 'application/pdf', parentId: 'F9' }, img('a', 'F1')]), 'F1');
+  assert.equal(P.folderOf([img('a')]), '');
+  assert.equal(P.folderOf(null), '');
+});
 test('selector de Drive: una foto elegida se baja de Drive con reintentos', async () => {
   const { createDrive } = require('../js/drive.js');
   const { createMockDrive } = require('./mockdrive.js');

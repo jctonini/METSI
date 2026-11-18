@@ -262,7 +262,8 @@
     if (!clientId()) { alert('Primero conectá Google Drive en la pestaña Drive.'); App.showTab('drive'); return; }
     if (missing.length) { alert('Falta configurar ' + missing.join(' y ') + ' en js/config.js (ver README, sección «Elegir fotos desde Drive»).'); return; }
     try {
-      const picked = await MetsiPicker.pickImages(cfg, await getToken());
+      const settings = App.loadSettings();
+      const picked = await MetsiPicker.pickImages(cfg, await getToken(), settings.pickFolder, (id) => App.saveSettings(Object.assign(App.loadSettings(), { pickFolder: id })));
       if (!picked.length) return;
       await App.processFiles(picked.map((p) => ({
         name: p.name,
