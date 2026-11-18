@@ -52,7 +52,9 @@
   });
   let rootFolderId = null;
   const ensureRoot = async () => rootFolderId || (rootFolderId = await drive.ensureRootFolder());
-  const folderName = () => `${state.cfg.title || 'Examen'} · ${new Date(state.examCreatedAt).toISOString().slice(0, 10)}`;
+  const autoFolderName = () => `${state.cfg.title || 'Examen'} · ${new Date(state.examCreatedAt).toISOString().slice(0, 10)}`;
+  // Si el docente le puso un nombre propio a la carpeta, se respeta: la sincronización no lo pisa con el automático.
+  const folderName = () => state.driveFolderCustom || autoFolderName();
 
   // ¿Hay algo que todavía no está en Drive?
   function pendingCount() {
@@ -217,7 +219,10 @@
         const btn = document.createElement('button');
         btn.textContent = cur ? 'Actualizar' : 'Abrir';
         btn.addEventListener('click', () => openFromDrive(ex));
-        row.appendChild(btn);
+        const ren = document.createElement('button');
+        ren.textContent = 'Renombrar'; ren.title = 'Cambiar el nombre de la carpeta en Drive';
+        ren.addEventListener('click', () => renameExamFolder(ex));
+        row.appendChild(btn); row.appendChild(ren);
         box.appendChild(row);
       });
     } catch (e) {
@@ -225,6 +230,22 @@
     }
   }
   $('drive-list').addEventListener('click', renderDriveExams);
+
+  // Cambia el nombre de la carpeta del examen en Drive. Vacío = volver al nombre automático (título + fecha, solo del examen abierto).
+  async function renameExamFolder(ex) {
+    const cur = ex.examId === state.examId;
+    const typed = prompt('Nuevo nombre de la carpeta en Drive' + (cur ? ' (vacío: nombre automático con el título y la fecha)' : ''), ex.name);
+    if (typed === null) return;
+    const name = typed.trim();
+    if (!name && !cur) { alert('Para volver al nombre automático, abrí primero ese examen.'); return; }
+    const final = name || autoFolderName();
+    if (final === ex.name) return;
+    try {
+      await drive.renameFolder(ex.folderId, final);
+      if (cur) { state.driveFolderCustom = name; state.driveFolderName = final; save(); }
+      await renderDriveExams();
+    } catch (e) { alert('No se pudo renombrar la carpeta: ' + (e.message || e)); }
+  }
 
   async function openFromDrive(ex) {
     if (ex.examId === state.examId) { await runSync(); refreshAll(); return; }
@@ -236,6 +257,7 @@
       memory.clear();
       replaceState(fixCfg(Object.assign(defaults(), remote, { lastSync: Date.now(), driveFolderName: ex.name })));
       state.sheets.forEach((sh) => { sh.id = String(sh.id); });
+      state.driveFolderCustom = ex.name !== autoFolderName() ? ex.name : ''; // una carpeta con otro nombre se respeta
       save();
       refreshAll();
       App.showTab('results');
