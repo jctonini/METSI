@@ -450,7 +450,28 @@
     App.renderResults();
   });
 
+  // Redibuja las tarjetas sin quitarle el foco a quien está escribiendo: cuando Drive termina de sincronizar (o se
+  // cambia otra cosa) se rehacen todas las tarjetas, y el cursor, el texto a medio escribir y el scroll se perdían.
   function renderCards() {
+    const ae = document.activeElement, box = $('cards');
+    const card = ae && box && box.contains(ae) ? ae.closest('.card') : null;
+    const cls = card && ['f-name', 'f-reg', 'f-mod', 'f-note'].find((c) => ae.classList.contains(c));
+    const saved = cls ? { id: card.dataset.sheet, cls, value: ae.value, a: ae.selectionStart, b: ae.selectionEnd } : null;
+    const y = window.scrollY;
+    renderCardsNow();
+    if (saved) {
+      const el = [...box.querySelectorAll('.card')].find((c) => c.dataset.sheet === saved.id);
+      const f = el && el.querySelector('.' + saved.cls);
+      if (f) {
+        if (f.value !== saved.value) f.value = saved.value; // lo escrito y todavía no confirmado
+        f.focus({ preventScroll: true });
+        try { if (saved.a != null) f.setSelectionRange(saved.a, saved.b); } catch (e) { /* los select no tienen selección */ }
+      }
+    }
+    window.scrollTo(0, y);
+  }
+
+  function renderCardsNow() {
     renderBulkBar();
     const box = $('cards');
     box.innerHTML = '';
