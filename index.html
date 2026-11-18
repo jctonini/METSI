@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>METSI · Corrector de multiple choice</title>
-  <link rel="stylesheet" href="css/style.css?v=c54bb809">
+  <link rel="stylesheet" href="css/style.css?v=a0c33825">
 </head>
 <body>
   <header class="top">
@@ -93,6 +93,8 @@
         <label class="btn primary">📷 Sacar foto / elegir fotos
           <input id="file" type="file" accept="image/*" multiple hidden></label>
         <button id="pick-drive" type="button">☁ Elegir fotos desde Drive</button>
+        <button id="open-drive-photos" type="button" title="Abre en una pestaña nueva la carpeta de las últimas fotos que elegiste">📂 Abrir carpeta de fotos</button>
+        <button id="open-drive-exam" type="button" title="Abre en una pestaña nueva la carpeta de este examen en Drive">📂 Abrir carpeta del examen</button>
         <label>Sensibilidad de marca
           <select id="cfg-thr">
             <option value="0.1">Alta (cuenta marcas suaves)</option>
@@ -100,6 +102,7 @@
             <option value="0.22">Baja (solo marcas fuertes)</option>
           </select></label>
       </div>
+      <datalist id="comment-ideas"><option value="Corregida a mano"><option value="Registro corregido a mano"><option value="Respuestas corregidas a mano"><option value="Foto repetida"></datalist>
       <div id="status" class="status"></div>
       <div id="scan-banner" hidden></div>
       <p id="reg-stats" class="muted" hidden></p>
@@ -185,33 +188,33 @@
   <div id="print-area"></div>
   <style id="page-style"></style>
 
-  <script src="js/version.js?v=c54bb809"></script>
-  <script src="js/config.js?v=c54bb809"></script>
-  <script src="js/layout.js?v=c54bb809"></script>
-  <script src="js/scoring.js?v=c54bb809"></script>
-  <script src="js/csv.js?v=c54bb809"></script>
-  <script src="js/sheet.js?v=c54bb809"></script>
-  <script src="js/scanner.js?v=c54bb809"></script>
-  <script src="js/merge.js?v=c54bb809"></script>
-  <script src="js/review.js?v=c54bb809"></script>
-  <script src="js/identity.js?v=c54bb809"></script>
-  <script src="js/similar.js?v=c54bb809"></script>
-  <script src="js/digit-model.js?v=c54bb809"></script>
-  <script src="js/digits.js?v=c54bb809"></script>
-  <script src="js/photostore.js?v=c54bb809"></script>
-  <script src="js/storage.js?v=c54bb809"></script>
-  <script src="js/picker.js?v=c54bb809"></script>
-  <script src="js/selection.js?v=c54bb809"></script>
-  <script src="js/retry.js?v=c54bb809"></script>
-  <script src="js/auth.js?v=c54bb809"></script>
-  <script src="js/drive.js?v=c54bb809"></script>
-  <script src="js/app-core.js?v=c54bb809"></script>
-  <script src="js/app-exam.js?v=c54bb809"></script>
-  <script src="js/app-scan.js?v=c54bb809"></script>
-  <script src="js/app-results.js?v=c54bb809"></script>
-  <script src="js/app-drive.js?v=c54bb809"></script>
-  <script src="js/account.js?v=c54bb809"></script>
-  <script src="js/app-users.js?v=c54bb809"></script>
-  <script src="js/app.js?v=c54bb809"></script>
+  <script src="js/version.js?v=a0c33825"></script>
+  <script src="js/config.js?v=a0c33825"></script>
+  <script src="js/layout.js?v=a0c33825"></script>
+  <script src="js/scoring.js?v=a0c33825"></script>
+  <script src="js/csv.js?v=a0c33825"></script>
+  <script src="js/sheet.js?v=a0c33825"></script>
+  <script src="js/scanner.js?v=a0c33825"></script>
+  <script src="js/merge.js?v=a0c33825"></script>
+  <script src="js/review.js?v=a0c33825"></script>
+  <script src="js/identity.js?v=a0c33825"></script>
+  <script src="js/similar.js?v=a0c33825"></script>
+  <script src="js/digit-model.js?v=a0c33825"></script>
+  <script src="js/digits.js?v=a0c33825"></script>
+  <script src="js/photostore.js?v=a0c33825"></script>
+  <script src="js/storage.js?v=a0c33825"></script>
+  <script src="js/picker.js?v=a0c33825"></script>
+  <script src="js/selection.js?v=a0c33825"></script>
+  <script src="js/retry.js?v=a0c33825"></script>
+  <script src="js/auth.js?v=a0c33825"></script>
+  <script src="js/drive.js?v=a0c33825"></script>
+  <script src="js/app-core.js?v=a0c33825"></script>
+  <script src="js/app-exam.js?v=a0c33825"></script>
+  <script src="js/app-scan.js?v=a0c33825"></script>
+  <script src="js/app-results.js?v=a0c33825"></script>
+  <script src="js/app-drive.js?v=a0c33825"></script>
+  <script src="js/account.js?v=a0c33825"></script>
+  <script src="js/app-users.js?v=a0c33825"></script>
+  <script src="js/app.js?v=a0c33825"></script>
 </body>
 </html>

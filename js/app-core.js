@@ -27,6 +27,7 @@
     cfgHash: '',
     lastSync: 0,
     driveFolderName: '',
+    driveFolderId: '', // carpeta del examen en Drive (se completa al sincronizar)
     driveFolderCustom: '', // nombre propio de la carpeta en Drive ('' = automático)
   });
   // Completa campos nuevos en estados guardados antes (o provenientes de otro dispositivo).

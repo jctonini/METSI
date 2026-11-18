@@ -136,6 +136,7 @@
       if (!folderId) folderId = await drive.createExamFolder(root, state.examId, folderName());
       else if (state.driveFolderName && state.driveFolderName !== folderName()) await drive.renameFolder(folderId, folderName());
 
+      state.driveFolderId = folderId; // para el botón «Abrir carpeta del examen en Drive»
       const remote = await drive.readJson(folderId, 'datos.json');
       if (remote && remote.examId === state.examId) {
         const before = state.cfgUpdatedAt;
@@ -292,6 +293,18 @@
         load: async () => new File([await drive.downloadBlob(p.id)], p.name, { type: p.mimeType }),
       })), 'Bajando y procesando');
     } catch (e) { alert('No se pudo abrir Drive: ' + (e.message || e)); }
+  });
+
+  // Abrir una carpeta de Drive en una pestaña nueva (la del examen, con las hojas y los casos, o la de las últimas fotos elegidas).
+  const openFolder = (id) => window.open('https://drive.google.com/drive/folders/' + encodeURIComponent(id), '_blank', 'noopener');
+  $('open-drive-exam').addEventListener('click', () => {
+    if (!state.driveFolderId) { alert('Todavía no hay carpeta de este examen en Drive: conectá Drive en la pestaña Drive y sincronizá una vez.'); return; }
+    openFolder(state.driveFolderId);
+  });
+  $('open-drive-photos').addEventListener('click', () => {
+    const f = loadSettings().pickFolder;
+    if (!f) { alert('Todavía no elegiste fotos desde Drive: usá «Elegir fotos desde Drive» y acá se abre esa carpeta.'); return; }
+    openFolder(f);
   });
 
   Object.assign(App, { drive, hasToken, setStatus, updateSyncBar, fetchPhoto, loadGis, syncNow });

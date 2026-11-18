@@ -455,7 +455,7 @@
   function renderCards() {
     const ae = document.activeElement, box = $('cards');
     const card = ae && box && box.contains(ae) ? ae.closest('.card') : null;
-    const cls = card && ['f-name', 'f-reg', 'f-mod', 'f-note'].find((c) => ae.classList.contains(c));
+    const cls = card && ['f-name', 'f-reg', 'f-mod', 'f-note', 'f-comment'].find((c) => ae.classList.contains(c));
     const saved = cls ? { id: card.dataset.sheet, cls, value: ae.value, a: ae.selectionStart, b: ae.selectionEnd } : null;
     const y = window.scrollY;
     renderCardsNow();
@@ -555,6 +555,7 @@
         <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
         <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
           L.modalidades.map((m, i) => `<option value="${i}" ${sheet.modalidad === i ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></label>
+        <label class="wide">Comentario <input type="text" class="f-comment" maxlength="300" list="comment-ideas" placeholder="para vos (opcional): por ejemplo, corregida a mano" value="${escapeHtml(sheet.comentario || '')}"></label>
         <div class="score">Puntaje <b>${fmt(score.total)}</b> / ${fmt(score.max)}</div>`;
       card.appendChild(fields);
       const afterIdChange = async () => {
@@ -571,6 +572,7 @@
         clearAck(sheet); touch(sheet);
         afterIdChange().then(() => { if (!sure) focusSheet(sheet.id); }); // con dudas: deja el cursor en el campo para revisar
       });
+      fields.querySelector('.f-comment').addEventListener('change', (e) => { sheet.comentario = e.target.value.trim(); touch(sheet); });
       fields.querySelector('.f-mod').addEventListener('change', (e) => {
         sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); touch(sheet);
       });
