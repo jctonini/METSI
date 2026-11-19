@@ -82,6 +82,45 @@
     return makeSignature(reg, name);
   }
 
+
+  // Reduce un recorte gris RGBA a (tw x th) promediando área; devuelve un objeto como el de cropFn.
+  function shrink(img, x0, y0, w, h, tw, th) {
+    const data = new Uint8ClampedArray(tw * th * 4);
+    for (let y = 0; y < th; y++) {
+      for (let x = 0; x < tw; x++) {
+        const xa = x0 + Math.floor((x * w) / tw), xb = Math.max(xa + 1, x0 + Math.floor(((x + 1) * w) / tw));
+        const ya = y0 + Math.floor((y * h) / th), yb = Math.max(ya + 1, y0 + Math.floor(((y + 1) * h) / th));
+        let sum = 0, n = 0;
+        for (let yy = ya; yy < yb && yy < img.height; yy++) for (let xx = xa; xx < xb && xx < img.width; xx++) { sum += img.data[(yy * img.width + xx) * 4]; n++; }
+        const k = (y * tw + x) * 4;
+        data[k] = data[k + 1] = data[k + 2] = n ? sum / n : 255; data[k + 3] = 255;
+      }
+    }
+    return { width: tw, height: th, data };
+  }
+
+  // Firma con los recortes que la app ya ubicó sobre lo impreso (v2): `cells` = interior de cada casillero a 10 px/mm y
+  // `nameImg` = recorte del nombre enderezado sobre su línea (a 10 px/mm, con la línea a `lineRow` filas del borde de arriba).
+  // Con las ventanas fijas de la v1, el papel corrido hacía caer la ventana sobre las líneas y los casilleros impresos (iguales
+  // en todas las hojas): 163 de 435 pares de hojas distintas daban «parecido» >= 0,55.
+  // Del nombre solo se toma la banda de escritura, sin la línea ni la etiqueta ni el subtítulo impresos.
+  function signatureFromCrops(cells, nameImg, lineRow, regBox) {
+    const tw = Math.round((regBox.w - 2.4) * PPM), th = Math.round((regBox.h - 2.4) * PPM);
+    const parts = cells.map((c) => inkBits(shrink(c, 0, 0, c.width, c.height, tw, th)).bits);
+    const all = new Uint8Array(parts.length * tw * th);
+    parts.forEach((p, i) => all.set(p, i * tw * th));
+    let name = null;
+    if (nameImg) {
+      const x0 = 320, w = Math.max(1, nameImg.width - x0 - 40); // de 48 a 132 mm
+      const y0 = Math.max(0, lineRow - 80), y1 = Math.max(y0 + 1, lineRow - 12);    // de 8 a 1,2 mm arriba de la línea
+      const m = inkBits(shrink(nameImg, x0, y0, w, y1 - y0, Math.round((w * PPM) / 10), Math.round(((y1 - y0) * PPM) / 10)));
+      name = { w: m.w, h: m.h, bits: m.bits };
+    }
+    const sig = makeSignature({ n: parts.length, w: tw, h: th, bits: all }, name);
+    sig.v = 2;
+    return sig;
+  }
+
   // ---------- comparación ----------
   function blur(bits, w, h) {
     const out = new Float32Array(w * h);
@@ -141,5 +180,8 @@
     return { reg, name, score: vals.length ? Math.max(...vals) : null };
   }
 
-  return { signature, makeSignature, compare, SIMILAR_THRESHOLD, PPM };
+  // Umbral de «parece la misma hoja»: las firmas v2 (recortes ubicados) separan mucho mejor (distintas <= 0,64; misma hoja 0,95).
+  const thresholdFor = (sig) => (sig && sig.v === 2 ? 0.75 : SIMILAR_THRESHOLD);
+
+  return { signature, signatureFromCrops, thresholdFor, makeSignature, compare, SIMILAR_THRESHOLD, PPM };
 });

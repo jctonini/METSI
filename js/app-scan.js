@@ -2,7 +2,7 @@
 (function () {
   const App = window.MetsiApp;
   const { buildLayout, LETTERS } = MetsiLayout;
-  const { scanImage, interpret, applyH, cropRegion, makeFix } = MetsiScanner;
+  const { scanImage, interpret, applyH, cropRegion, makeFix, nameCrop } = MetsiScanner;
   const Identity = MetsiIdentity;
   const Similar = MetsiSimilar;
   const Digits = MetsiDigits;
@@ -83,11 +83,29 @@
   }
 
   // Zonas que se recortan de la foto para que el docente lea nombre y registro.
+  // Agranda un rectángulo (mm): con el papel curvado o inclinado lo escrito sale corrido hasta ~5 mm de donde predicen las esquinas.
+  const grow = (r, dx, dy) => ({ x: r.x - dx, y: r.y - dy, w: r.w + 2 * dx, h: r.h + 2 * dy });
+
   function displayRects(L) {
     return {
-      name: L.version >= 2 ? { x: 16, y: 24, w: 120, h: 14 } : L.fields.name, // más alto y ancho que el campo impreso: la letra sube sobre la línea y la foto sale corrida (hojas reales del 18/11)
-      reg: L.fields.reg,
+      name: L.version >= 2 ? { x: 14, y: 18, w: 124, h: 30 } : L.fields.name, // más alto y ancho que el campo impreso: la letra sube sobre la línea y la foto sale corrida (hojas reales del 18/11)
+      reg: { x: L.fields.reg.x - 3, y: L.fields.reg.y - 3, w: L.fields.reg.w + 6, h: L.fields.reg.h + 10 }, // más margen abajo: con el papel curvado la fila de casilleros se corre hacia abajo
     };
+  }
+
+  // Firma de la letra con los recortes ubicados sobre lo impreso (casilleros y línea del nombre); si algo falla, la de ventanas fijas.
+  function makeSig(L, img, H) {
+    try {
+      const rb = L.fields.regBoxes;
+      const cropFn = (rect, ppm) => cropRegion(img, H, rect, ppm);
+      if (L.version >= 2 && L.header) {
+        const cells = [];
+        for (let i = 0; i < rb.n; i++) cells.push(Digits.cellCrop(rb, i, cropFn));
+        const nc = nameCrop(img, H, L.header.nameLineY, 10);
+        if (nc) return Similar.signatureFromCrops(cells, nc, 12 * 10, rb);
+      }
+    } catch (e) { /* cae a la firma simple */ }
+    return Similar.signature((rect, ppm) => cropRegion(img, H, rect, ppm), L);
   }
 
   // Lectura sugerida del número de registro. Es solo una sugerencia: no se guarda como `registro` hasta que el
@@ -96,7 +114,8 @@
   function suggestRegistro(L, img, H) {
     try {
       const r = Digits.readRegistro(L.fields.regBoxes, (rect, ppm) => cropRegion(img, H, rect, ppm));
-      return { text: r.text, st: r.read.map((c) => (c.empty ? 'e' : c.uncertain ? 'u' : 'k')).join(''), ok: r.sure };
+      // `alts`: la segunda opción de la red en cada dígito (para mostrar «¿o un 4?» en los dudosos)
+      return { text: r.text, st: r.read.map((c) => (c.empty ? 'e' : c.uncertain ? 'u' : 'k')).join(''), alts: r.read.map((c) => (c.empty ? '' : c.alt || '')).join(''), ok: r.sure };
     } catch (e) {
       return null; // si la lectura falla, la hoja se carga igual y el registro se escribe a mano
     }
@@ -121,7 +140,8 @@
     if (sheet.registro || !a || !/[0-9]/.test(a.text)) return '';
     const digits = [...a.text].map((ch, i) => {
       const st = a.st[i];
-      return `<b class="rd ${st === 'k' ? '' : st === 'u' ? 'doubt' : 'blank'}" title="${st === 'k' ? 'leído' : st === 'u' ? 'dudoso: revisalo' : 'casillero vacío'}">${escapeHtml(ch)}</b>`;
+      const alt = st === 'u' && a.alts && /[0-9]/.test(a.alts[i] || '') ? a.alts[i] : '';
+      return `<b class="rd ${st === 'k' ? '' : st === 'u' ? 'doubt' : 'blank'}" title="${st === 'k' ? 'leído' : st === 'u' ? 'dudoso: revisalo' + (alt ? ' (¿o un ' + alt + '?)' : '') : 'casillero vacío'}">${escapeHtml(ch)}${alt ? `<small>¿${alt}?</small>` : ''}</b>`;
     }).join('');
     const sure = regSure(a);
     return `<div class="wide reg-suggest ${sure ? '' : 'unsure'}"><span class="muted">Lectura del registro (sugerida, no cargada):</span>
@@ -226,8 +246,8 @@
     if (sheet.scan && sheet.fullScale) {
       const L = buildLayout(state.cfg, sheet.version || 1);
       const H = sheet.scan.H.map((v, i) => (i < 6 ? v * sheet.fullScale : v));
-      const rects = [displayRects(L).name, L.fields.reg];
-      if (L.version >= 2) rects.push({ x: L.date.x - 3, y: L.date.y - 4, w: 132 - L.date.x + 3, h: 8 });
+      const rects = [displayRects(L).name, displayRects(L).reg];
+      if (L.version >= 2) rects.push({ x: L.date.x - 3, y: L.date.y - 6, w: 136 - L.date.x + 3, h: 12 });
       ctx.fillStyle = '#000';
       for (const r of rects) {
         const pts = [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]].map(([x, y]) => applyH(H, x, y));
@@ -319,12 +339,17 @@
       const p7 = (v) => Number(v.toPrecision(7));
       const p3 = (v) => Math.round(v * 1000) / 1000;
       // Recortes de lo escrito a mano (nombre y registro) para transcribirlos mirando la imagen.
-      const crop = (rect) => {
-        const cr = cropRegion(img, scan.H, rect, 10);
+      const toUrl = (cr) => {
         const cc = document.createElement('canvas');
         cc.width = cr.width; cc.height = cr.height;
         cc.getContext('2d').putImageData(new ImageData(cr.data, cr.width, cr.height), 0, 0);
         return cc.toDataURL('image/jpeg', 0.8);
+      };
+      const crop = (rect) => toUrl(cropRegion(img, scan.H, rect, 10));
+      // El nombre se recorta enderezado sobre su línea impresa; si no se ve la línea, queda la ventana fija.
+      const cropName = (rect) => {
+        const nc = L.version >= 2 && L.header ? nameCrop(img, scan.H, L.header.nameLineY, 10) : null;
+        return nc ? toUrl(nc) : crop(rect);
       };
       const rects = displayRects(L);
       const sheet = {
@@ -333,10 +358,10 @@
         // Lo que leyó la app por su cuenta, para saber después qué corrigió el docente a mano.
         autoAnswers: r.answers.map((a) => a.slice()), autoModalidad: r.modalidad,
         appVersion: window.METSI_VERSION || null, fullScale: 1 / tk, review: { flag: false, note: '', q: {} },
-        crops: { name: crop(rects.name), reg: crop(rects.reg) },
+        crops: { name: cropName(rects.name), reg: crop(rects.reg) },
         regAuto: suggestRegistro(L, img, scan.H),
         // Firma de la letra: sirve para avisar si se fotografió dos veces el mismo papel.
-        sig: Similar.signature((rect, ppm) => cropRegion(img, scan.H, rect, ppm), L),
+        sig: makeSig(L, img, scan.H),
         // Datos para revisar más tarde (también desde otro dispositivo): homografía ya
         // escalada a la miniatura y puntajes de cada burbuja.
         scan: {
@@ -351,7 +376,7 @@
       for (const other of state.sheets) {
         if (other.failed || !other.sig) continue;
         const cmp = Similar.compare(sheet.sig, other.sig);
-        if (cmp.score !== null && cmp.score >= Similar.SIMILAR_THRESHOLD && (!best || cmp.score > best.score)) best = { other, score: cmp.score };
+        if (cmp.score !== null && cmp.score >= Similar.thresholdFor(sheet.sig) && (!best || cmp.score > best.score)) best = { other, score: cmp.score };
       }
       if (best) {
         const ans = await askDialog({
