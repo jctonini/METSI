@@ -595,7 +595,16 @@
     const markedIdx = (arr, base) => arr.map((v, i) => (adj(v, base) >= thr ? i : -1)).filter((i) => i >= 0);
 
     const modMarked = markedIdx(scan.scores.mod, modBase);
-    const modalidad = modMarked.length === 1 ? modMarked[0] : null;
+    let modalidad = modMarked.length === 1 ? modMarked[0] : null;
+    // Respaldo para marcas livianas (una X, un tilde): ninguna burbuja pasa el umbral pero una es claramente más oscura que
+    // la otra (medido: 0,12-0,17 contra 0,00-0,05). Se preselecciona y queda como DUDOSA para que el docente la confirme.
+    // Con 39 hojas reales: 37 aciertos, 0 errores y 2 sin decidir.
+    let modalidadWeak = false;
+    if (modMarked.length === 0 && scan.scores.mod.length >= 2) {
+      const mv = scan.scores.mod.map((v) => adj(v, modBase));
+      const mx = Math.max(...mv), top = mv.indexOf(mx), other = Math.min(...mv.filter((_, k) => k !== top));
+      if (mx >= 0.1 && mx - other >= 0.06 && other <= 0.5 * mx) { modalidad = top; modalidadWeak = true; }
+    }
     const answers = ans.map((arr, q) => markedIdx(arr, baseOfQ[q]));
     const flags = ans.map((arr, q) => ({
       blank: answers[q].length === 0,
@@ -604,7 +613,8 @@
     return {
       threshold: thr,
       modalidad,
-      modalidadProblem: scan.scores.mod.length > 0 && (modMarked.length !== 1 || scan.scores.mod.some((v) => dubiousV(v, modBase))),
+      modalidadWeak,
+      modalidadProblem: scan.scores.mod.length > 0 && (modalidadWeak || modMarked.length !== 1 || scan.scores.mod.some((v) => dubiousV(v, modBase))),
       answers,
       flags,
     };
