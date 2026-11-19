@@ -525,9 +525,10 @@
   // su propio nivel base porque la luz puede cambiar de un lado al otro de la hoja.
   // `threshold`: cuánto más oscura que el fondo tiene que estar una burbuja para contar como
   // marcada. Las que quedan apenas por debajo se señalan como dudosas para revisar a mano.
-  const DEFAULT_THRESHOLD = 0.18; // con la grilla ajustada a los círculos: 0 errores en 259 preguntas (tanda 1) y 10 en 220 (tanda 2) de hojas reales
+  const DEFAULT_THRESHOLD = 0.17; // piso del umbral adaptativo (ver interpret): 9 errores en 559 preguntas de 28 hojas reales
   const MIN_CLUSTER_GAP = 0.15; // diferencia mínima entre burbujas vacías y marcadas
   const BASE_QUANTILE = 0.3;
+  const ADAPT_FRAC = 0.45, ADAPT_MAX = 0.22; // dónde cae el umbral entre vacías y marcadas, y tope
   const WINDOW_BEFORE = 4, WINDOW_AFTER = 4; // filas vecinas que se usan para el nivel base
 
   function quantile(sortedAsc, q) {
@@ -553,7 +554,8 @@
   }
 
   function interpret(scan, threshold, groups) {
-    const thr = threshold == null ? DEFAULT_THRESHOLD : threshold;
+    const floor = threshold == null ? DEFAULT_THRESHOLD : threshold;
+    let thr = floor;
     const ans = scan.scores.ans;
     const grp = groups && groups.length ? groups : [[0, ans.length]];
     // El nivel base de cada pregunta se calcula con las filas cercanas de su misma columna
@@ -568,6 +570,26 @@
     // Modalidad: se compara con el nivel base de la primera pregunta (queda justo arriba).
     const modBase = ans.length ? baseOfQ[0] : 0;
     const adj = (v, base) => Math.max(0, v - base);
+    // Umbral de cada foto: la «sensibilidad» elegida es un PISO y el umbral sube hasta quedar entre el grupo de burbujas
+    // vacías y el de marcadas de esa hoja. Un umbral fijo queda siempre en el borde: las vacías llegan a 0,16-0,23 por la
+    // luz, la lapicera y el papel, y una marca tenue de una hoja vale lo mismo que el ruido de otra. Medido con 28 hojas
+    // reales: con el umbral fijo 0,12 daba 155 preguntas mal; adaptativo, 10 con cualquier piso de 0,12 a 0,20.
+    {
+      const all = [];
+      ans.forEach((arr, q) => arr.forEach((v) => all.push(adj(v, baseOfQ[q]))));
+      all.sort((a, b) => a - b);
+      if (all.length) {
+        let lo2 = all[0], hi2 = all[all.length - 1];
+        for (let it = 0; it < 40; it++) {
+          const mid = (lo2 + hi2) / 2, low = all.filter((x) => x <= mid), high = all.filter((x) => x > mid);
+          if (!low.length || !high.length) break;
+          const nl = low.reduce((a, c) => a + c, 0) / low.length, nh = high.reduce((a, c) => a + c, 0) / high.length;
+          if (Math.abs(nl - lo2) < 1e-6 && Math.abs(nh - hi2) < 1e-6) break;
+          lo2 = nl; hi2 = nh;
+        }
+        thr = Math.min(ADAPT_MAX, Math.max(floor, lo2 + ADAPT_FRAC * (hi2 - lo2)));
+      }
+    }
     const lo = thr * 0.7; // por debajo de esto es ruido de la foto, no una marca tenue
     const dubiousV = (v, base) => adj(v, base) >= lo && adj(v, base) < thr;
     const markedIdx = (arr, base) => arr.map((v, i) => (adj(v, base) >= thr ? i : -1)).filter((i) => i >= 0);
@@ -580,6 +602,7 @@
       dubious: arr.some((v) => dubiousV(v, baseOfQ[q])),
     }));
     return {
+      threshold: thr,
       modalidad,
       modalidadProblem: scan.scores.mod.length > 0 && (modMarked.length !== 1 || scan.scores.mod.some((v) => dubiousV(v, modBase))),
       answers,
@@ -605,5 +628,47 @@
     return { width: w, height: h, data };
   }
 
-  return { scanImage, interpret, makeFix, gridContrast, cropRegion, findMarkers, bubbleScore, bubbleStats, barDarkness, buildH, solveHomography, applyH, toGray, binarize, components };
+  // Recorte del nombre escrito a mano, relativo a la LÍNEA IMPRESA del nombre y no a una ventana fija. Con la hoja curvada
+  // o inclinada la línea sale corrida (hasta ~5 mm) y torcida (sube hacia un lado): la ventana fija cortaba la mitad de
+  // abajo de lo escrito o dejaba entrar el título. Se busca la recta (pendiente y altura) más oscura del tramo libre de
+  // letras y se endereza el recorte sobre ella. Devuelve { width, height, data RGBA gris, line } o null si no ve la línea.
+  const NAME_SEARCH = { x: 16, y: 16, w: 120, h: 36 }; // mm de la hoja donde buscar
+  const NAME_LINE_X = [48, 128];                        // tramo de la línea que está libre de letras (mm)
+  const NAME_ABOVE = 12, NAME_BELOW = 4;                // mm que se recortan arriba y abajo de la línea
+  function nameCrop(img, H, lineY, ppm) {
+    ppm = ppm || 10;
+    const big = cropRegion(img, H, NAME_SEARCH, ppm);
+    const W = big.width, Hh = big.height, d = big.data;
+    const at = (x, y) => d[(Math.max(0, Math.min(Hh - 1, Math.round(y))) * W + Math.max(0, Math.min(W - 1, Math.round(x)))) * 4];
+    const xa = (NAME_LINE_X[0] - NAME_SEARCH.x) * ppm, xb = (NAME_LINE_X[1] - NAME_SEARCH.x) * ppm, xm = (xa + xb) / 2;
+    const yExp = (lineY - NAME_SEARCH.y) * ppm;
+    let best = null;
+    for (let slope = -0.12; slope <= 0.1201; slope += 0.01) {
+      for (let y0 = yExp - 6 * ppm; y0 <= yExp + 6 * ppm; y0 += 1) {
+        let sum = 0, n = 0;
+        for (let x = xa; x <= xb; x += 3) {
+          const y = y0 + slope * (x - xm);
+          const bg = (at(x, y - 7) + at(x, y + 7)) / 2;
+          sum += Math.max(0, bg - Math.min(at(x, y - 1), at(x, y), at(x, y + 1)));
+          n++;
+        }
+        const sc = sum / n;
+        if (!best || sc > best.sc) best = { sc, slope, y0 };
+      }
+    }
+    if (!best || best.sc < 25) return null;
+    const outH = Math.round((NAME_ABOVE + NAME_BELOW) * ppm);
+    const out = new Uint8ClampedArray(W * outH * 4);
+    for (let v = 0; v < outH; v++) {
+      for (let u = 0; u < W; u++) {
+        const y = best.y0 + best.slope * (u - xm) - NAME_ABOVE * ppm + v;
+        const val = y < 0 || y > Hh - 1 ? 255 : at(u, y);
+        const k = (v * W + u) * 4;
+        out[k] = out[k + 1] = out[k + 2] = val; out[k + 3] = 255;
+      }
+    }
+    return { width: W, height: outH, data: out, line: best };
+  }
+
+  return { scanImage, interpret, nameCrop, makeFix, gridContrast, cropRegion, findMarkers, bubbleScore, bubbleStats, barDarkness, buildH, solveHomography, applyH, toGray, binarize, components };
 });

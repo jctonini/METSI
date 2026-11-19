@@ -856,6 +856,22 @@ test('calibración: el barrido de umbrales incluye el umbral por defecto sin err
   } else console.log('  --  calibración con casos reales omitida (tests/fixtures/real/ está vacía)');
 }
 
+test('letra: la firma con recortes ubicados no se parece entre hojas distintas y sí entre la misma hoja (aunque las líneas impresas sean iguales)', () => {
+  const rng1 = rng(11), rng2 = rng(12);
+  const printed = (w, h) => { const d = new Uint8ClampedArray(w * h * 4).fill(235); for (let x = 0; x < w; x++) for (const y of [0, 1, h - 2, h - 1]) { const k = (y * w + x) * 4; d[k] = d[k + 1] = d[k + 2] = 40; } return d; };
+  const cell = (rnd, dx) => { const w = 66, h = 76, d = printed(w, h); for (let t = 0; t < 120; t++) { const x = Math.floor(10 + rnd() * 46) + dx, y = Math.floor(10 + rnd() * 56); for (let k = 0; k < 3; k++) { const i = (y * w + Math.min(w - 1, x + k)) * 4; d[i] = d[i + 1] = d[i + 2] = 30; } } return { width: w, height: h, data: d }; };
+  const nameImg = (rnd) => { const w = 1200, h = 160, d = printed(w, h); for (let t = 0; t < 900; t++) { const x = 340 + Math.floor(rnd() * 780), y = 45 + Math.floor(rnd() * 60); const i = (y * w + x) * 4; d[i] = d[i + 1] = d[i + 2] = 30; } return { width: w, height: h, data: d }; };
+  const box = { w: 8, h: 9 };
+  const sheet = (seed) => { const r = rng(seed); return { cells: Array.from({ length: 6 }, () => cell(r, 0)), name: nameImg(r) }; };
+  const A = sheet(21), B = sheet(22);
+  const sig = (s) => SIM.signatureFromCrops(s.cells, s.name, 120, box);
+  const same = SIM.compare(sig(A), sig(A)).score, diff = SIM.compare(sig(A), sig(B)).score;
+  assert.ok(same > 0.9, 'la misma hoja: ' + same);
+  assert.ok(diff < SIM.thresholdFor(sig(A)), 'hojas distintas con las mismas líneas impresas: ' + diff);
+  assert.equal(SIM.thresholdFor({ v: 2 }), 0.75);
+  assert.equal(SIM.thresholdFor({ v: 1 }), SIM.SIMILAR_THRESHOLD);
+});
+
 // ---------- archivo de examen (.json) ----------
 const ExamFile = require('../js/examfile.js');
 test('archivo de examen: exportar e importar da lo mismo (ida y vuelta)', () => {
