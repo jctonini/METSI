@@ -63,8 +63,11 @@
     text(16, H.nameLabelY, T.nameLabel, 3.2, '', 24);
     o.push(`<line x1="42" y1="${H.nameLineY}" x2="132" y2="${H.nameLineY}" stroke="#000" stroke-width="0.3"/>`);
 
-    text(16, H.regLabelY, T.regLabel, 3.2, '', L.fields.regBoxes.x - 18);
     const rb = L.fields.regBoxes;
+    // V4: el rótulo va pegado al primer casillero (alineado a la derecha). Con el rótulo contra el margen quedaba un hueco de ~20 mm y
+    // algunos alumnos escribieron el número ahí en vez de usar los casilleros. Las V1 a V3 ya están impresas y no se tocan.
+    if (L.version >= 4) text(rb.x - 2, H.regLabelY, T.regLabel, 3.2, 'text-anchor="end"', rb.x - 18);
+    else text(16, H.regLabelY, T.regLabel, 3.2, '', rb.x - 18);
     for (let i = 0; i < rb.n; i++) {
       o.push(`<rect x="${rb.x + i * rb.pitch}" y="${rb.y}" width="${rb.w}" height="${rb.h}" fill="none" stroke="#000" stroke-width="0.3"/>`);
     }

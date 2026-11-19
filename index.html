@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>METSI · Corrector de multiple choice</title>
-  <link rel="stylesheet" href="css/style.css?v=227a1e88">
+  <link rel="stylesheet" href="css/style.css?v=5770f46f">
 </head>
 <body>
   <header class="top">
@@ -137,6 +137,12 @@
       <div class="actions"><button id="dl-cases" type="button">Descargar casos (JSON)</button></div>
       <div id="results-table"></div>
       <h3>Aciertos por pregunta</h3>
+      <label class="inline-sort">Ordenar por
+        <select id="item-sort">
+          <option value="num">Número de pregunta</option>
+          <option value="best">Más aciertos primero</option>
+          <option value="worst">Menos aciertos primero (las más difíciles)</option>
+        </select></label>
       <div id="item-stats"></div>
     </section>
 
@@ -192,34 +198,34 @@
   <div id="print-area"></div>
   <style id="page-style"></style>
 
-  <script src="js/version.js?v=227a1e88"></script>
-  <script src="js/config.js?v=227a1e88"></script>
-  <script src="js/layout.js?v=227a1e88"></script>
-  <script src="js/scoring.js?v=227a1e88"></script>
-  <script src="js/examfile.js?v=227a1e88"></script>
-  <script src="js/csv.js?v=227a1e88"></script>
-  <script src="js/sheet.js?v=227a1e88"></script>
-  <script src="js/scanner.js?v=227a1e88"></script>
-  <script src="js/merge.js?v=227a1e88"></script>
-  <script src="js/review.js?v=227a1e88"></script>
-  <script src="js/identity.js?v=227a1e88"></script>
-  <script src="js/similar.js?v=227a1e88"></script>
-  <script src="js/digit-model.js?v=227a1e88"></script>
-  <script src="js/digits.js?v=227a1e88"></script>
-  <script src="js/photostore.js?v=227a1e88"></script>
-  <script src="js/storage.js?v=227a1e88"></script>
-  <script src="js/picker.js?v=227a1e88"></script>
-  <script src="js/selection.js?v=227a1e88"></script>
-  <script src="js/retry.js?v=227a1e88"></script>
-  <script src="js/auth.js?v=227a1e88"></script>
-  <script src="js/drive.js?v=227a1e88"></script>
-  <script src="js/app-core.js?v=227a1e88"></script>
-  <script src="js/app-exam.js?v=227a1e88"></script>
-  <script src="js/app-scan.js?v=227a1e88"></script>
-  <script src="js/app-results.js?v=227a1e88"></script>
-  <script src="js/app-drive.js?v=227a1e88"></script>
-  <script src="js/account.js?v=227a1e88"></script>
-  <script src="js/app-users.js?v=227a1e88"></script>
-  <script src="js/app.js?v=227a1e88"></script>
+  <script src="js/version.js?v=5770f46f"></script>
+  <script src="js/config.js?v=5770f46f"></script>
+  <script src="js/layout.js?v=5770f46f"></script>
+  <script src="js/scoring.js?v=5770f46f"></script>
+  <script src="js/examfile.js?v=5770f46f"></script>
+  <script src="js/csv.js?v=5770f46f"></script>
+  <script src="js/sheet.js?v=5770f46f"></script>
+  <script src="js/scanner.js?v=5770f46f"></script>
+  <script src="js/merge.js?v=5770f46f"></script>
+  <script src="js/review.js?v=5770f46f"></script>
+  <script src="js/identity.js?v=5770f46f"></script>
+  <script src="js/similar.js?v=5770f46f"></script>
+  <script src="js/digit-model.js?v=5770f46f"></script>
+  <script src="js/digits.js?v=5770f46f"></script>
+  <script src="js/photostore.js?v=5770f46f"></script>
+  <script src="js/storage.js?v=5770f46f"></script>
+  <script src="js/picker.js?v=5770f46f"></script>
+  <script src="js/selection.js?v=5770f46f"></script>
+  <script src="js/retry.js?v=5770f46f"></script>
+  <script src="js/auth.js?v=5770f46f"></script>
+  <script src="js/drive.js?v=5770f46f"></script>
+  <script src="js/app-core.js?v=5770f46f"></script>
+  <script src="js/app-exam.js?v=5770f46f"></script>
+  <script src="js/app-scan.js?v=5770f46f"></script>
+  <script src="js/app-results.js?v=5770f46f"></script>
+  <script src="js/app-drive.js?v=5770f46f"></script>
+  <script src="js/account.js?v=5770f46f"></script>
+  <script src="js/app-users.js?v=5770f46f"></script>
+  <script src="js/app.js?v=5770f46f"></script>
 </body>
 </html>

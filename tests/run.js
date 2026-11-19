@@ -417,6 +417,20 @@ test('modalidad: una marca liviana (X o tilde) se preselecciona como dudosa si u
   const lleno = interpret(mk([0.0, 0.7]), 0.17); // marca normal: sin dudas
   assert.equal(lleno.modalidad, 1); assert.equal(lleno.modalidadWeak, false); assert.equal(lleno.modalidadProblem, false);
 });
+test('hoja V4: el rótulo «N° de registro» va pegado al primer casillero; las V1 a V3 no cambian', () => {
+  const { sheetSVG } = require('../js/sheet.js');
+  // El elemento <text> del rótulo del registro (solo ese: otros textos de la hoja también pueden alinearse a la derecha).
+  const rotulo = (v) => { const L = buildLayout(CFG20, v); const m = sheetSVG(L).match(new RegExp('<text [^>]*>' + L.texts.regLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</text>')); return { L, tag: m && m[0] }; };
+  const v4 = rotulo(4);
+  assert.ok(v4.tag, 'se dibuja el rótulo');
+  assert.ok(v4.tag.includes('text-anchor="end"'), 'la V4 alinea el rótulo a la derecha');
+  assert.ok(v4.tag.includes('x="' + (v4.L.fields.regBoxes.x - 2) + '"'), 'termina 2 mm antes del primer casillero');
+  for (const v of [1, 2, 3]) {
+    const r = rotulo(v);
+    assert.ok(r.tag && !r.tag.includes('text-anchor') && r.tag.includes('x="16"'), 'la V' + v + ' queda como estaba (a la izquierda)');
+  }
+});
+
 test('V3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha)', () => {
   const L = buildLayout(CFG10, 3);
   assert.deepEqual(L.markerShapes.map((m) => [m.w, m.h]), [[8, 8], [16, 4], [8, 8], [16, 4]]);
@@ -858,11 +872,11 @@ test('calibración: el barrido de umbrales incluye el umbral por defecto sin err
   const reales = Calibrar.loadCases(Calibrar.listFiles([Calibrar.DEFAULT_DIR]));
   if (reales.length) {
     test('calibración: la lectura coincide con las respuestas corregidas en los casos reales (' + reales.length + ' hojas)', () => {
-      // Valor por defecto (0,18). Con las 25 hojas reales (18/11 y 19/11, grilla ajustada a los círculos) quedan 11 de 489
-      // mal leídas: marcas tachadas, anotaciones a mano («NO D») y marcas muy tenues. El tope evita que la lectura empeore;
-      // si mejora, bajá el tope.
-      const r = Calibrar.evaluate(reales, 0.18, 0.18);
-      assert.ok(r.wrong <= 11, 'preguntas mal leídas (tope 11): ' + r.wrong + ' ' + JSON.stringify(r.detail.slice(0, 8)));
+      // Piso por defecto (0,17; el umbral se adapta a cada hoja). Con las 40 hojas reales (18/11 y 19/11, grilla ajustada) quedan 18 de
+      // 789 mal leídas: marcas tachadas o anotadas a mano por el alumno («NO D») y marcas muy tenues que la app marca como dudosas.
+      // El tope evita que la lectura empeore; si mejora, bajá el tope.
+      const r = Calibrar.evaluate(reales, 0.17, 0.17);
+      assert.ok(r.wrong <= 18, 'preguntas mal leídas (tope 18): ' + r.wrong + ' ' + JSON.stringify(r.detail.slice(0, 8)));
     });
   } else console.log('  --  calibración con casos reales omitida (tests/fixtures/real/ está vacía)');
 }
