@@ -417,6 +417,20 @@ test('modalidad: una marca liviana (X o tilde) se preselecciona como dudosa si u
   const lleno = interpret(mk([0.0, 0.7]), 0.17); // marca normal: sin dudas
   assert.equal(lleno.modalidad, 1); assert.equal(lleno.modalidadWeak, false); assert.equal(lleno.modalidadProblem, false);
 });
+test('hoja V4: el rótulo «N° de registro» va pegado al primer casillero; las V1 a V3 no cambian', () => {
+  const { sheetSVG } = require('../js/sheet.js');
+  // El elemento <text> del rótulo del registro (solo ese: otros textos de la hoja también pueden alinearse a la derecha).
+  const rotulo = (v) => { const L = buildLayout(CFG20, v); const m = sheetSVG(L).match(new RegExp('<text [^>]*>' + L.texts.regLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</text>')); return { L, tag: m && m[0] }; };
+  const v4 = rotulo(4);
+  assert.ok(v4.tag, 'se dibuja el rótulo');
+  assert.ok(v4.tag.includes('text-anchor="end"'), 'la V4 alinea el rótulo a la derecha');
+  assert.ok(v4.tag.includes('x="' + (v4.L.fields.regBoxes.x - 2) + '"'), 'termina 2 mm antes del primer casillero');
+  for (const v of [1, 2, 3]) {
+    const r = rotulo(v);
+    assert.ok(r.tag && !r.tag.includes('text-anchor') && r.tag.includes('x="16"'), 'la V' + v + ' queda como estaba (a la izquierda)');
+  }
+});
+
 test('V3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha)', () => {
   const L = buildLayout(CFG10, 3);
   assert.deepEqual(L.markerShapes.map((m) => [m.w, m.h]), [[8, 8], [16, 4], [8, 8], [16, 4]]);
