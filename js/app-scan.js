@@ -2,7 +2,7 @@
 (function () {
   const App = window.MetsiApp;
   const { buildLayout, LETTERS } = MetsiLayout;
-  const { scanImage, interpret, applyH, cropRegion } = MetsiScanner;
+  const { scanImage, interpret, applyH, cropRegion, makeFix } = MetsiScanner;
   const Identity = MetsiIdentity;
   const Similar = MetsiSimilar;
   const Digits = MetsiDigits;
@@ -342,6 +342,7 @@
         scan: {
           H: scan.H.map((v, i) => p7(i < 6 ? v * tk : v)),
           scores: { mod: scan.scores.mod.map(p3), ans: scan.scores.ans.map((a) => a.map(p3)) },
+          grid: scan.grid, // corrección de la grilla de cada columna de respuestas (papel curvado): para dibujar bien lo detectado
         },
       };
 
@@ -389,7 +390,13 @@
     const ctx = canvas.getContext('2d');
     ctx.drawImage(mem.thumb, 0, 0);
     const H = sheet.scan.H;
-    const pts = (b) => applyH(H, b.x, b.y);
+    const grid = sheet.scan.grid;
+    const blockOf = (q) => L.ans.cols.findIndex((c) => q >= c.qStart && q < c.qEnd);
+    const pts = (b) => {
+      const bl = grid && grid[b.kind === 'mod' ? 0 : blockOf(b.q)];
+      const c = bl ? makeFix(bl, bl.yc)(b) : b; // la misma corrección con la que se leyó la hoja
+      return applyH(H, c.x, c.y);
+    };
     const o = applyH(H, 0, 0), e = applyH(H, 2.2, 0);
     const rad = Math.max(3, Math.hypot(o.x - e.x, o.y - e.y));
     for (const b of L.bubbles) {

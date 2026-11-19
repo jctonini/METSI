@@ -41,16 +41,22 @@ function renderPhoto(layout, marks, opts) {
   const base = opts.paper || 232, ink = 28;
   const gray = new Float32Array(W * Hh).fill(base);
 
+  // Papel curvado (opts.warp = { dy, dx } en mm): las cuatro marcas quedan en su lugar y el interior se corre hasta
+  // `dy` mm hacia abajo y `dx` hacia un costado, como una hoja apoyada sobre una pila de papeles.
+  const warp = opts.warp || null;
+  const bump = (x, y) => Math.sin((Math.PI * (x - 10)) / 124) * Math.sin((Math.PI * (y - 10)) / 190);
+  const margin = warp ? 50 : 1;
   function paint(minX, minY, maxX, maxY, inside) {
     const pts = [applyH(T, minX, minY), applyH(T, maxX, minY), applyH(T, minX, maxY), applyH(T, maxX, maxY)];
-    const x0 = Math.max(0, Math.floor(Math.min(...pts.map((q) => q.x))) - 1);
-    const x1 = Math.min(W - 1, Math.ceil(Math.max(...pts.map((q) => q.x))) + 1);
-    const y0 = Math.max(0, Math.floor(Math.min(...pts.map((q) => q.y))) - 1);
-    const y1 = Math.min(Hh - 1, Math.ceil(Math.max(...pts.map((q) => q.y))) + 1);
+    const x0 = Math.max(0, Math.floor(Math.min(...pts.map((q) => q.x))) - margin);
+    const x1 = Math.min(W - 1, Math.ceil(Math.max(...pts.map((q) => q.x))) + margin);
+    const y0 = Math.max(0, Math.floor(Math.min(...pts.map((q) => q.y))) - margin);
+    const y1 = Math.min(Hh - 1, Math.ceil(Math.max(...pts.map((q) => q.y))) + margin);
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
-        const s = applyH(Tinv, x, y);
-        if (inside(s.x, s.y)) gray[y * W + x] = ink;
+        let s = applyH(Tinv, x, y);
+        if (warp) { const k = bump(s.x, s.y); s = { x: s.x - (warp.dx || 0) * k, y: s.y - (warp.dy || 0) * k }; }
+        if (s.x >= minX && s.x <= maxX && s.y >= minY && s.y <= maxY && inside(s.x, s.y)) gray[y * W + x] = ink;
       }
     }
   }

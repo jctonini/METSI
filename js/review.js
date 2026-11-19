@@ -50,6 +50,7 @@
       modalidad: s.modalidad === undefined ? undefined : { auto: s.autoModalidad === undefined ? null : s.autoModalidad, final: s.modalidad },
       scores: s.scan ? s.scan.scores : undefined,
       H: s.scan ? s.scan.H : undefined,
+      grid: s.scan ? s.scan.grid : undefined,
       fullScale: s.fullScale,
       imageFile: s.review && s.review.imageFile ? s.review.imageFile : undefined,
     }));

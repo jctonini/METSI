@@ -288,6 +288,90 @@
     return n ? sum / n : -1;
   }
 
+
+  // ---------- ajuste de la grilla a los círculos impresos ----------
+  // Las cuatro marcas de las esquinas fijan la posición de las burbujas como si la hoja fuera un plano. Con la hoja
+  // sobre una pila de papeles, curvada o con la foto muy inclinada, el interior queda corrido respecto de lo que predicen
+  // las esquinas (medido: hasta 5 mm arriba a la izquierda y 0 abajo a la derecha, con filas separadas 5,5 mm: una fila
+  // entera). Por eso cada columna de respuestas se ajusta a los aros impresos de la propia foto con una corrección
+  // chica: desplazamiento (dx, dy), escala vertical (sy) e inclinación horizontal (kx).
+  const GRID_OUTER = 1.2; // mm hacia afuera del aro donde se mira el papel
+  const GRID_MIN_GAIN = 0.04; // cuánto tiene que mejorar el contraste para aceptar la corrección
+
+  function makeFix(p, yc) {
+    const xc = p.xc || 0, sx = p.sx || 1;
+    return (b) => ({ x: xc + (b.x - xc) * sx + p.dx + p.kx * (b.y - yc), y: yc + (b.y - yc) * p.sy + p.dy });
+  }
+
+  // Contraste de los aros (oscuros) contra el papel justo afuera; 0 si no se puede medir.
+  function gridContrast(g, w, h, H, bubbles, fix, r) {
+    let sum = 0, n = 0;
+    for (const b of bubbles) {
+      const c = fix(b);
+      for (let k = 0; k < 8; k++) {
+        const a = (k * Math.PI) / 4 + 0.39;
+        const pr = applyH(H, c.x + r * Math.cos(a), c.y + r * Math.sin(a));
+        const po = applyH(H, c.x + (r + GRID_OUTER) * Math.cos(a), c.y + (r + GRID_OUTER) * Math.sin(a));
+        const vr = sampleGray(g, w, h, pr.x, pr.y), vo = sampleGray(g, w, h, po.x, po.y);
+        if (vr === null || vo === null) continue;
+        sum += Math.max(0, (vo - vr) / Math.max(40, vo)); n++;
+      }
+    }
+    return n ? sum / n : 0;
+  }
+
+  // Busca la corrección de un bloque de burbujas: barrido grueso de (dy, sy) y después ajuste fino de los cuatro parámetros.
+  // La grilla es periódica: correrla una fila entera también encaja con los aros. Para no engancharse a la fila equivocada,
+  // se castiga que haya aros una fila antes de la primera o una fila después de la última (ahí tiene que haber papel).
+  function refineBlock(g, w, h, H, bubbles, r, pitch) {
+    const yc = bubbles.reduce((a, b) => a + b.y, 0) / bubbles.length;
+    const xc = bubbles.reduce((a, b) => a + b.x, 0) / bubbles.length;
+    const ys = bubbles.map((b) => b.y);
+    const top = Math.min(...ys), bot = Math.max(...ys);
+    const above = bubbles.filter((b) => b.y === top).map((b) => ({ x: b.x, y: b.y - pitch }));
+    const below = bubbles.filter((b) => b.y === bot).map((b) => ({ x: b.x, y: b.y + pitch }));
+    const score = (p) => {
+      const f = makeFix(Object.assign({ xc }, p), yc);
+      const inside = gridContrast(g, w, h, H, bubbles, f, r);
+      const out = Math.max(gridContrast(g, w, h, H, above, f, r), gridContrast(g, w, h, H, below, f, r));
+      return inside - 0.8 * out;
+    };
+    let best = { dx: 0, dy: 0, sy: 1, kx: 0, sx: 1 };
+    const zero = score(best);
+    let bs = zero;
+    for (let dx = -3; dx <= 3.001; dx += 0.75) {
+      for (let dy = -6; dy <= 6.001; dy += 0.75) {
+        for (let sy = 0.9; sy <= 1.1001; sy += 0.0333) {
+          const p = { dx, dy, sy, kx: 0, sx: 1 }, v = score(p);
+          if (v > bs) { bs = v; best = p; }
+        }
+      }
+    }
+    const steps = { dx: [3, 0.25], kx: [0.08, 0.01], dy: [1, 0.1], sy: [0.04, 0.005], sx: [0.06, 0.005] };
+    for (let round = 0; round < 2; round++) {
+      for (const k of ['dx', 'sx', 'kx', 'dy', 'sy']) {
+        const [span, st] = steps[k];
+        for (let d = -span; d <= span + 1e-9; d += st) {
+          const p = Object.assign({}, best); p[k] = best[k] + d;
+          const v = score(p);
+          if (v > bs) { bs = v; best = p; }
+        }
+      }
+    }
+    return { ...best, yc, xc, gain: zero > 0 ? bs / zero - 1 : (bs > zero ? 1 : 0), score: bs, base: zero };
+  }
+
+  // Una corrección por columna de respuestas; si no mejora, queda sin corregir.
+  function gridFixes(g, w, h, H, layout) {
+    return layout.ans.cols.map((c) => {
+      const bubbles = layout.bubbles.filter((b) => b.kind === 'ans' && b.q >= c.qStart && b.q < c.qEnd);
+      if (!bubbles.length) return null;
+      const f = refineBlock(g, w, h, H, bubbles, layout.r, layout.ans.rowPitch);
+      if (f.gain < GRID_MIN_GAIN) return { dx: 0, dy: 0, sy: 1, kx: 0, sx: 1, xc: f.xc, yc: f.yc, gain: f.gain, score: f.score, base: f.base };
+      return f;
+    });
+  }
+
   // Candidatos a marca de esquina: manchas negras macizas y cuadradas, completas (sin tocar el borde).
   function markerCandidates(comps, w, h) {
     const L = Math.max(w, h);
@@ -410,15 +494,25 @@
       mod: new Array(layout.modalidades.length).fill(0),
       ans: Array.from({ length: layout.numQuestions }, () => new Array(layout.numOptions).fill(0)),
     };
+    // Corrección por columna de respuestas; la modalidad usa la de la primera columna (queda justo arriba).
+    const blocks = gridFixes(g, w, h, H, layout);
+    const blockOf = (q) => layout.ans.cols.findIndex((c) => q >= c.qStart && q < c.qEnd);
+    const fixOf = (b) => {
+      const bl = blocks[b.kind === 'mod' ? 0 : blockOf(b.q)];
+      if (!bl || !(bl.dx || bl.dy || bl.sy !== 1 || bl.kx || bl.sx !== 1)) return b;
+      return makeFix(bl, bl.yc)(b);
+    };
     for (const b of layout.bubbles) {
-      const s = bubbleScore(g, w, h, H, b.x, b.y);
+      const c = fixOf(b);
+      const s = bubbleScore(g, w, h, H, c.x, c.y);
       if (s === null) {
         return { ok: false, error: 'Parte de la hoja quedó fuera de la foto. Sacala de nuevo con la hoja completa.' };
       }
       if (b.kind === 'mod') scores.mod[b.index] = s;
       else scores.ans[b.q][b.opt] = s;
     }
-    return { ok: true, H, rotated, version, layout, scores };
+    const grid = blocks.map((bl) => bl && { xc: +bl.xc.toFixed(1), sx: +bl.sx.toFixed(3), dx: +bl.dx.toFixed(2), dy: +bl.dy.toFixed(2), sy: +bl.sy.toFixed(3), kx: +bl.kx.toFixed(3), yc: +bl.yc.toFixed(1), gain: +bl.gain.toFixed(2) });
+    return { ok: true, H, rotated, version, layout, scores, grid };
   }
 
   // Convierte los puntajes de burbuja en respuestas.
@@ -431,7 +525,7 @@
   // su propio nivel base porque la luz puede cambiar de un lado al otro de la hoja.
   // `threshold`: cuánto más oscura que el fondo tiene que estar una burbuja para contar como
   // marcada. Las que quedan apenas por debajo se señalan como dudosas para revisar a mano.
-  const DEFAULT_THRESHOLD = 0.16; // centro del rango que lee bien 14 hojas reales de un examen (0,155-0,165; 6 errores en 269 preguntas); con 0,085 eran 75
+  const DEFAULT_THRESHOLD = 0.18; // con la grilla ajustada a los círculos: 0 errores en 259 preguntas (tanda 1) y 10 en 220 (tanda 2) de hojas reales
   const MIN_CLUSTER_GAP = 0.15; // diferencia mínima entre burbujas vacías y marcadas
   const BASE_QUANTILE = 0.3;
   const WINDOW_BEFORE = 4, WINDOW_AFTER = 4; // filas vecinas que se usan para el nivel base
@@ -511,5 +605,5 @@
     return { width: w, height: h, data };
   }
 
-  return { scanImage, interpret, cropRegion, findMarkers, bubbleScore, bubbleStats, barDarkness, buildH, solveHomography, applyH, toGray, binarize, components };
+  return { scanImage, interpret, makeFix, gridContrast, cropRegion, findMarkers, bubbleScore, bubbleStats, barDarkness, buildH, solveHomography, applyH, toGray, binarize, components };
 });
