@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T13:17:00Z'
-updated_date: '2026-11-19T13:17:00Z'
+updated_date: '2026-11-19T14:24:00Z'
 labels:
   - lectura
 dependencies: []
@@ -33,4 +33,6 @@ Tras corregir 17 hojas más: se inventaban respuestas E en 11-20, el nombre sal�
 
 <!-- SECTION:NOTES:BEGIN -->
 Medido sobre 28 hojas con foto (preguntas con verdad = corrección del docente; las no corregidas se asumen bien leídas, aproximación): umbral fijo 0,12 (el que tenía guardado el docente) 155 preguntas mal; adaptativo 9-10 con cualquier piso de 0,12 a 0,20 (piso elegido mirando esas mismas hojas, sin hojas reservadas). Nombre: recorte relativo a la línea impresa, enderezado; verificado a ojo en 10 hojas y en la app (Chromium). Modalidad: 25/28 con el código actual; las 3 que fallan son marcas con ⊗ o aro garabateado, avisadas como problema. Aviso de hoja repetida: pares de hojas distintas con parecido >= 0,55 pasan de 77/152 a 1/152; la misma hoja da 0,95 (antes 0,70); umbral nuevo 0,75 para firmas v2. Registro: la ubicación de casilleros es correcta; el límite es el lector de dígitos. Con la versión desplegada, 7 de 15 hojas de hoy coincidían con lo confirmado y 14 de 15 errores estaban marcados como dudosos. Modelo reentrenado con 108 dígitos de 18 hojas (reps 25): validación cruzada por hoja 90,7% de dígitos y 11/17 registros completos (n chico). AC 5 sin marcar: no se pudo medir mejora contra el modelo anterior con hojas no vistas distintas de estas. Sin probar en celular ni Vercel.
+
+Tanda del 19/11 tarde (7 hojas con la versión 10c3c583): 1 pregunta corregida a mano de 140 (P11: faltaba una A con puntaje 0,224, al límite del ruido de las vacías, pero la app la había marcado como dudosa); registro sugerido == confirmado en 3 de 7; modalidad falló en 3 hojas marcadas con X (puntajes de la marcada 0,12-0,17 contra 0,00-0,05 de la otra). Se agregó un respaldo: si ninguna burbuja pasa el umbral pero una es claramente más oscura (>= 0,10, diferencia >= 0,06 y la otra <= la mitad), se preselecciona y queda como DUDOSA. Con 39 hojas reales: 37 aciertos, 0 errores, 2 sin decidir; regla elegida mirando esas mismas hojas.
 <!-- SECTION:NOTES:END -->

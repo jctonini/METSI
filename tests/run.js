@@ -406,6 +406,17 @@ test('papel curvado: el interior de la hoja se corre hasta una fila entera y la 
     assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers, 'warp ' + JSON.stringify(warp));
   }
 });
+test('modalidad: una marca liviana (X o tilde) se preselecciona como dudosa si una burbuja es claramente más oscura; si no, no se decide', () => {
+  const ans = Array.from({ length: 4 }, () => [0, 0, 0, 0, 0]);
+  const mk = (mod) => ({ scores: { mod, ans } });
+  const x = interpret(mk([0.002, 0.169]), 0.17);
+  assert.equal(x.modalidad, 1); assert.equal(x.modalidadWeak, true); assert.equal(x.modalidadProblem, true);
+  assert.equal(interpret(mk([0.048, 0.119]), 0.17).modalidad, 1);
+  const parejo = interpret(mk([0.16, 0.14]), 0.17); // las dos parecidas: no se adivina
+  assert.equal(parejo.modalidad, null); assert.equal(parejo.modalidadProblem, true);
+  const lleno = interpret(mk([0.0, 0.7]), 0.17); // marca normal: sin dudas
+  assert.equal(lleno.modalidad, 1); assert.equal(lleno.modalidadWeak, false); assert.equal(lleno.modalidadProblem, false);
+});
 test('V3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha)', () => {
   const L = buildLayout(CFG10, 3);
   assert.deepEqual(L.markerShapes.map((m) => [m.w, m.h]), [[8, 8], [16, 4], [8, 8], [16, 4]]);

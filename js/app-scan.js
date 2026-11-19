@@ -672,7 +672,7 @@
         card.appendChild(det);
       }
       const warn = [];
-      if (r && r.modalidadProblem) warn.push(r.modalidad === null ? 'modalidad sin marcar bien (¿tilde o cruz?): elegila vos' : 'revisá la modalidad');
+      if (r && r.modalidadProblem) warn.push(r.modalidadWeak ? 'modalidad marcada con X o tilde: confirmá que sea la correcta' : r.modalidad === null ? 'modalidad sin marcar bien (¿tilde o cruz?): elegila vos' : 'revisá la modalidad');
       const nr = sheet.answers.filter((a) => a.length === 0).length;
       if (nr) warn.push(`${nr} pregunta(s) sin marcar`);
       const nd = r ? r.flags.filter((f) => f.dubious).length : 0;
