@@ -16,6 +16,13 @@
     return { L, rows, regCount };
   }
 
+  // El orden de «Aciertos por pregunta» se recuerda en este dispositivo.
+  try { const saved = App.loadSettings().itemSort; if (saved) $('item-sort').value = saved; } catch (e) { /* sin guardado */ }
+  $('item-sort').addEventListener('change', () => {
+    try { App.saveSettings(Object.assign(App.loadSettings(), { itemSort: $('item-sort').value })); } catch (e) { /* sin guardado */ }
+    renderResults();
+  });
+
   function renderResults() {
     const an = Identity.analyze(state.sheets);
     App.renderBanner($('results-blockers'), an);
@@ -36,15 +43,19 @@
           s.modalidad == null ? '' : escapeHtml(L.modalidades[s.modalidad] || '')}</td><td><b>${fmt(score.total)}</b></td><td>${fmt(score.max)}</td><td>${fmt(score.percent)}%</td></tr>`;
       }).join('')}</tbody></table><p class="muted">${rows.length} hoja(s). ⚠ = registro repetido o sin cargar.</p>`;
 
-    const stats = [];
+    const items = [];
     for (let q = 0; q < L.numQuestions; q++) {
       const full = rows.filter((r) => r.score.perQuestion[q].earned >= r.score.perQuestion[q].max).length;
       const counts = Array.from({ length: L.numOptions }, (_, o) => rows.filter((r) => r.s.answers[q].includes(o)).length);
       const blank = rows.filter((r) => r.s.answers[q].length === 0).length;
-      const pct = Math.round((full / rows.length) * 100);
-      stats.push(`<tr><td>${q + 1}</td><td><div class="bar"><i style="width:${pct}%"></i></div></td><td>${pct}%</td><td class="muted">${
-        counts.map((c, o) => `${LETTERS[o]}: ${c}`).join(' · ')}${blank ? ` · en blanco: ${blank}` : ''}</td></tr>`);
+      items.push({ q, full, counts, blank, pct: Math.round((full / rows.length) * 100) });
     }
+    // Orden elegido (se recuerda en este dispositivo); a igualdad de aciertos, por número de pregunta.
+    const order = $('item-sort').value;
+    if (order === 'best') items.sort((a, b) => b.full - a.full || a.q - b.q);
+    else if (order === 'worst') items.sort((a, b) => a.full - b.full || a.q - b.q);
+    const stats = items.map(({ q, counts, blank, pct }) => `<tr><td>${q + 1}</td><td><div class="bar"><i style="width:${pct}%"></i></div></td><td>${pct}%</td><td class="muted">${
+      counts.map((c, o) => `${LETTERS[o]}: ${c}`).join(' · ')}${blank ? ` · en blanco: ${blank}` : ''}</td></tr>`);
     $('item-stats').innerHTML = `<table><thead><tr><th>#</th><th>Puntaje completo</th><th></th><th>Opciones marcadas</th></tr></thead><tbody>${stats.join('')}</tbody></table>`;
   }
 
