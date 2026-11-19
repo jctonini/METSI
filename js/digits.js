@@ -231,7 +231,8 @@
   // lo calcula la geometría de la hoja, y el recorte le corta el dibujo al dígito (un 9 cortado parece un 4 o un 2).
   // Se busca el marco impreso en una ventana más grande: el desplazamiento donde las cuatro líneas del marco son
   // más oscuras que el papel que tienen al lado.
-  const SEARCH = 3;           // mm que se busca hacia cada lado
+  const SEARCH_X = 3.5;       // mm que se busca hacia los costados (la separación entre casilleros es 9: no se confunde con el vecino)
+  const SEARCH_Y = 5;         // y hacia arriba o abajo: con la hoja curvada el interior se corre hasta ~5 mm
   const STEP = 2;             // px entre posiciones probadas (0,2 mm)
   const LINE_MIN = 18;        // oscurecimiento mínimo (0-255) del marco para fiarse de la posición encontrada
 
@@ -247,9 +248,9 @@
       return Math.max(0, (a + b) / 2 - c);
     };
     let best = null;
-    const R = Math.round(SEARCH * PPM);
-    for (let oy = -R; oy <= R; oy += STEP) {
-      for (let ox = -R; ox <= R; ox += STEP) {
+    const RX = Math.round(SEARCH_X * PPM), RY = Math.round(SEARCH_Y * PPM);
+    for (let oy = -RY; oy <= RY; oy += STEP) {
+      for (let ox = -RX; ox <= RX; ox += STEP) {
         let tot = 0, n = 0;
         const x0 = Math.round(fx) + ox, y0 = Math.round(fy) + oy, x1 = x0 + Math.round(fw), y1 = y0 + Math.round(fh);
         for (let t = Math.round(0.15 * fw); t < Math.round(0.85 * fw); t += 2) { tot += side(x0 + t, y0, true) + side(x0 + t, y1, true); n += 2; }
@@ -276,11 +277,11 @@
   function cellCrop(regBoxes, i, crop) {
     const bx = regBoxes.x + i * regBoxes.pitch, by = regBoxes.y;
     // Ventana más grande que el casillero, para encontrar el marco impreso aunque salga corrido.
-    const win = crop({ x: bx - SEARCH, y: by - SEARCH, w: regBoxes.w + 2 * SEARCH, h: regBoxes.h + 2 * SEARCH }, PPM);
-    const loc = locateFrame(win, SEARCH * PPM, SEARCH * PPM, regBoxes.w * PPM, regBoxes.h * PPM);
+    const win = crop({ x: bx - SEARCH_X, y: by - SEARCH_Y, w: regBoxes.w + 2 * SEARCH_X, h: regBoxes.h + 2 * SEARCH_Y }, PPM);
+    const loc = locateFrame(win, SEARCH_X * PPM, SEARCH_Y * PPM, regBoxes.w * PPM, regBoxes.h * PPM);
     const dx = loc ? loc.ox : 0, dy = loc ? loc.oy : 0;
     const m = Math.round(MARGIN * PPM);
-    return subCrop(win, Math.round(SEARCH * PPM) + dx + m, Math.round(SEARCH * PPM) + dy + m,
+    return subCrop(win, Math.round(SEARCH_X * PPM) + dx + m, Math.round(SEARCH_Y * PPM) + dy + m,
       Math.round(regBoxes.w * PPM) - 2 * m, Math.round(regBoxes.h * PPM) - 2 * m);
   }
 

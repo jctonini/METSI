@@ -218,23 +218,35 @@ def load_real(path):
     return np.array(xs, np.float32), np.array(ys, np.int64), np.array(gs)
 
 
-def cross_validate(x, y, xt, yt, xa, real, folds, epochs, reps, log):
+SAME_HAND = {'191006': '184628'}  # el 19/11 el mismo alumno volvió a entregar (ids de las hojas reales del 18/11)
+
+
+def cross_validate(x, y, xt, yt, xa, real, folds, epochs, reps, log, baseline=True):
     """Entrena `folds` veces dejando afuera hojas enteras y mide sobre lo que quedó afuera (con y sin dígitos reales)."""
     xr, yr, gr = real
+    # hojas de la misma persona (mismo registro y misma letra) van juntas: si una entrenara y la otra se midiera, daría de más
+    gr = np.array([SAME_HAND.get(g, g) for g in gr])
     sheets = sorted(set(gr))
     # una misma persona puede haber escrito dos hojas: las que comparten registro se agrupan en main() con el mismo nombre
     res = {'con reales': [0, 0], 'solo MNIST': [0, 0]}
+    regs = [0, 0]  # registros completos bien leídos / hojas, con reales
     for f in range(folds):
         out = {s for i, s in enumerate(sheets) if i % folds == f}
         te = np.isin(gr, list(out))
-        for name, use in (('con reales', True), ('solo MNIST', False)):
+        for name, use in (('con reales', True), ('solo MNIST', False)) if baseline else (('con reales', True),):
             rng = np.random.default_rng(1000 + f)
             ws, bs = train(x, y, xt, yt, xa, yt, epochs, rng, lambda _s: None, real=(xr[~te], yr[~te], reps) if use else None)
-            hit = int((forward(ws, bs, xr[te]).argmax(1) == yr[te]).sum())
+            pred = forward(ws, bs, xr[te]).argmax(1)
+            hit = int((pred == yr[te]).sum())
+            if use:
+                for sh in sorted(set(gr[te])):
+                    m = gr[te] == sh
+                    regs[1] += 1; regs[0] += int((pred[m] == yr[te][m]).all())
             res[name][0] += hit; res[name][1] += int(te.sum())
             log(f'bloque {f + 1}/{folds} {name}: {hit}/{int(te.sum())}')
     for name, (h, n) in res.items():
-        log(f'TOTAL {name}: {h}/{n} = {h / n:.3f}')
+        if n: log(f'TOTAL {name}: {h}/{n} = {h / n:.3f}')
+    log(f'REGISTROS COMPLETOS con reales (hojas que quedaron afuera): {regs[0]}/{regs[1]}')
 
 
 def main():
@@ -244,6 +256,7 @@ def main():
     ap.add_argument('--real', help='JSON con dígitos reales (ver arriba)')
     ap.add_argument('--reps', type=int, default=120, help='veces que entra cada dígito real por época')
     ap.add_argument('--cv', type=int, default=0, help='validación cruzada por hoja con N bloques (no escribe archivos)')
+    ap.add_argument('--sin-base', action='store_true', help='con --cv: no entrena la versión solo MNIST (más rápido)')
     ap.add_argument('--out', default=os.path.join(ROOT, 'js', 'digit-model.js'))
     ap.add_argument('--fixture', default=os.path.join(ROOT, 'tests', 'fixtures', 'digits-sample.json'))
     a = ap.parse_args()
@@ -260,7 +273,7 @@ def main():
     xa = augment_batch(xt, yt, np.random.default_rng(777), clean_frac=0.0)
     real = load_real(a.real) if a.real else None
     if a.cv:
-        cross_validate(x, y, xt, yt, xa, real, a.cv, a.epochs, a.reps, log)
+        cross_validate(x, y, xt, yt, xa, real, a.cv, a.epochs, a.reps, log, baseline=not a.sin_base)
         return 0
     ws, bs = train(x, y, xt, yt, xa, yt, a.epochs, rng, log, real=(real[0], real[1], a.reps) if real else None)
 

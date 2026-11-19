@@ -396,6 +396,16 @@ test('una grampa o un tachón pegado a la marca de la esquina no impide leer la 
     assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers);
   }
 });
+test('papel curvado: el interior de la hoja se corre hasta una fila entera y la grilla se ajusta a los círculos (hojas reales del 19/11)', () => {
+  // Las cuatro marcas quedan bien pero las burbujas aparecen hasta 5 mm más abajo (casi una fila de 5,5 mm): antes la
+  // pregunta 1 caía en el espacio vacío de arriba y todas las respuestas se leían una fila corridas.
+  for (const [seed, warp] of [[1, { dy: 5, dx: -1.6 }], [2, { dy: 4.5, dx: 1.5 }], [3, { dy: 3.5, dx: -1 }], [4, { dy: -4, dx: 1.2 }]]) {
+    const exam = makeExam(CFG20, 700 + seed);
+    const scan = scanImage(renderPhoto(exam.L, exam.marks, { seed, jitter: 60, warp }), exam.layoutFor);
+    assert.ok(scan.ok, scan.error);
+    assert.deepEqual(interpret(scan, undefined, groupsOf(scan.layout)).answers, exam.answers, 'warp ' + JSON.stringify(warp));
+  }
+});
 test('V3: marcas de esquina con forma propia (cuadrados a la izquierda, barras a la derecha)', () => {
   const L = buildLayout(CFG10, 3);
   assert.deepEqual(L.markerShapes.map((m) => [m.w, m.h]), [[8, 8], [16, 4], [8, 8], [16, 4]]);
@@ -837,10 +847,11 @@ test('calibración: el barrido de umbrales incluye el umbral por defecto sin err
   const reales = Calibrar.loadCases(Calibrar.listFiles([Calibrar.DEFAULT_DIR]));
   if (reales.length) {
     test('calibración: la lectura coincide con las respuestas corregidas en los casos reales (' + reales.length + ' hojas)', () => {
-      // Valor por defecto (0,16). Con las 15 hojas del 18/11 quedan 6 de 269 mal leídas (marcas muy tenues o agregadas a mano):
-      // el tope evita que la lectura empeore; si mejora, bajá el tope.
-      const r = Calibrar.evaluate(reales, 0.16, 0.085);
-      assert.ok(r.wrong <= 6, 'preguntas mal leídas (tope 6): ' + r.wrong + ' ' + JSON.stringify(r.detail.slice(0, 8)));
+      // Valor por defecto (0,18). Con las 25 hojas reales (18/11 y 19/11, grilla ajustada a los círculos) quedan 11 de 489
+      // mal leídas: marcas tachadas, anotaciones a mano («NO D») y marcas muy tenues. El tope evita que la lectura empeore;
+      // si mejora, bajá el tope.
+      const r = Calibrar.evaluate(reales, 0.18, 0.18);
+      assert.ok(r.wrong <= 11, 'preguntas mal leídas (tope 11): ' + r.wrong + ' ' + JSON.stringify(r.detail.slice(0, 8)));
     });
   } else console.log('  --  calibración con casos reales omitida (tests/fixtures/real/ está vacía)');
 }

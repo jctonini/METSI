@@ -18,7 +18,7 @@
   const defaults = () => ({
     examId: newId(),
     examCreatedAt: Date.now(),
-    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 0.33, threshold: 0.16, thrVersion: 4,
+    cfg: { title: '', numQuestions: 10, numOptions: 4, regDigits: 7, modalidades: ['Presencial', 'A distancia'], penalty: 0.33, threshold: 0.18, thrVersion: 5,
       sheet: { subtitle: '', nameLabel: '', regLabel: '', modLabel: '', instructions: '', legal: '', logo: '' } },
     key: Array.from({ length: 10 }, () => ({ correct: [], points: 1 })),
     sheets: [],
@@ -34,15 +34,16 @@
   const fixCfg = (st) => {
     st.cfg.sheet = Object.assign({}, defaults().cfg.sheet, st.cfg.sheet);
     // La sensibilidad cambió de escala (ahora se mide sobre el nivel base de cada foto).
-    if (st.cfg.thrVersion !== 4) {
-      const old = Number(st.cfg.threshold);
-      if (st.cfg.thrVersion !== 2 && st.cfg.thrVersion !== 3) st.cfg.threshold = old <= 0.2 ? 0.06 : old >= 0.35 ? 0.2 : 0.1; // escala vieja -> escala 2
-      const t = Number(st.cfg.threshold);
-      if (st.cfg.thrVersion !== 3) st.cfg.threshold = t <= 0.07 ? 0.05 : t >= 0.15 ? 0.16 : 0.085; // escala 2 -> escala 3 (se mide más cerca del centro)
-      const t3 = Number(st.cfg.threshold);
-      // escala 3 -> escala 4: con las fotos reales de un examen (birome, celular) el valor «Normal» de antes marcaba de más
-      st.cfg.threshold = t3 <= 0.07 ? 0.1 : t3 >= 0.15 ? 0.22 : 0.16;
-      st.cfg.thrVersion = 4;
+    // Se convierte paso a paso de la escala guardada a la actual (cada paso solo corre si el estado es más viejo).
+    if (st.cfg.thrVersion !== 5) {
+      const v = st.cfg.thrVersion;
+      let t = Number(st.cfg.threshold);
+      if (v !== 2 && v !== 3 && v !== 4) t = t <= 0.2 ? 0.06 : t >= 0.35 ? 0.2 : 0.1; // escala vieja -> escala 2
+      if (v !== 3 && v !== 4) t = t <= 0.07 ? 0.05 : t >= 0.15 ? 0.16 : 0.085; // escala 2 -> escala 3 (se mide más cerca del centro)
+      if (v !== 4) t = t <= 0.07 ? 0.1 : t >= 0.15 ? 0.22 : 0.16; // escala 3 -> escala 4: con fotos reales «Normal» marcaba de más
+      t = t <= 0.13 ? 0.12 : t >= 0.2 ? 0.24 : 0.18; // escala 4 -> escala 5: la grilla ahora se ajusta a los círculos de cada foto
+      st.cfg.threshold = t;
+      st.cfg.thrVersion = 5;
     }
     return st;
   };
