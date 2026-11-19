@@ -858,11 +858,11 @@ test('calibración: el barrido de umbrales incluye el umbral por defecto sin err
   const reales = Calibrar.loadCases(Calibrar.listFiles([Calibrar.DEFAULT_DIR]));
   if (reales.length) {
     test('calibración: la lectura coincide con las respuestas corregidas en los casos reales (' + reales.length + ' hojas)', () => {
-      // Valor por defecto (0,18). Con las 25 hojas reales (18/11 y 19/11, grilla ajustada a los círculos) quedan 11 de 489
-      // mal leídas: marcas tachadas, anotaciones a mano («NO D») y marcas muy tenues. El tope evita que la lectura empeore;
-      // si mejora, bajá el tope.
-      const r = Calibrar.evaluate(reales, 0.18, 0.18);
-      assert.ok(r.wrong <= 11, 'preguntas mal leídas (tope 11): ' + r.wrong + ' ' + JSON.stringify(r.detail.slice(0, 8)));
+      // Piso por defecto (0,17; el umbral se adapta a cada hoja). Con las 40 hojas reales (18/11 y 19/11, grilla ajustada) quedan 18 de
+      // 789 mal leídas: marcas tachadas o anotadas a mano por el alumno («NO D») y marcas muy tenues que la app marca como dudosas.
+      // El tope evita que la lectura empeore; si mejora, bajá el tope.
+      const r = Calibrar.evaluate(reales, 0.17, 0.17);
+      assert.ok(r.wrong <= 18, 'preguntas mal leídas (tope 18): ' + r.wrong + ' ' + JSON.stringify(r.detail.slice(0, 8)));
     });
   } else console.log('  --  calibración con casos reales omitida (tests/fixtures/real/ está vacía)');
 }
