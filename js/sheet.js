@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.MetsiSheet = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const estWidth = (s, size, bold) => String(s).length * size * (bold ? 0.6 : 0.55);
 
   // Parte un texto en líneas que entren en `maxW` mm (máximo `maxLines`; el resto se comprime en la última).
