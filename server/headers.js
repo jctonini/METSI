@@ -13,7 +13,7 @@ function supabaseOrigin(env) {
 function fullPolicy(env) {
   return [
     "default-src 'self'",
-    "script-src 'self' https://cdn.jsdelivr.net https://accounts.google.com https://apis.google.com",
+    "script-src 'self' https://accounts.google.com https://apis.google.com",
     "style-src 'self' 'unsafe-inline'", // la app usa estilos en línea (barras, hoja imprimible)
     "img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com",
     `connect-src 'self' https://www.googleapis.com https://accounts.google.com ${supabaseOrigin(env)}`,

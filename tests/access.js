@@ -49,7 +49,8 @@ test('cabeceras: toda respuesta de la app lleva la CSP completa exigida y las de
   ];
   for (const r of respuestas) {
     assert.match(r.headers['content-security-policy'], /object-src 'none'.*base-uri 'self'.*frame-ancestors 'none'/);
-    assert.match(r.headers['content-security-policy'], /script-src 'self' https:\/\/cdn\.jsdelivr\.net/);
+    assert.match(r.headers['content-security-policy'], /script-src 'self' https:\/\/accounts\.google\.com/);
+    assert.ok(!r.headers['content-security-policy'].includes('jsdelivr'), 'la CSP ya no debe permitir jsdelivr');
     assert.match(r.headers['content-security-policy'], /connect-src [^;]*https:\/\/demo\.supabase\.co/);
     assert.equal(r.headers['content-security-policy-report-only'], undefined);
     assert.equal(r.headers['x-content-type-options'], 'nosniff');
@@ -58,6 +59,20 @@ test('cabeceras: toda respuesta de la app lleva la CSP completa exigida y las de
     assert.ok(r.headers['strict-transport-security'] && r.headers['permissions-policy']);
   }
   assert.equal(respuestas[2].statusCode, 404); // URL mal codificada: no es un error 500
+});
+test('supabase: el script se sirve desde el propio sitio, igual al del paquete npm fijado, y nada carga de jsdelivr', () => {
+  const fs = require('node:fs'), path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const copia = fs.readFileSync(path.join(root, 'public/supabase.js'));
+  const npm = fs.readFileSync(path.join(root, 'node_modules/@supabase/supabase-js/dist/umd/supabase.js'));
+  assert.ok(copia.equals(npm), 'public/supabase.js no coincide con la versión instalada: copiala de nuevo desde node_modules');
+  assert.equal(require('../package.json').dependencies['@supabase/supabase-js'], '2.45.4', 'versión fijada sin rango');
+  for (const f of ['public/login.html', 'js/account.js', 'index.html', 'vercel.json', 'server/headers.js']) {
+    assert.ok(!/jsdelivr/.test(fs.readFileSync(path.join(root, f), 'utf8')), f + ' todavía menciona jsdelivr');
+  }
+  assert.match(fs.readFileSync(path.join(root, 'public/login.html'), 'utf8'), /<script src="\/supabase\.js"><\/script>/);
+  const v = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+  assert.ok(new RegExp(v.rewrites[0].source.replace(/^\//, '^')).test('supabase.js') === false, 'supabase.js no debe pasar por api/app');
 });
 test('sesión: el servidor crea la cookie HttpOnly solo con un token válido, y la borra al salir', async () => {
   const tok = await sign({});
