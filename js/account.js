@@ -52,7 +52,7 @@
     $('acct-logout').addEventListener('click', logout);
     try {
       const cfg = await (await fetch('/api/config', { cache: 'no-store' })).json();
-      await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js');
+      await loadScript('/supabase.js');
       sb = window.supabase.createClient(cfg.url, cfg.anonKey);
       const { data } = await sb.auth.getSession();
       if (!data.session) { await clearCookie(); location.replace('/login'); return; }
