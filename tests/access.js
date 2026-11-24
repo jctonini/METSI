@@ -38,7 +38,7 @@ const test = (name, fn) => tests.push([name, fn]);
 test('cookie: se lee el token entre otras cookies', () => {
   assert.equal(parseCookies('a=1; metsi-at=abc.def; b=2')['metsi-at'], 'abc.def');
 });
-test('cabeceras: toda respuesta de la app lleva CSP exigida, la completa en modo aviso y las demás de seguridad', async () => {
+test('cabeceras: toda respuesta de la app lleva la CSP completa exigida y las demás cabeceras de seguridad', async () => {
   const tok = await sign({});
   const respuestas = [
     await call(app, { query: {}, headers: {} }),
@@ -48,8 +48,9 @@ test('cabeceras: toda respuesta de la app lleva CSP exigida, la completa en modo
   ];
   for (const r of respuestas) {
     assert.match(r.headers['content-security-policy'], /object-src 'none'.*base-uri 'self'.*frame-ancestors 'none'/);
-    assert.match(r.headers['content-security-policy-report-only'], /script-src 'self' https:\/\/cdn\.jsdelivr\.net/);
-    assert.match(r.headers['content-security-policy-report-only'], /connect-src [^;]*https:\/\/demo\.supabase\.co/);
+    assert.match(r.headers['content-security-policy'], /script-src 'self' https:\/\/cdn\.jsdelivr\.net/);
+    assert.match(r.headers['content-security-policy'], /connect-src [^;]*https:\/\/demo\.supabase\.co/);
+    assert.equal(r.headers['content-security-policy-report-only'], undefined);
     assert.equal(r.headers['x-content-type-options'], 'nosniff');
     assert.equal(r.headers['x-frame-options'], 'DENY');
     assert.equal(r.headers['referrer-policy'], 'strict-origin-when-cross-origin');

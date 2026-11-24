@@ -1,10 +1,9 @@
 // Cabeceras de seguridad de las respuestas de Vercel.
 //
-// - La política que se EXIGE (`Content-Security-Policy`) solo lleva reglas que no pueden romper la app:
-//   sin plugins, sin cambiar la base de las direcciones, sin que otro sitio la meta en un marco.
-// - La política completa (qué scripts, conexiones e imágenes se permiten) va en `Content-Security-Policy-Report-Only`:
-//   el navegador NO bloquea nada, solo avisa en la consola (F12) lo que bloquearía. Cuando se confirme en un
-//   navegador real que no avisa nada con Drive, el selector y el login, se pasa a `Content-Security-Policy`.
+// La política de contenido (CSP) se EXIGE: solo se cargan scripts, conexiones, imágenes y marcos de los sitios
+// de la lista (la app, Google Drive y su selector, Supabase y el CDN del login). Se probó primero en modo solo-aviso
+// (Content-Security-Policy-Report-Only) y la consola del navegador no mostró ningún aviso con el login, Drive y el selector.
+// Si Google o Supabase cambian un dominio y algo deja de andar, la consola (F12) dice qué sitio se bloqueó.
 const ENFORCED = "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'";
 
 function supabaseOrigin(env) {
@@ -26,8 +25,7 @@ function fullPolicy(env) {
 
 function securityHeaders(env) {
   return {
-    'Content-Security-Policy': ENFORCED,
-    'Content-Security-Policy-Report-Only': fullPolicy(env),
+    'Content-Security-Policy': fullPolicy(env),
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
