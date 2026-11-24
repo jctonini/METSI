@@ -27,7 +27,7 @@ npm install
 node tests/run.js
 ```
 
-Tiene que terminar con **«115 pasaron, 0 fallaron»**. Sin `npm install`, falla solo la prueba de acceso (`tests/access.js`), porque le falta el módulo de Supabase. La app del navegador **no tiene dependencias**: `package.json` solo trae las que usan las funciones de Vercel (`@supabase/supabase-js` y `jose`).
+Tiene que terminar con **«125 pasaron, 0 fallaron»**. Sin `npm install`, falla solo la prueba de acceso (`tests/access.js`), porque le falta el módulo de Supabase. La app del navegador **no tiene dependencias**: `package.json` solo trae las que usan las funciones de Vercel (`@supabase/supabase-js` y `jose`).
 
 ---
 

@@ -51,7 +51,7 @@ No se conecta con MiEcon; no compara con el listado de inscriptos; no convierte 
 
 ## Reglas técnicas
 - Después de cambiar código o estilos en `js/` o `css/`, correr `node tools/version.js` (una prueba falla si se olvida).
-- Antes de cada commit, correr `node tests/run.js`: tienen que pasar todas (hoy 115). `tests/access.js` necesita `npm install`.
+- Antes de cada commit, correr `node tests/run.js`: tienen que pasar todas (hoy 125). `tests/access.js` necesita `npm install`.
 - El cálculo del puntaje vive solo en `js/scoring.js`. Cualquier cambio de regla lleva su prueba en `tests/run.js`.
 - **No usar datos reales de alumnos** en ejemplos, pruebas, capturas ni commits: el repositorio es público. Los datos de prueba se inventan. Los «casos a revisar» no llevan nombres, registros ni recortes, y las fotos que se mandan a analizar van con nombre, registro y fecha tapados.
 - **Claves:** nunca subir claves privadas. La API key del selector de Drive es pública por diseño, pero se **restringe antes de subirla** (sitios web de la app con `/*` y solo Google Picker API); la cronología del aviso de Google está en `docs/informe/incidente-api-key.md`.

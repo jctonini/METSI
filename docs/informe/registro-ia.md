@@ -13,6 +13,7 @@
 | Capacidad, selector de Drive, selección múltiple | 8 de nov | N.º 47 a 50 | `registro-ia-bruto-noviembre.md` | #10, #11, #12 |
 | Lectura del registro, README | 8 de nov | N.º 51 a 53 | `registro-ia-bruto-noviembre.md` | #13 |
 | Armado del informe, verificaciones y regla de puntaje | 8 y 9 de nov | N.º 54 a 80 | `registro-ia-bruto-sesion-informe.md` | #14, #15, #16 (y tarea METSI-12) |
+| Uso con 15 y luego más de 50 exámenes reales: lectura de la grilla, sensibilidad, nombre, registro y modalidad; mejoras pedidas | 18 y 19 de nov | N.º 81 a 104 | `registro-ia-bruto-examenes-reales.md` | Fusiones a `main` (tareas METSI-13 a METSI-22) |
 
 El orden de los N.º no es cronológico (el login se extrajo antes que las demás sesiones de noviembre); el índice del Anexo C los ordena por fecha. **No se registran** las sesiones que no tocaron la herramienta: armado del examen del 2.º parcial y su guía, la skill de armado de exámenes, la escala de calificación no lineal (4 de oct), el acceso a Drive para el examen (23 de oct) y el trabajo en otro proyecto (EjeZ3D).
 
@@ -20,17 +21,17 @@ El orden de los N.º no es cronológico (el login se extrajo antes que las demá
 
 | Ítem | Estado | Dónde está | Qué falta |
 |---|---|---|---|
-| 1 Problema real | Parcial | Borrador §1 | Medición del 18/11 (horas por turno) |
+| 1 Problema real | Parcial | Borrador §1 | Medición del tiempo por turno (el 18 y 19/11 usé la herramienta con exámenes reales, pero no cronometré) |
 | 2 Herramienta y costo | Cubierto | Borrador §4 y §8; `valor-y-costo.md` | Aclarar si el uso de IA se cobró; validar si el plan Hobby de Vercel admite una cátedra |
 | 3 Instrucciones para el modelo | Cubierto con un equivalente | Borrador §5; `instrucciones-para-el-modelo.md` (Anexo D) | Confirmar si PEDIR es una sigla oral (no aparece en las 16 clases) |
 | 4 Datos o documentos | Cubierto | Borrador §4; `diccionario-de-datos.md` (Anexo B) | — |
-| 5 Verificación con casos conocidos | Cubierto | Borrador §6 (115 pruebas y 5 casos de mi criterio manual) | Confirmar la clave de la pregunta 8 y el valor 0,5; resultados del 18/11 |
+| 5 Verificación con casos conocidos | Cubierto | Borrador §6 (125 pruebas, 5 casos de mi criterio manual y calibración con exámenes reales del 18 y 19/11) | Confirmar la clave de la pregunta 8 y el valor 0,5; resultados del 18/11 |
 | 6 Autonomía | Cubierto | Borrador §3 (tabla) | — |
 | 7 Construcción paso por paso | Cubierto | Borrador §4; `anexo-f-paso-a-paso.md` (Anexo F) | Que una persona ajena la rehaga siguiendo el Anexo F |
 | 8 Diccionario de datos | Cubierto | `diccionario-de-datos.md` (Anexo B) | — |
 | 9 Instalación en la organización | Cubierto | Borrador §4; `docs/guia-de-uso.md`, `docs/guia-windows.md` | Validar si el mantenimiento seguirá con el asistente |
 | 10 Riesgos y datos personales | Casi cubierto | Borrador §7; `incidente-api-key.md` (Anexo G) | Verificar la Ley 25.326; autorización formal; decisión sobre GitHub Pages |
-| 11 Uso de IA declarado | Cubierto | Borrador §5; Anexo C; los cuatro registros brutos (N.º 1 a 80) | — |
+| 11 Uso de IA declarado | Cubierto | Borrador §5; Anexo C; los cinco registros brutos (N.º 1 a 104) | — |
 | 12 Valor estimado | Parcial | Borrador §8; `valor-y-costo.md` | Medición del 18/11, horas de armado, turnos por año |
 
 ## 3. Pendientes
