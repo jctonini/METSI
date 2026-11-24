@@ -1,6 +1,6 @@
 # Anexo C · Pedidos textuales
 
-> Los pedidos están **copiados tal cual** de los registros brutos (`registro-ia-bruto.md`, `registro-ia-bruto-login.md`, `registro-ia-bruto-noviembre.md` y `registro-ia-bruto-sesion-informe.md`), con sus errores de tipeo. Este archivo se generó copiando esos textos, no retipeándolos. Se reemplazó por `[OMITIDO]` lo sensible (ID de cliente, API key, email, URL del proyecto de Supabase). Los pedidos que se hicieron a Claude Code en el chat original pegaron solo los mensajes del usuario, sin las respuestas del asistente; por eso «Qué hizo la IA» se apoya en el historial de git y en el resumen de la sesión. **La sesión de armado del informe (N.º 54 a 80) está registrada completa en `registro-ia-bruto-sesion-informe.md`; sus mensajes incluyen los que el autor mandó mientras el asistente trabajaba y sus respuestas a las preguntas del asistente.** **Modelo: Claude Sonnet 5.5 (`claude-sonnet-5-5`) con esfuerzo medio, en todas las sesiones de desarrollo. Lo declaró el autor («se utilizó siempre Sonnet 5.5 medio») y se verificó el 2026-11-09 en los datos de cada sesión (modelo configurado y último modelo servido).**
+> Los pedidos están **copiados tal cual** de los registros brutos (`registro-ia-bruto.md`, `registro-ia-bruto-login.md`, `registro-ia-bruto-noviembre.md`, `registro-ia-bruto-sesion-informe.md` y `registro-ia-bruto-examenes-reales.md`), con sus errores de tipeo. Este archivo se generó copiando esos textos, no retipeándolos. Se reemplazó por `[OMITIDO]` lo sensible (ID de cliente, API key, email, URL del proyecto de Supabase). Los pedidos que se hicieron a Claude Code en el chat original pegaron solo los mensajes del usuario, sin las respuestas del asistente; por eso «Qué hizo la IA» se apoya en el historial de git y en el resumen de la sesión. **La sesión de armado del informe (N.º 54 a 80) está registrada completa en `registro-ia-bruto-sesion-informe.md`; sus mensajes incluyen los que el autor mandó mientras el asistente trabajaba y sus respuestas a las preguntas del asistente.** **Modelo: Claude Sonnet 5.5 (`claude-sonnet-5-5`) con esfuerzo medio, en todas las sesiones de desarrollo. Lo declaró el autor («se utilizó siempre Sonnet 5.5 medio») y se verificó el 2026-11-09 en los datos de cada sesión (modelo configurado y último modelo servido).**
 
 ## Parte 1 · Pedidos principales para el cuerpo del informe
 
@@ -231,7 +231,7 @@ Cada grupo muestra el pedido textual, lo que hubo que corregir, lo que erró o i
 - **Qué inventó o erró la IA:** NO CONSTA un error afirmado. **Límites declarados (según README y Backlog):** el nombre sigue siendo manual (solo se lee el registro); la precisión de cerca del 99 % se midió con dígitos de MNIST dibujados sobre fotos sintéticas, es una prueba optimista, y con birome real puede fallar más.
 - **Decisión mía (no delegada):** que lo manuscrito lo confirme una persona (la lectura es solo una sugerencia); **no enviar a un servicio externo los recortes de lo que escriben los alumnos** y elegir la lectura local (opción 3).
 
-## Parte 2 · Índice de los 80 pedidos
+## Parte 2 · Índice de los 104 pedidos
 
 El texto completo de cada uno está en el archivo indicado, con su número. Orden cronológico.
 
@@ -318,4 +318,29 @@ El texto completo de cada uno está en el archivo indicado, con su número. Orde
 | 79 | 2026-11-09 17:40 | construcción | 3 La solución y 6 Pruebas | 5, 6, 7 | `registro-ia-bruto-sesion-informe.md` |
 | 80 | 2026-11-09 17:45 | documentación | 5 Registro de IA | 11 | `registro-ia-bruto-sesion-informe.md` |
 
-Total: 80 pedidos.
+| 81 | 2026-11-18 22:49 | pruebas | 6 Pruebas | 1, 5, 11 | `registro-ia-bruto-examenes-reales.md` |
+| 82 | 2026-11-18 22:52 | pruebas | 6 Pruebas y 7 Riesgos | 5, 10 | `registro-ia-bruto-examenes-reales.md` |
+| 83 | 2026-11-18 23:05 | pruebas | 6 Pruebas | 5 | `registro-ia-bruto-examenes-reales.md` |
+| 84 | 2026-11-18 23:15 | construcción | 3 La solución | 6, 7 | `registro-ia-bruto-examenes-reales.md` |
+| 85 | 2026-11-18 23:17 | pruebas | 6 Pruebas | 5 | `registro-ia-bruto-examenes-reales.md` |
+| 86 | 2026-11-18 23:19 | construcción | 3 La solución | 6, 7 | `registro-ia-bruto-examenes-reales.md` |
+| 87 | 2026-11-18 23:33 | construcción | 4 Cómo se construyó | 6, 11 | `registro-ia-bruto-examenes-reales.md` |
+| 88 | 2026-11-18 23:34 | construcción | 4 Cómo se construyó | 6 | `registro-ia-bruto-examenes-reales.md` |
+| 89 | 2026-11-18 23:36 | riesgos | 5 Registro de IA y 6 Pruebas | 5, 10, 11 | `registro-ia-bruto-examenes-reales.md` |
+| 90 | 2026-11-18 23:38 | construcción | 4 Cómo se construyó | 6 | `registro-ia-bruto-examenes-reales.md` |
+| 91 | 2026-11-18 23:38 | despliegue | 4 Cómo se construyó | 9 | `registro-ia-bruto-examenes-reales.md` |
+| 92 | 2026-11-18 23:40 | pruebas | 6 Pruebas | 5 | `registro-ia-bruto-examenes-reales.md` |
+| 93 | 2026-11-19 03:31 | pruebas | 6 Pruebas | 5, 6 | `registro-ia-bruto-examenes-reales.md` |
+| 94 | 2026-11-19 12:23 | despliegue | 4 Cómo se construyó | 9 | `registro-ia-bruto-examenes-reales.md` |
+| 95 | 2026-11-19 12:39 | pruebas | 6 Pruebas | 5, 6 | `registro-ia-bruto-examenes-reales.md` |
+| 96 | 2026-11-19 12:39 | pruebas | 6 Pruebas | 5, 6 | `registro-ia-bruto-examenes-reales.md` |
+| 97 | 2026-11-19 12:45 | construcción | 3 La solución | 6 | `registro-ia-bruto-examenes-reales.md` |
+| 98 | 2026-11-19 14:01 | despliegue | 4 Cómo se construyó | 9 | `registro-ia-bruto-examenes-reales.md` |
+| 99 | 2026-11-19 14:22 | pruebas | 6 Pruebas y 8 Valor | 5, 12 | `registro-ia-bruto-examenes-reales.md` |
+| 100 | 2026-11-19 14:48 | despliegue | 4 Cómo se construyó | 9 | `registro-ia-bruto-examenes-reales.md` |
+| 101 | 2026-11-19 14:48 | documentación | 4 Cómo se construyó | 9 | `registro-ia-bruto-examenes-reales.md` |
+| 102 | 2026-11-19 20:41 | pruebas | 6 Pruebas y 8 Valor | 5, 12 | `registro-ia-bruto-examenes-reales.md` |
+| 103 | 2026-11-19 21:02 | despliegue | 4 Cómo se construyó | 9 | `registro-ia-bruto-examenes-reales.md` |
+| 104 | 2026-11-19 21:04 | construcción | 3 La solución | 6 | `registro-ia-bruto-examenes-reales.md` |
+
+Total: 104 pedidos.
