@@ -12,11 +12,20 @@
     document.head.appendChild(s);
   });
 
-  function setCookie(s) {
+  // La cookie la crea el servidor (HttpOnly: la página no puede leerla). Si el servidor no responde, se usa
+  // el método anterior (cookie escrita desde la página) para no dejar a nadie sin entrar.
+  async function setCookie(s) {
+    try {
+      const r = await fetch('/api/session', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: s.access_token }) });
+      if (r.ok) return;
+    } catch (e) { /* se usa el respaldo */ }
     const age = Math.max(60, Math.floor(s.expires_at - Date.now() / 1000));
     document.cookie = 'metsi-at=' + s.access_token + '; Path=/; Max-Age=' + age + '; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
   }
-  const clearCookie = () => { document.cookie = 'metsi-at=; Path=/; Max-Age=0; SameSite=Lax'; };
+  async function clearCookie() {
+    try { await fetch('/api/session', { method: 'DELETE', credentials: 'same-origin' }); } catch (e) { /* se usa el respaldo */ }
+    document.cookie = 'metsi-at=; Path=/; Max-Age=0; SameSite=Lax';
+  }
   const isAdmin = () => !!(session && session.user.app_metadata && session.user.app_metadata.role === 'admin');
 
   function paint() {
@@ -35,7 +44,7 @@
 
   async function logout() {
     try { if (sb) await sb.auth.signOut(); } catch (e) { /* se sale igual */ }
-    clearCookie();
+    await clearCookie();
     location.replace('/login');
   }
 
@@ -46,11 +55,11 @@
       await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js');
       sb = window.supabase.createClient(cfg.url, cfg.anonKey);
       const { data } = await sb.auth.getSession();
-      if (!data.session) { clearCookie(); location.replace('/login'); return; }
-      session = data.session; setCookie(session); paint();
-      sb.auth.onAuthStateChange((ev, s) => {
-        if (ev === 'SIGNED_OUT' || !s) { clearCookie(); location.replace('/login'); return; }
-        session = s; setCookie(s); paint();
+      if (!data.session) { await clearCookie(); location.replace('/login'); return; }
+      session = data.session; await setCookie(session); paint();
+      sb.auth.onAuthStateChange(async (ev, s) => {
+        if (ev === 'SIGNED_OUT' || !s) { await clearCookie(); location.replace('/login'); return; }
+        session = s; await setCookie(s); paint();
       });
     } catch (e) { /* sin red o sin el script: la app sigue funcionando con la sesión actual */ }
   }

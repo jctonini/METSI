@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const jose = require('jose');
 const app = require('../api/app.js');
 const users = require('../api/users.js');
+const session = require('../api/session.js');
 const { parseCookies } = require('../server/auth.js');
 
 const URL_ = 'https://demo.supabase.co';
@@ -57,6 +58,32 @@ test('cabeceras: toda respuesta de la app lleva la CSP completa exigida y las de
     assert.ok(r.headers['strict-transport-security'] && r.headers['permissions-policy']);
   }
   assert.equal(respuestas[2].statusCode, 404); // URL mal codificada: no es un error 500
+});
+test('sesión: el servidor crea la cookie HttpOnly solo con un token válido, y la borra al salir', async () => {
+  const tok = await sign({});
+  const ok = await call(session, { method: 'POST', headers: {}, body: { access_token: tok } });
+  assert.equal(ok.statusCode, 200);
+  const c = ok.headers['set-cookie'];
+  assert.match(c, /^metsi-at=/);
+  for (const f of ['HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/']) assert.ok(c.includes(f), 'falta ' + f);
+  const age = Number(/Max-Age=(\d+)/.exec(c)[1]);
+  assert.ok(age > 3000 && age <= 3600, 'Max-Age ' + age);
+  assert.equal(parseCookies(c.split(';')[0])['metsi-at'], tok);
+  // lo que el servidor puso sirve para entrar a la app
+  const pag = await call(app, { query: { path: 'js/csv.js' }, headers: { cookie: c.split(';')[0] } });
+  assert.equal(pag.statusCode, 200);
+  // tokens malos: 401 y ninguna cookie
+  for (const mal of [await sign({}, { secret: 'otro-secreto-otro-secreto-otro-secreto' }), 'basura', '', undefined, 5]) {
+    const r = await call(session, { method: 'POST', headers: {}, body: { access_token: mal } });
+    assert.equal(r.statusCode, 401);
+    assert.equal(r.headers['set-cookie'], undefined);
+  }
+  const sinCuerpo = await call(session, { method: 'POST', headers: {} });
+  assert.equal(sinCuerpo.statusCode, 401);
+  const salir = await call(session, { method: 'DELETE', headers: {} });
+  assert.match(salir.headers['set-cookie'], /^metsi-at=; Max-Age=0.*HttpOnly/);
+  assert.equal((await call(session, { method: 'GET', headers: {} })).statusCode, 405);
+  assert.equal((await call(session, { method: 'POST', headers: { 'x-forwarded-proto': 'http' }, body: { access_token: tok } })).headers['set-cookie'].includes('Secure'), false);
 });
 test('app: sin sesión, la página principal redirige a /login', async () => {
   const r = await call(app, { url: '/', query: { path: '' }, headers: {} });

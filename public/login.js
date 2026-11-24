@@ -9,7 +9,12 @@
     return /^\/(?![\/\\])/.test(n) ? n : '/';
   })();
 
-  function setCookie(session) {
+  // La cookie la crea el servidor (HttpOnly). Si /api/session no responde, se usa el método anterior para no dejar a nadie afuera.
+  async function setCookie(session) {
+    try {
+      const r = await fetch('/api/session', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: session.access_token }) });
+      if (r.ok) return;
+    } catch (e) { /* se usa el respaldo */ }
     const age = Math.max(60, Math.floor(session.expires_at - Date.now() / 1000));
     document.cookie = 'metsi-at=' + session.access_token + '; Path=/; Max-Age=' + age + '; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
   }
@@ -20,7 +25,7 @@
     const sb = window.supabase.createClient(cfg.url, cfg.anonKey);
     // Si ya había una sesión en este navegador, se renueva y se entra sin pedir la contraseña.
     const { data } = await sb.auth.getSession();
-    if (data.session) { setCookie(data.session); location.replace(next); return; }
+    if (data.session) { await setCookie(data.session); location.replace(next); return; }
     $('go').disabled = false; $('go').textContent = 'Ingresar';
     $('login').addEventListener('submit', async (ev) => {
       ev.preventDefault();
@@ -31,7 +36,7 @@
         $('go').disabled = false;
         return;
       }
-      setCookie(d.session);
+      await setCookie(d.session);
       location.replace(next);
     });
   }
