@@ -38,6 +38,25 @@ const test = (name, fn) => tests.push([name, fn]);
 test('cookie: se lee el token entre otras cookies', () => {
   assert.equal(parseCookies('a=1; metsi-at=abc.def; b=2')['metsi-at'], 'abc.def');
 });
+test('cabeceras: toda respuesta de la app lleva CSP exigida, la completa en modo aviso y las demás de seguridad', async () => {
+  const tok = await sign({});
+  const respuestas = [
+    await call(app, { query: {}, headers: {} }),
+    await call(app, { query: { path: 'js/csv.js' }, headers: { authorization: 'Bearer ' + tok } }),
+    await call(app, { query: { path: '%E0%A4%A' }, headers: { authorization: 'Bearer ' + tok } }),
+    await call(users, { method: 'GET', headers: {} }),
+  ];
+  for (const r of respuestas) {
+    assert.match(r.headers['content-security-policy'], /object-src 'none'.*base-uri 'self'.*frame-ancestors 'none'/);
+    assert.match(r.headers['content-security-policy-report-only'], /script-src 'self' https:\/\/cdn\.jsdelivr\.net/);
+    assert.match(r.headers['content-security-policy-report-only'], /connect-src [^;]*https:\/\/demo\.supabase\.co/);
+    assert.equal(r.headers['x-content-type-options'], 'nosniff');
+    assert.equal(r.headers['x-frame-options'], 'DENY');
+    assert.equal(r.headers['referrer-policy'], 'strict-origin-when-cross-origin');
+    assert.ok(r.headers['strict-transport-security'] && r.headers['permissions-policy']);
+  }
+  assert.equal(respuestas[2].statusCode, 404); // URL mal codificada: no es un error 500
+});
 test('app: sin sesión, la página principal redirige a /login', async () => {
   const r = await call(app, { url: '/', query: { path: '' }, headers: {} });
   assert.equal(r.statusCode, 302); assert.equal(r.headers.location, '/login');
