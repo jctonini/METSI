@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { tokenFromRequest, verifyToken } = require('../server/auth.js');
+const { apply: securityHeaders } = require('../server/headers.js');
 
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
@@ -23,7 +24,9 @@ function requestedPath(req) {
 
 module.exports = async (req, res, deps) => {
   const env = (deps && deps.env) || process.env;
-  const rel = requestedPath(req);
+  securityHeaders(res, env);
+  let rel;
+  try { rel = requestedPath(req); } catch (e) { res.statusCode = 404; return res.end('No encontrado'); }
   const user = await verifyToken(tokenFromRequest(req), env, deps);
   if (!user) {
     res.setHeader('Cache-Control', 'no-store');
@@ -47,6 +50,5 @@ module.exports = async (req, res, deps) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', TYPES[path.extname(rel)] || 'application/octet-stream');
   res.setHeader('Cache-Control', 'private, no-cache');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
   return res.end(body);
 };

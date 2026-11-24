@@ -139,8 +139,10 @@
       state.driveFolderId = folderId; // para el botón «Abrir carpeta del examen en Drive»
       const remote = await drive.readJson(folderId, 'datos.json');
       if (remote && remote.examId === state.examId) {
+        const clean = MetsiSanitize.cleanRemote(remote);
+        if (!clean) throw new Error('El archivo datos.json de Drive no tiene el formato esperado: no se sincronizó para no pisarlo.');
         const before = state.cfgUpdatedAt;
-        replaceState(fixCfg(Object.assign(defaults(), mergeStates(state, remote))));
+        replaceState(fixCfg(Object.assign(defaults(), mergeStates(state, clean))));
         if (state.cfgUpdatedAt !== before) { App.fillConfig(); App.renderKey(); }
       }
 
@@ -255,8 +257,10 @@
       if (pendingCount()) await syncNow();
       const remote = await drive.readJson(ex.folderId, 'datos.json');
       if (!remote) { alert('Ese examen no tiene datos guardados.'); return; }
+      const clean = MetsiSanitize.cleanRemote(remote);
+      if (!clean) { alert('Los datos de ese examen en Drive no tienen el formato esperado, así que no se abrieron.'); return; }
       memory.clear();
-      replaceState(fixCfg(Object.assign(defaults(), remote, { lastSync: Date.now(), driveFolderName: ex.name })));
+      replaceState(fixCfg(Object.assign(defaults(), clean, { lastSync: Date.now(), driveFolderName: ex.name })));
       state.sheets.forEach((sh) => { sh.id = String(sh.id); });
       state.driveFolderCustom = ex.name !== autoFolderName() ? ex.name : ''; // una carpeta con otro nombre se respeta
       save();

@@ -116,6 +116,81 @@ test('csv escapa separadores y comillas', () => {
   assert.equal(toDelimited([['a;b', 'c"d', 'e']], ';'), '"a;b";"c""d";e\r\n');
 });
 
+test('csv: neutraliza fórmulas (=, +, -, @, tab, retorno) y no toca números ni texto normal', () => {
+  const peligrosos = ['=1+1', '=HYPERLINK("https://ejemplo.invalid","clic")', '+cmd', '-cmd', '@SUMA(A1)', '\t=1', '\r=1'];
+  for (const v of peligrosos) {
+    const salida = toDelimited([[v]], ';');
+    assert.ok(!/^[=+\-@\t\r]/.test(salida.replace(/^"/, '')), 'sin neutralizar: ' + JSON.stringify(v));
+    assert.ok(salida.replace(/^"/, '').startsWith("'"), 'falta la comilla: ' + JSON.stringify(v));
+  }
+  // Se neutraliza antes de poner comillas por separador.
+  assert.equal(toDelimited([['=a;b']], ';'), '"\'=a;b"\r\n');
+  // Lo legítimo queda igual.
+  assert.equal(toDelimited([['1234567', 'Ana Pérez', '7,5', '-0,33', '0.5', 12, null, '', 'AB', "O'Brien"]], ';'), '1234567;Ana Pérez;7,5;-0,33;0.5;12;;;AB;O\'Brien\r\n');
+});
+
+// ---------- datos que vienen de afuera (Drive) ----------
+const { cleanRemote, safeImageUrl, isSafeId } = require('../js/sanitize.js');
+const okRemote = () => ({
+  examId: 'abc123', examCreatedAt: 5, cfgUpdatedAt: 7, cfgHash: 'h', deleted: { x1: 9 },
+  cfg: { title: 'Parcial de prueba', numQuestions: 2, numOptions: 4, regDigits: 7, modalidades: ['A', 'B'], penalty: 0.33, threshold: 0.18, thrVersion: 5, sheet: { logo: '' } },
+  key: [{ correct: [0], points: 1 }, { correct: [1, 2], points: 2 }],
+  sheets: [{ id: 'h1', nombre: 'Ana de prueba', registro: '1234567', modalidad: 0, answers: [[0], [1, 2]], photoId: 'Fx-_9', crops: { name: 'data:image/jpeg;base64,AAAA', reg: 'data:image/jpeg;base64,BBBB==' }, createdAt: 1, updatedAt: 2 }],
+});
+test('sanitize: unos datos de Drive normales pasan y quedan iguales', () => {
+  const c = cleanRemote(okRemote());
+  assert.ok(c);
+  assert.deepEqual(c.sheets[0].answers, [[0], [1, 2]]);
+  assert.equal(c.sheets[0].crops.name, 'data:image/jpeg;base64,AAAA');
+  assert.equal(c.sheets[0].photoId, 'Fx-_9');
+  assert.deepEqual(c.deleted, { x1: 9 });
+});
+test('sanitize: una imagen que no es data:image en base64 se descarta (no se puede cerrar el atributo src)', () => {
+  assert.equal(safeImageUrl('data:image/jpeg;base64,AAAA'), 'data:image/jpeg;base64,AAAA');
+  for (const mal of ['javascript:alert(1)', 'https://ejemplo.invalid/x.png', 'data:image/jpeg;base64,AA"onerror="x', 'data:text/html;base64,AAAA', 'x" onerror="y', '', null, 5]) {
+    assert.equal(safeImageUrl(mal), '', 'pasó: ' + mal);
+  }
+  const r = okRemote();
+  r.sheets[0].crops.name = 'x" onerror="alert(1)';
+  r.cfg.sheet.logo = 'javascript:alert(1)';
+  const c = cleanRemote(r);
+  assert.equal(c.sheets[0].crops.name, '');
+  assert.equal(c.cfg.sheet.logo, '');
+});
+test('sanitize: ids raros (de hoja, de foto, de examen) se rechazan o se anulan', () => {
+  assert.ok(isSafeId('abc-DEF_123'));
+  for (const mal of ['', 'a/b', '../x', "a'b", 'a"b', 'a b', 'a]b', 5, null, 'x'.repeat(101)]) assert.equal(isSafeId(mal), false, String(mal));
+  let r = okRemote(); r.sheets[0].photoId = 'abc/permissions';
+  assert.equal(cleanRemote(r).sheets[0].photoId, null);
+  r = okRemote(); r.sheets[0].id = 'h1"] , [x';
+  assert.equal(cleanRemote(r), null);
+  r = okRemote(); r.examId = "x' or '1'='1";
+  assert.equal(cleanRemote(r), null);
+});
+test('sanitize: formas imposibles se rechazan o se corrigen sin romper la app', () => {
+  assert.equal(cleanRemote(null), null);
+  assert.equal(cleanRemote([]), null);
+  let r = okRemote(); r.cfg.numQuestions = 1e9; assert.equal(cleanRemote(r), null);
+  r = okRemote(); r.cfg.numOptions = 'x'; assert.equal(cleanRemote(r), null);
+  r = okRemote(); r.cfg.penalty = 5; assert.equal(cleanRemote(r), null);
+  r = okRemote(); r.key = []; assert.equal(cleanRemote(r), null);
+  r = okRemote(); r.sheets[0].answers = [['<img>'], null, [9, -1, 1.5, 2]];
+  const c = cleanRemote(r);
+  assert.deepEqual(c.sheets[0].answers, [[], []]);
+  r = okRemote(); r.sheets[0].answers = null; r.sheets[0].nombre = { a: 1 }; r.sheets[0].registro = 12;
+  const c2 = cleanRemote(r);
+  assert.deepEqual(c2.sheets[0].answers, [[], []]);
+  assert.equal(typeof c2.sheets[0].nombre, 'string');
+  assert.equal(c2.sheets[0].registro, '12');
+  r = okRemote(); r.deleted = { 'a/b': 1, ok1: 2, malo: 'x' };
+  assert.deepEqual(cleanRemote(r).deleted, { ok1: 2 });
+});
+test('sanitize: los textos con HTML no se tocan (los escapa la pantalla), pero se acotan', () => {
+  const r = okRemote(); r.sheets[0].nombre = '<img src=x onerror=alert(1)>'.padEnd(500, 'a');
+  const c = cleanRemote(r);
+  assert.equal(c.sheets[0].nombre.length, 300);
+  assert.ok(c.sheets[0].nombre.startsWith('<img'));
+});
 // ---------- layout ----------
 test('layout: sin burbujas superpuestas ni fuera de la hoja (V3: capacidad 38/57)', () => {
   const mods8 = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -951,6 +1026,21 @@ test('reintentos: cuáles errores son reintentables', () => {
   for (const st of [408, 429, 500, 502, 503, 504]) assert.equal(isRetryable(httpErr(st)), true, String(st));
   assert.equal(isRetryable(httpErr(404)), false);
   assert.equal(isRetryable(new Error('sin status')), false);
+});
+
+atest('drive: un identificador raro no llega a la URL ni a la búsqueda', async () => {
+  const { createDrive } = require('../js/drive.js');
+  const llamadas = [];
+  const d = createDrive({ fetch: async (u) => { llamadas.push(u); return { ok: true, status: 200, json: async () => ({ files: [] }), blob: async () => ({}) }; }, getToken: async () => 't', retries: 0 });
+  for (const mal of ['abc/permissions', "x' or name contains '", '../x', '']) {
+    await assert.rejects(() => d.downloadBlob(mal), /Identificador/);
+    await assert.rejects(() => d.renameFolder(mal, 'n'), /Identificador/);
+    await assert.rejects(() => d.readJson(mal, 'datos.json'), /Identificador/);
+    await assert.rejects(() => d.listExams(mal), /Identificador/);
+  }
+  assert.equal(llamadas.length, 0);
+  await d.downloadBlob('Abc-123_x');
+  assert.equal(llamadas.length, 1);
 });
 
 atest('drive: un corte de red pasajero no pierde la operación', async () => {

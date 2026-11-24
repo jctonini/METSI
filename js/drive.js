@@ -10,6 +10,11 @@
   const FOLDER = 'application/vnd.google-apps.folder';
   const ROOT_NAME = 'METSI Corrector';
   const q = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  // Los identificadores de Drive van dentro de URLs y de búsquedas: solo letras, números, guion y guion bajo.
+  const safeId = (x) => {
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(x))) throw new Error('Identificador de Drive no válido');
+    return String(x);
+  };
 
   const { withRetry } = typeof require === 'function' ? require('./retry.js') : self.MetsiRetry;
 
@@ -86,7 +91,7 @@
       },
 
       async findExamFolder(rootId, examId) {
-        const found = await list(`'${rootId}' in parents and mimeType='${FOLDER}' and appProperties has { key='examId' and value='${q(examId)}' } and trashed=false`);
+        const found = await list(`'${safeId(rootId)}' in parents and mimeType='${FOLDER}' and appProperties has { key='examId' and value='${q(examId)}' } and trashed=false`);
         return found.length ? found[0].id : null;
       },
 
@@ -96,16 +101,16 @@
 
       // Subcarpeta con nombre fijo dentro de otra carpeta (se crea una sola vez).
       async ensureSubfolder(parentId, name) {
-        const found = await list(`'${parentId}' in parents and mimeType='${FOLDER}' and name='${q(name)}' and trashed=false`);
+        const found = await list(`'${safeId(parentId)}' in parents and mimeType='${FOLDER}' and name='${q(name)}' and trashed=false`);
         return found.length ? found[0].id : createFolder(name, parentId, { kind: 'metsi-sub' });
       },
 
       async renameFolder(folderId, name) {
-        await call(`${API}/${folderId}?fields=id`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+        await call(`${API}/${safeId(folderId)}?fields=id`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
       },
 
       async listExams(rootId) {
-        const files = await list(`'${rootId}' in parents and mimeType='${FOLDER}' and appProperties has { key='kind' and value='metsi-exam' } and trashed=false`,
+        const files = await list(`'${safeId(rootId)}' in parents and mimeType='${FOLDER}' and appProperties has { key='kind' and value='metsi-exam' } and trashed=false`,
           'id,name,modifiedTime,appProperties');
         return files.map((f) => ({ folderId: f.id, name: f.name, modifiedTime: f.modifiedTime, examId: f.appProperties && f.appProperties.examId }))
           .sort((a, b) => String(b.modifiedTime).localeCompare(String(a.modifiedTime)));
@@ -113,7 +118,7 @@
 
       // Crea o reemplaza el archivo `name` dentro de la carpeta.
       async upsertFile(folderId, name, mime, content, appProperties) {
-        const found = await list(`'${folderId}' in parents and name='${q(name)}' and trashed=false`);
+        const found = await list(`'${safeId(folderId)}' in parents and name='${q(name)}' and trashed=false`);
         if (found.length) {
           await call(`${UPLOAD}/${found[0].id}?uploadType=media&fields=id`, { method: 'PATCH', headers: { 'Content-Type': mime }, body: content });
           return found[0].id;
@@ -122,13 +127,13 @@
       },
 
       async readJson(folderId, name) {
-        const found = await list(`'${folderId}' in parents and name='${q(name)}' and trashed=false`);
+        const found = await list(`'${safeId(folderId)}' in parents and name='${q(name)}' and trashed=false`);
         if (!found.length) return null;
         return (await call(`${API}/${found[0].id}?alt=media`)).json();
       },
 
       async downloadBlob(fileId) {
-        return (await call(`${API}/${fileId}?alt=media`)).blob();
+        return (await call(`${API}/${safeId(fileId)}?alt=media`)).blob();
       },
     };
   }

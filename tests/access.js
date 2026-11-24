@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const jose = require('jose');
 const app = require('../api/app.js');
 const users = require('../api/users.js');
+const session = require('../api/session.js');
 const { parseCookies } = require('../server/auth.js');
 
 const URL_ = 'https://demo.supabase.co';
@@ -37,6 +38,52 @@ const test = (name, fn) => tests.push([name, fn]);
 
 test('cookie: se lee el token entre otras cookies', () => {
   assert.equal(parseCookies('a=1; metsi-at=abc.def; b=2')['metsi-at'], 'abc.def');
+});
+test('cabeceras: toda respuesta de la app lleva la CSP completa exigida y las demás cabeceras de seguridad', async () => {
+  const tok = await sign({});
+  const respuestas = [
+    await call(app, { query: {}, headers: {} }),
+    await call(app, { query: { path: 'js/csv.js' }, headers: { authorization: 'Bearer ' + tok } }),
+    await call(app, { query: { path: '%E0%A4%A' }, headers: { authorization: 'Bearer ' + tok } }),
+    await call(users, { method: 'GET', headers: {} }),
+  ];
+  for (const r of respuestas) {
+    assert.match(r.headers['content-security-policy'], /object-src 'none'.*base-uri 'self'.*frame-ancestors 'none'/);
+    assert.match(r.headers['content-security-policy'], /script-src 'self' https:\/\/cdn\.jsdelivr\.net/);
+    assert.match(r.headers['content-security-policy'], /connect-src [^;]*https:\/\/demo\.supabase\.co/);
+    assert.equal(r.headers['content-security-policy-report-only'], undefined);
+    assert.equal(r.headers['x-content-type-options'], 'nosniff');
+    assert.equal(r.headers['x-frame-options'], 'DENY');
+    assert.equal(r.headers['referrer-policy'], 'strict-origin-when-cross-origin');
+    assert.ok(r.headers['strict-transport-security'] && r.headers['permissions-policy']);
+  }
+  assert.equal(respuestas[2].statusCode, 404); // URL mal codificada: no es un error 500
+});
+test('sesión: el servidor crea la cookie HttpOnly solo con un token válido, y la borra al salir', async () => {
+  const tok = await sign({});
+  const ok = await call(session, { method: 'POST', headers: {}, body: { access_token: tok } });
+  assert.equal(ok.statusCode, 200);
+  const c = ok.headers['set-cookie'];
+  assert.match(c, /^metsi-at=/);
+  for (const f of ['HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/']) assert.ok(c.includes(f), 'falta ' + f);
+  const age = Number(/Max-Age=(\d+)/.exec(c)[1]);
+  assert.ok(age > 3000 && age <= 3600, 'Max-Age ' + age);
+  assert.equal(parseCookies(c.split(';')[0])['metsi-at'], tok);
+  // lo que el servidor puso sirve para entrar a la app
+  const pag = await call(app, { query: { path: 'js/csv.js' }, headers: { cookie: c.split(';')[0] } });
+  assert.equal(pag.statusCode, 200);
+  // tokens malos: 401 y ninguna cookie
+  for (const mal of [await sign({}, { secret: 'otro-secreto-otro-secreto-otro-secreto' }), 'basura', '', undefined, 5]) {
+    const r = await call(session, { method: 'POST', headers: {}, body: { access_token: mal } });
+    assert.equal(r.statusCode, 401);
+    assert.equal(r.headers['set-cookie'], undefined);
+  }
+  const sinCuerpo = await call(session, { method: 'POST', headers: {} });
+  assert.equal(sinCuerpo.statusCode, 401);
+  const salir = await call(session, { method: 'DELETE', headers: {} });
+  assert.match(salir.headers['set-cookie'], /^metsi-at=; Max-Age=0.*HttpOnly/);
+  assert.equal((await call(session, { method: 'GET', headers: {} })).statusCode, 405);
+  assert.equal((await call(session, { method: 'POST', headers: { 'x-forwarded-proto': 'http' }, body: { access_token: tok } })).headers['set-cookie'].includes('Secure'), false);
 });
 test('app: sin sesión, la página principal redirige a /login', async () => {
   const r = await call(app, { url: '/', query: { path: '' }, headers: {} });
@@ -104,6 +151,20 @@ test('users: el admin lista, crea, desactiva, cambia contraseña y borra', async
   assert.equal((await call(users, { method: 'PATCH', headers: h, body: { id: 'u2', password: '87654321' } }, m)).statusCode, 200);
   assert.equal((await call(users, { method: 'DELETE', headers: h, body: { id: 'u2' } }, m)).statusCode, 200);
   assert.ok(!m.db.has('u2'));
+});
+test('users: un rol que no sea admin ni docente se rechaza con 400 y no toca la base', async () => {
+  const m = mockSupabase();
+  const hdr = { authorization: 'Bearer ' + (await sign({ app_metadata: { role: 'admin' } })) };
+  const antes = JSON.stringify([...m.db.values()]);
+  for (const role of ['superadmin', 'ADMIN', '', 5, ['admin'], { a: 1 }]) {
+    const a = await call(users, { method: 'POST', headers: hdr, body: { email: 'nuevo@x.com', password: '12345678', role } }, { createClient: m.createClient });
+    assert.equal(a.statusCode, 400, 'POST ' + JSON.stringify(role));
+    const b = await call(users, { method: 'PATCH', headers: hdr, body: { id: 'u2', role } }, { createClient: m.createClient });
+    assert.equal(b.statusCode, 400, 'PATCH ' + JSON.stringify(role));
+  }
+  assert.equal(JSON.stringify([...m.db.values()]), antes);
+  const ok = await call(users, { method: 'POST', headers: hdr, body: { email: 'nuevo@x.com', password: '12345678', role: 'docente' } }, { createClient: m.createClient });
+  assert.equal(ok.statusCode, 201);
 });
 test('users: el admin no puede desactivarse, degradarse ni borrarse a sí mismo', async () => {
   const m = mockSupabase();

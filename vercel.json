@@ -3,9 +3,45 @@
   "outputDirectory": "public",
   "buildCommand": "",
   "functions": {
-    "api/app.js": { "includeFiles": "{index.html,js/**,css/**,docs/**}" }
+    "api/app.js": {
+      "includeFiles": "{index.html,js/**,css/**,docs/**}"
+    }
   },
   "rewrites": [
-    { "source": "/((?!login$|login\\.js$|api/).*)", "destination": "/api/app?path=$1" }
+    {
+      "source": "/((?!login$|login\\.js$|api/).*)",
+      "destination": "/api/app?path=$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/login(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        }
+      ]
+    }
   ]
 }

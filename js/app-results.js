@@ -38,7 +38,7 @@
     t.innerHTML = `<table><thead><tr><th>Registro</th><th>Nombre</th><th>Modalidad</th><th>Puntaje</th><th>Máx.</th><th>%</th></tr></thead><tbody>${
       rows.map(({ s, score }) => {
         const dup = !s.registro || regCount[s.registro] > 1;
-        const img = (k) => (s.crops && s.crops[k] ? `<img class="mini" alt="" src="${s.crops[k]}">` : '');
+        const img = (k) => (s.crops && s.crops[k] ? `<img class="mini" alt="" src="${MetsiSanitize.safeImageUrl(s.crops[k])}">` : '');
         return `<tr><td class="${dup ? 'warn' : ''}">${s.registro ? escapeHtml(s.registro) : img('reg') || 'falta'}${dup ? ' ⚠' : ''}</td><td>${s.nombre ? escapeHtml(s.nombre) : img('name')}</td><td>${
           s.modalidad == null ? '' : escapeHtml(L.modalidades[s.modalidad] || '')}</td><td><b>${fmt(score.total)}</b></td><td>${fmt(score.max)}</td><td>${fmt(score.percent)}%</td></tr>`;
       }).join('')}</tbody></table><p class="muted">${rows.length} hoja(s). ⚠ = registro repetido o sin cargar.</p>`;

@@ -6,7 +6,9 @@
 //   DELETE /api/users {id}                  -> borra el usuario
 // El rol se guarda en app_metadata.role y la baja usa `ban_duration` de Supabase.
 const { tokenFromRequest, verifyToken } = require('../server/auth.js');
+const { apply: securityHeaders } = require('../server/headers.js');
 
+const ROLES = ['admin', 'docente'];
 const BAN = '876000h'; // ~100 años: equivale a "desactivado"
 const send = (res, code, obj) => {
   res.statusCode = code;
@@ -28,6 +30,7 @@ async function readBody(req) {
 
 module.exports = async (req, res, deps) => {
   const env = (deps && deps.env) || process.env;
+  securityHeaders(res, env);
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return send(res, 500, { error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en Vercel' });
   const me = await verifyToken(tokenFromRequest(req), env, deps);
   if (!me) return send(res, 401, { error: 'Sesión no válida' });
@@ -44,6 +47,7 @@ module.exports = async (req, res, deps) => {
       return send(res, 200, { users: data.users.map(publicUser), me: me.id });
     }
     const body = await readBody(req);
+    if (body.role != null && !ROLES.includes(body.role)) return send(res, 400, { error: 'Rol no válido: tiene que ser admin o docente' });
     if (req.method === 'POST') {
       const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '');

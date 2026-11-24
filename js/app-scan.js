@@ -9,6 +9,7 @@
   const Review = MetsiReview;
   const selection = MetsiSelection.createSelection();
   const { $, state, memory, Photos, save, touch, removeSheet, scoreOf, clientId, layout, fmt, escapeHtml, newId, MAX_SIDE, THUMB_SIDE } = App;
+  const { safeImageUrl, isSafeId } = MetsiSanitize;
 
   // ---------- 3. corregir ----------
   $('file').addEventListener('change', async (e) => {
@@ -60,6 +61,7 @@
 
   // ---------- ventana de consulta ----------
   // buttons: [{ label, value, kind }]; `cancel` es el valor si se cierra con Esc.
+  // OJO: `html` se inserta como HTML. Todo texto que no sea fijo (nombres, archivos) tiene que pasar por escapeHtml.
   function askDialog({ title, html, buttons, cancel }) {
     return new Promise((resolve) => {
       const dlg = $('dlg');
@@ -152,7 +154,7 @@
 
   const sheetNumber = (sh) => state.sheets.indexOf(sh) + 1;
   const cropsHtml = (sh) => (sh.crops && sh.crops.reg
-    ? `<div class="crops"><img alt="" src="${sh.crops.name}"><img alt="" src="${sh.crops.reg}"></div>` : '');
+    ? `<div class="crops"><img alt="" src="${safeImageUrl(sh.crops.name)}"><img alt="" src="${safeImageUrl(sh.crops.reg)}"></div>` : '');
 
   const KIND_TEXT = {
     'same-data': (n, o) => `Tiene el mismo nombre y el mismo registro que la <b>Hoja ${n}</b>.`,
@@ -219,8 +221,8 @@
       const n = state.sheets.findIndex((x) => x.id === c.id) + 1;
       const bits = [];
       if (c.failed) bits.push('no se pudo leer');
-      if (c.flaggedQuestions.length) bits.push('preguntas marcadas: ' + c.flaggedQuestions.join(', '));
-      if (c.edited.length) bits.push('corregidas a mano: ' + c.edited.map((e) => `${e.q} (${e.auto || '—'} → ${e.final || '—'})`).join(', '));
+      if (c.flaggedQuestions.length) bits.push('preguntas marcadas: ' + escapeHtml(c.flaggedQuestions.join(', ')));
+      if (c.edited.length) bits.push('corregidas a mano: ' + escapeHtml(c.edited.map((e) => `${e.q} (${e.auto || '—'} → ${e.final || '—'})`).join(', ')));
       if (c.note) bits.push('nota: ' + escapeHtml(c.note));
       return `<li><b>Hoja ${n}</b> · ${bits.join(' · ') || 'marcada'}</li>`;
     }).join('');
@@ -288,7 +290,7 @@
     renderCards(); App.renderResults();
   }
   function focusSheet(id) {
-    const card = document.querySelector(`[data-sheet="${id}"]`);
+    const card = isSafeId(String(id)) ? document.querySelector(`[data-sheet="${id}"]`) : null;
     if (card) { card.scrollIntoView({ block: 'start' }); const f = card.querySelector('.f-reg') || card.querySelector('.f-name'); if (f) f.focus(); }
   }
 
@@ -581,7 +583,7 @@
       fields.className = 'grid fields';
       const hasCrops = sheet.crops && sheet.crops.reg;
       fields.innerHTML = `
-        ${hasCrops ? `<div class="crops wide"><img alt="Nombre escrito" src="${sheet.crops.name}"><img alt="Registro escrito" src="${sheet.crops.reg}"></div>` : ''}
+        ${hasCrops ? `<div class="crops wide"><img alt="Nombre escrito" src="${safeImageUrl(sheet.crops.name)}"><img alt="Registro escrito" src="${safeImageUrl(sheet.crops.reg)}"></div>` : ''}
         ${regSuggestHtml(sheet)}
         <label>Nombre y apellido <input type="text" class="f-name ${missingIds.has(sheet.id) ? 'warn' : ''}" placeholder="nombre o registro: hace falta uno" value="${escapeHtml(sheet.nombre || '')}"></label>
         <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>

@@ -45,7 +45,7 @@ async function verifyToken(token, env, deps) {
     const { payload } = await jose.jwtVerify(token, key, { issuer: base + '/auth/v1', audience: 'authenticated', algorithms });
     if (!payload.sub) return null;
     const meta = payload.app_metadata || {};
-    return { id: payload.sub, email: payload.email || '', role: meta.role === 'admin' ? 'admin' : 'docente' };
+    return { id: payload.sub, exp: payload.exp || 0, email: payload.email || '', role: meta.role === 'admin' ? 'admin' : 'docente' };
   } catch (e) {
     return null;
   }
