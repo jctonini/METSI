@@ -116,6 +116,19 @@ test('csv escapa separadores y comillas', () => {
   assert.equal(toDelimited([['a;b', 'c"d', 'e']], ';'), '"a;b";"c""d";e\r\n');
 });
 
+test('csv: neutraliza fórmulas (=, +, -, @, tab, retorno) y no toca números ni texto normal', () => {
+  const peligrosos = ['=1+1', '=HYPERLINK("https://ejemplo.invalid","clic")', '+cmd', '-cmd', '@SUMA(A1)', '\t=1', '\r=1'];
+  for (const v of peligrosos) {
+    const salida = toDelimited([[v]], ';');
+    assert.ok(!/^[=+\-@\t\r]/.test(salida.replace(/^"/, '')), 'sin neutralizar: ' + JSON.stringify(v));
+    assert.ok(salida.replace(/^"/, '').startsWith("'"), 'falta la comilla: ' + JSON.stringify(v));
+  }
+  // Se neutraliza antes de poner comillas por separador.
+  assert.equal(toDelimited([['=a;b']], ';'), '"\'=a;b"\r\n');
+  // Lo legítimo queda igual.
+  assert.equal(toDelimited([['1234567', 'Ana Pérez', '7,5', '-0,33', '0.5', 12, null, '', 'AB', "O'Brien"]], ';'), '1234567;Ana Pérez;7,5;-0,33;0.5;12;;;AB;O\'Brien\r\n');
+});
+
 // ---------- layout ----------
 test('layout: sin burbujas superpuestas ni fuera de la hoja (V3: capacidad 38/57)', () => {
   const mods8 = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];

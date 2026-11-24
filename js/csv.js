@@ -3,9 +3,17 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.MetsiCsv = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
+  // Un texto que empieza con = + - @ (o tab / retorno de carro) lo toman Excel y Sheets como fórmula.
+  // Se le antepone una comilla simple para que quede como texto. Los números sueltos (7,5 o -0,33) no se tocan.
+  const PELIGROSO = /^[=+\-@\t\r]/;
+  const NUMERO = /^[-+]?\d+([.,]\d+)?$/;
+  function neutralizar(s) {
+    return PELIGROSO.test(s) && !NUMERO.test(s) ? "'" + s : s;
+  }
+
   function cell(v, sep) {
     if (v === null || v === undefined) return '';
-    const s = String(v);
+    const s = neutralizar(String(v));
     return s.includes(sep) || /["\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
@@ -22,5 +30,5 @@
     return decimalComma ? s.replace('.', ',') : s;
   }
 
-  return { toDelimited, formatNumber, round3 };
+  return { toDelimited, formatNumber, round3, neutralizar };
 });
