@@ -124,7 +124,7 @@ Es exactamente lo que dice la clase 5: lo que no se escribe, el modelo lo comple
 ## 5. Cómo se verificó que los pedidos sirven
 
 La clase 5 pide verificar una consigna con casos de respuesta conocida, no con opinión («eso lo dice tu banco de pruebas»). En METSI la verificación es:
-- **Pruebas automáticas** (`node tests/run.js`, 115 pruebas, todas en verde el 2026-11-09) con fotos sintéticas de hojas V1 a V4, el puntaje y la lectura de dígitos.
+- **Pruebas automáticas** (`node tests/run.js`, 125 pruebas, todas en verde el 2026-11-24) con fotos sintéticas de hojas V1 a V4, el puntaje y la lectura de dígitos.
 - **Pruebas con hojas reales** del docente (N.º 13, 20, 23, 26, 29): detectaron fallas que las sintéticas no mostraron.
 - **Limitación honesta:** la lectura del registro se midió con dígitos de MNIST sobre fotos sintéticas (cerca del 99 %), que es una prueba optimista. Falta calibrar con hojas reales (tarea METSI-1, abierta).
 

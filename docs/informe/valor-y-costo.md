@@ -14,7 +14,7 @@ El valor de METSI Corrector es el **tiempo que ahorra** al corregir exámenes mu
 | Tiempo por hoja con la herramienta | **SIN DATO** | — | Falta medir (§7) |
 | Exámenes por año, recuperatorios | **SIN DATO** | — | Falta |
 | Horas de armado | **SIN DATO** | — | Las sesiones de trabajo fueron del 1 de octubre al 8 de noviembre de 2026, pero no se registraron las horas dedicadas |
-| Costo de uso de IA | hasta USD 56,13 | Plataforma, 2026-11-09 (§5) | **Cota superior** |
+| Costo de uso de IA | USD 56,13 en cinco sesiones, más la de los exámenes reales (sin dato) | Plataforma, 2026-11-09 (§5) | Cota superior **solo de las cinco primeras** |
 | Licencias | USD 0 | Autor (planes gratuitos) y proyecto de Google Cloud sin facturación (§5) | Declaración y verificación |
 
 **Qué no se sabe del 4 a 5 minutos** y debe aclararse en el informe: si es para el examen de 10 o el de 20 preguntas, y si incluye ordenar por registro, pasar a Excel, el control contra el listado de inscriptos, convertir el puntaje en nota, compartir las notas y subirlas a MiEcon.
@@ -50,7 +50,7 @@ El segundo término es **SIN DATO**. Esta tabla es una **hipótesis de sensibili
 | GitHub y GitHub Pages | USD 0 | Plan gratuito, según el autor. Herramienta de la cursada (clase 13) |
 | Vercel | USD 0 | Plan gratuito, según el autor. Aviso de la clase 13: el plan Hobby es solo para uso personal y no comercial **[VALIDAR si una cátedra califica; si no, haría falta un plan pago]** |
 | Supabase | USD 0 | Plan gratuito, según el autor. Aviso de la clase 13: pausa el proyecto tras una semana sin actividad y se reactiva desde el panel, con sus datos: conviene entrar a la app antes de cada parcial |
-| Uso de IA | hasta USD 56,13 | Cota superior (cuadro de abajo). Falta saber si se cobró o está incluido en una suscripción |
+| Uso de IA | USD 56,13 en cinco sesiones (más la de los exámenes reales, sin dato) | Cuadro de abajo. Falta saber si se cobró o está incluido en una suscripción |
 | Horas de armado | **SIN DATO** | — |
 | Mantenimiento | Lo hace el autor; horas **SIN DATO** | `node tools/version.js` tras cada cambio, administrar usuarios, entrar a la app antes de cada parcial, revisar los planes gratuitos y calibrar la lectura con hojas reales (tarea METSI-1) |
 | Impresión de las hojas | **SIN DATO** | Hoja A5, dos por A4, igual para todos los alumnos |
@@ -66,8 +66,9 @@ El segundo término es **SIN DATO**. Esta tabla es una **hipótesis de sensibili
 | «Lectura de escritura manual de alumnos» (8 de nov) | N.º 51 a 53 | 3,22 | — |
 | **Suma de las cinco de desarrollo** | | **56,13** | Cota superior: las dos primeras incluyen trabajo ajeno a METSI |
 | «Asistente de corrección de exámenes» (8 y 9 de nov) | N.º 54 a 80 | 11,29 (primera consulta) | Informe y documentación: **no es costo de la herramienta** |
+| «Revisión de 15 exámenes reales» (18 y 19 de nov) | N.º 81 a 104 | **SIN DATO** (no consultado) | Mejoras de la herramienta (METSI-13 a METSI-22); es costo de la herramienta |
 
-Las tres sesiones que solo tocan la herramienta suman USD 7,24.
+Las tres sesiones que solo tocan la herramienta suman USD 7,24, **sin contar** la de los exámenes reales (18 y 19 de nov), cuyo costo no se consultó.
 
 ## 6. Beneficios que no se miden en minutos
 - **Criterio de puntaje uniforme:** el puntaje parcial y las incorrectas se aplican igual a todos (`js/scoring.js`). *No medido:* cuántos errores de cálculo había a mano.
