@@ -1,9 +1,10 @@
 ---
 id: METSI-26
 title: 'Seguridad L: reforzar login, cookie de sesión y API de usuarios'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-24T02:48:01Z'
+updated_date: '2026-11-24T03:03:31Z'
 labels: []
 dependencies: []
 ordinal: 26000
@@ -18,8 +19,17 @@ La cookie metsi-at se escribe desde JavaScript (public/login.js, js/account.js),
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 La sesión se guarda en una cookie HttpOnly, Secure y SameSite emitida por el servidor, o queda documentado por qué no se puede
-- [ ] #2 api/app.js responde 400 o 404 y no 500 ante una URL con codificación inválida
-- [ ] #3 api/users.js rechaza con 400 un role que no sea admin ni docente
+- [x] #2 api/app.js responde 400 o 404 y no 500 ante una URL con codificación inválida
+- [x] #3 api/users.js rechaza con 400 un role que no sea admin ni docente
 - [ ] #4 El script de Supabase en public/login.html lleva integrity (SRI) y crossorigin
-- [ ] #5 Hay pruebas en tests/access.js para lo que cambie en el servidor y pasan todas
+- [x] #5 Hay pruebas en tests/access.js para lo que cambie en el servidor y pasan todas
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Hecho: api/app.js responde 404 ante URL mal codificada (con prueba, junto con el frente C); api/users.js rechaza con 400 un rol que no sea admin ni docente, en alta y en cambio (prueba nueva en tests/access.js, 13 pasan).
+NO hecho a propósito:
+- Cookie HttpOnly (AC 1): requiere que el servidor cree la sesión; no se puede probar acá contra Supabase y Vercel reales, y un error deja a todos sin entrar. Además el cliente de Supabase guarda su propia sesión en localStorage del navegador, así que sin cambiar eso un XSS igual podría leerla: la ganancia real es chica frente al riesgo. Con la CSP completa exigida (METSI-25) y el escape reforzado (METSI-23) el riesgo de XSS ya bajó. Se retoma si se puede probar en un entorno de prueba de Vercel.
+- SRI del script de Supabase (AC 4): jsDelivr genera supabase.min.js al vuelo y no está en el paquete npm; desde este entorno jsdelivr no es accesible (proxy 403), así que no pude calcular un hash confiable. Un hash equivocado rompería el login de todos. Alternativa: alojar el script en el propio sitio o calcular el hash desde una PC con internet y probarlo.
+<!-- SECTION:NOTES:END -->

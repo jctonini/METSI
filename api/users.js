@@ -8,6 +8,7 @@
 const { tokenFromRequest, verifyToken } = require('../server/auth.js');
 const { apply: securityHeaders } = require('../server/headers.js');
 
+const ROLES = ['admin', 'docente'];
 const BAN = '876000h'; // ~100 años: equivale a "desactivado"
 const send = (res, code, obj) => {
   res.statusCode = code;
@@ -46,6 +47,7 @@ module.exports = async (req, res, deps) => {
       return send(res, 200, { users: data.users.map(publicUser), me: me.id });
     }
     const body = await readBody(req);
+    if (body.role != null && !ROLES.includes(body.role)) return send(res, 400, { error: 'Rol no válido: tiene que ser admin o docente' });
     if (req.method === 'POST') {
       const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '');

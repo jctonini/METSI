@@ -125,6 +125,20 @@ test('users: el admin lista, crea, desactiva, cambia contraseña y borra', async
   assert.equal((await call(users, { method: 'DELETE', headers: h, body: { id: 'u2' } }, m)).statusCode, 200);
   assert.ok(!m.db.has('u2'));
 });
+test('users: un rol que no sea admin ni docente se rechaza con 400 y no toca la base', async () => {
+  const m = mockSupabase();
+  const hdr = { authorization: 'Bearer ' + (await sign({ app_metadata: { role: 'admin' } })) };
+  const antes = JSON.stringify([...m.db.values()]);
+  for (const role of ['superadmin', 'ADMIN', '', 5, ['admin'], { a: 1 }]) {
+    const a = await call(users, { method: 'POST', headers: hdr, body: { email: 'nuevo@x.com', password: '12345678', role } }, { createClient: m.createClient });
+    assert.equal(a.statusCode, 400, 'POST ' + JSON.stringify(role));
+    const b = await call(users, { method: 'PATCH', headers: hdr, body: { id: 'u2', role } }, { createClient: m.createClient });
+    assert.equal(b.statusCode, 400, 'PATCH ' + JSON.stringify(role));
+  }
+  assert.equal(JSON.stringify([...m.db.values()]), antes);
+  const ok = await call(users, { method: 'POST', headers: hdr, body: { email: 'nuevo@x.com', password: '12345678', role: 'docente' } }, { createClient: m.createClient });
+  assert.equal(ok.statusCode, 201);
+});
 test('users: el admin no puede desactivarse, degradarse ni borrarse a sí mismo', async () => {
   const m = mockSupabase();
   const h = { authorization: 'Bearer ' + await sign({ app_metadata: { role: 'admin' } }, { sub: 'u1' }) };
