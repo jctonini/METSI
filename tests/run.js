@@ -1300,6 +1300,42 @@ test('casos a revisar: no incluyen el registro leído ni el cargado', () => {
   assert.equal(out.includes('regAuto'), false);
 });
 
+// ---------- tanda de fotos: guardado tras cada una (METSI-28) y gris compartido (METSI-29) ----------
+const { runBatch } = require('../js/batch.js');
+atest('tanda: se guarda después de cada foto, así un corte a mitad no pierde lo ya leído', async () => {
+  const sheets = [], saved = [];
+  const save = () => saved.push(sheets.length); // lo que quedaría guardado en ese momento
+  const tally = await runBatch(['a', 'b', 'c', 'd'], async (item, i) => {
+    if (i === 3) throw new Error('la pestaña se cerró'); // corte en la cuarta foto
+    sheets.push(item); return 'added';
+  }, save);
+  assert.deepEqual(saved, [1, 2, 3, 3], 'tras cada foto el guardado ya incluye las hojas anteriores');
+  assert.equal(tally.added, 3);
+  assert.equal(tally.failed, 1, 'un error en una foto no frena a las demás');
+});
+atest('tanda: cuenta cada resultado y avisa el progreso', async () => {
+  const prog = [];
+  const res = ['added', 'skipped', 'discarded', 'added'];
+  const tally = await runBatch(res, async (r) => r, () => {}, (i, n) => prog.push([i, n]));
+  assert.deepEqual(tally, { added: 2, skipped: 1, discarded: 1, failed: 0 });
+  assert.deepEqual(prog, [[0, 4], [1, 4], [2, 4], [3, 4]]);
+});
+test('lectura: reutilizar el gris da exactamente los mismos recortes y la misma lectura', () => {
+  const exam = makeExam({ numQuestions: 20, numOptions: 5, regDigits: 7, modalidades: ['A', 'B'] }, 31);
+  const a = renderPhoto(exam.L, exam.marks, { seed: 31 });
+  const b = { width: a.width, height: a.height, data: Uint8ClampedArray.from(a.data) }; // copia: no comparte el gris guardado
+  const sa = scanImage(a, exam.layoutFor), sb = scanImage(b, exam.layoutFor);
+  assert.deepEqual(sa.scores, sb.scores);
+  const rect = { x: 14, y: 18, w: 124, h: 30 };
+  for (let k = 0; k < 3; k++) { // la segunda y tercera vez ya usan el gris guardado
+    const ca = cropRegion(a, sa.H, rect, 10), cb = cropRegion(b, sb.H, rect, 10);
+    assert.deepEqual(ca.data, cb.data);
+  }
+  const na = require('../js/scanner.js').nameCrop(a, sa.H, exam.L.header.nameLineY, 10);
+  const nb = require('../js/scanner.js').nameCrop(b, sb.H, exam.L.header.nameLineY, 10);
+  assert.deepEqual(na && na.data, nb && nb.data);
+});
+
 (async () => {
   for (const [name, fn] of asyncTests) {
     try { await fn(); passed++; console.log('  ok  ' + name); }

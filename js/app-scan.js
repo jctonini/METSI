@@ -21,17 +21,18 @@
   // Procesa una lista de fotos (de la galería o bajadas de Drive), de a una, y muestra el resumen.
   // Cada elemento es un File o { name, load() } (load baja la foto recién cuando le toca, así no se juntan todas en memoria).
   async function processFiles(files, label) {
-    const tally = { added: 0, skipped: 0, discarded: 0, failed: 0 };
     const notDownloaded = [];
-    for (let i = 0; i < files.length; i++) {
-      $('status').textContent = `${label || 'Procesando'} ${i + 1} de ${files.length}…`;
-      await new Promise((r) => setTimeout(r, 20)); // deja que se actualice la pantalla
-      let file = files[i];
+    // Después de cada foto se guarda el estado: si la pestaña se cierra a mitad de la tanda, no se pierde lo ya leído.
+    const tally = await MetsiBatch.runBatch(files, async (item) => {
+      let file = item;
       if (typeof file.load === 'function') {
-        try { file = await file.load(); } catch (err) { notDownloaded.push(file.name); tally.failed++; continue; }
+        try { file = await file.load(); } catch (err) { notDownloaded.push(item.name); return 'failed'; }
       }
-      tally[await processFile(file)]++;
-    }
+      return processFile(file);
+    }, save, async (i, n) => {
+      $('status').textContent = `${label || 'Procesando'} ${i + 1} de ${n}…`;
+      await new Promise((r) => setTimeout(r, 20)); // deja que se actualice la pantalla
+    });
     const parts = [];
     if (tally.added) parts.push(`${tally.added} cargada(s)`);
     if (tally.skipped) parts.push(`${tally.skipped} omitida(s) por repetida(s)`);
@@ -96,14 +97,13 @@
   }
 
   // Firma de la letra con los recortes ubicados sobre lo impreso (casilleros y línea del nombre); si algo falla, la de ventanas fijas.
-  function makeSig(L, img, H) {
+  function makeSig(L, img, H, nc) {
     try {
       const rb = L.fields.regBoxes;
       const cropFn = (rect, ppm) => cropRegion(img, H, rect, ppm);
       if (L.version >= 2 && L.header) {
         const cells = [];
         for (let i = 0; i < rb.n; i++) cells.push(Digits.cellCrop(rb, i, cropFn));
-        const nc = nameCrop(img, H, L.header.nameLineY, 10);
         if (nc) return Similar.signatureFromCrops(cells, nc, 12 * 10, rb);
       }
     } catch (e) { /* cae a la firma simple */ }
@@ -349,10 +349,9 @@
       };
       const crop = (rect) => toUrl(cropRegion(img, scan.H, rect, 10));
       // El nombre se recorta enderezado sobre su línea impresa; si no se ve la línea, queda la ventana fija.
-      const cropName = (rect) => {
-        const nc = L.version >= 2 && L.header ? nameCrop(img, scan.H, L.header.nameLineY, 10) : null;
-        return nc ? toUrl(nc) : crop(rect);
-      };
+      // Se calcula una sola vez: lo usan el recorte que se muestra y la firma de la letra.
+      const nameC = L.version >= 2 && L.header ? nameCrop(img, scan.H, L.header.nameLineY, 10) : null;
+      const cropName = (rect) => (nameC ? toUrl(nameC) : crop(rect));
       const rects = displayRects(L);
       const sheet = {
         id, fileName: file.name, fileHash, failed: false, version: scan.version, nombre: '', registro: '', modalidad: r.modalidad,
@@ -363,7 +362,7 @@
         crops: { name: cropName(rects.name), reg: crop(rects.reg) },
         regAuto: suggestRegistro(L, img, scan.H),
         // Firma de la letra: sirve para avisar si se fotografió dos veces el mismo papel.
-        sig: makeSig(L, img, scan.H),
+        sig: makeSig(L, img, scan.H, nameC),
         // Datos para revisar más tarde (también desde otro dispositivo): homografía ya
         // escalada a la miniatura y puntajes de cada burbuja.
         scan: {
