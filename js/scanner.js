@@ -15,6 +15,15 @@
     return g;
   }
 
+  // Gris de la imagen, calculado una sola vez por foto: leer una hoja hace decenas de recortes sobre la misma
+  // imagen y cada uno volvía a convertirla entera. La clave es el objeto de la imagen, que no se modifica después de leerla.
+  const grayCache = new WeakMap();
+  function grayOf(img) {
+    let g = grayCache.get(img);
+    if (!g) { g = toGray(img); grayCache.set(img, g); }
+    return g;
+  }
+
   // Binarización adaptativa: un píxel es "tinta" si es bastante más oscuro que su entorno.
   function binarize(g, w, h, win, ratio) {
     const W = w + 1;
@@ -479,7 +488,7 @@
     const layoutFor = fixed ? () => fixed : layoutSource;
     const base = layoutFor(1);
     const { width: w, height: h } = img;
-    const g = toGray(img);
+    const g = grayOf(img);
     const win = Math.max(15, Math.round(Math.max(w, h) / 12)) | 1;
     const bin = binarize(g, w, h, win, 0.8);
     const comps = components(bin, w, h);
@@ -624,7 +633,7 @@
   // Devuelve { width, height, data } RGBA con `pxPerMm` píxeles por mm.
   function cropRegion(img, H, rect, pxPerMm) {
     const w = Math.round(rect.w * pxPerMm), h = Math.round(rect.h * pxPerMm);
-    const g = toGray(img);
+    const g = grayOf(img);
     const data = new Uint8ClampedArray(w * h * 4);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {

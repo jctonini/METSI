@@ -21,17 +21,18 @@
   // Procesa una lista de fotos (de la galería o bajadas de Drive), de a una, y muestra el resumen.
   // Cada elemento es un File o { name, load() } (load baja la foto recién cuando le toca, así no se juntan todas en memoria).
   async function processFiles(files, label) {
-    const tally = { added: 0, skipped: 0, discarded: 0, failed: 0 };
     const notDownloaded = [];
-    for (let i = 0; i < files.length; i++) {
-      $('status').textContent = `${label || 'Procesando'} ${i + 1} de ${files.length}…`;
-      await new Promise((r) => setTimeout(r, 20)); // deja que se actualice la pantalla
-      let file = files[i];
+    // Después de cada foto se guarda el estado: si la pestaña se cierra a mitad de la tanda, no se pierde lo ya leído.
+    const tally = await MetsiBatch.runBatch(files, async (item) => {
+      let file = item;
       if (typeof file.load === 'function') {
-        try { file = await file.load(); } catch (err) { notDownloaded.push(file.name); tally.failed++; continue; }
+        try { file = await file.load(); } catch (err) { notDownloaded.push(item.name); return 'failed'; }
       }
-      tally[await processFile(file)]++;
-    }
+      return processFile(file);
+    }, save, async (i, n) => {
+      $('status').textContent = `${label || 'Procesando'} ${i + 1} de ${n}…`;
+      await new Promise((r) => setTimeout(r, 20)); // deja que se actualice la pantalla
+    });
     const parts = [];
     if (tally.added) parts.push(`${tally.added} cargada(s)`);
     if (tally.skipped) parts.push(`${tally.skipped} omitida(s) por repetida(s)`);
@@ -96,14 +97,13 @@
   }
 
   // Firma de la letra con los recortes ubicados sobre lo impreso (casilleros y línea del nombre); si algo falla, la de ventanas fijas.
-  function makeSig(L, img, H) {
+  function makeSig(L, img, H, nc) {
     try {
       const rb = L.fields.regBoxes;
       const cropFn = (rect, ppm) => cropRegion(img, H, rect, ppm);
       if (L.version >= 2 && L.header) {
         const cells = [];
         for (let i = 0; i < rb.n; i++) cells.push(Digits.cellCrop(rb, i, cropFn));
-        const nc = nameCrop(img, H, L.header.nameLineY, 10);
         if (nc) return Similar.signatureFromCrops(cells, nc, 12 * 10, rb);
       }
     } catch (e) { /* cae a la firma simple */ }
@@ -264,6 +264,7 @@
     const wanted = state.sheets.filter((s) => Review.needsReview(s));
     if (!wanted.length) return;
     const sub = await App.drive.ensureSubfolder(folderId, 'a-revisar');
+    await App.drive.prime(sub); // una consulta con lo que ya hay, en vez de una por archivo
     for (const sh of wanted) {
       const mem = memory.get(sh.id);
       const rv = Review.ensure(sh);
@@ -314,7 +315,10 @@
     }
 
     let full = null; // foto reducida (1600 px) para poder mandarla a análisis si hace falta
+    let c = null; // lienzo de trabajo: se libera apenas deja de hacer falta (en el celular la memoria gráfica es limitada)
+    const release = (cv) => { if (cv) { cv.width = 0; cv.height = 0; } };
     const failSheet = (error) => {
+      release(c);
       if (full) memory.set(id, { full });
       state.sheets.push({ id, fileName: file.name, failed: true, error, answers: [], registro: '', modalidad: null, nombre: '', createdAt: now, updatedAt: now, appVersion: window.METSI_VERSION || null });
       return 'failed';
@@ -323,7 +327,7 @@
       const bmp = await loadBitmap(file);
       const bw = bmp.width || bmp.naturalWidth, bh = bmp.height || bmp.naturalHeight;
       const k = Math.min(1, MAX_SIDE / Math.max(bw, bh));
-      const c = document.createElement('canvas');
+      c = document.createElement('canvas');
       c.width = Math.round(bw * k); c.height = Math.round(bh * k);
       const ctx = c.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(bmp, 0, 0, c.width, c.height);
@@ -337,22 +341,34 @@
       const tk = Math.min(1, THUMB_SIDE / Math.max(c.width, c.height));
       t.width = Math.round(c.width * tk); t.height = Math.round(c.height * tk);
       t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+      // De la miniatura solo se conserva el JPEG comprimido (unos 100 KB); decodificada ocuparía ~2,3 MB por hoja.
+      const thumbBlob = await new Promise((res) => t.toBlob(res, 'image/jpeg', 0.8));
+      release(t); release(c);
+      if (!thumbBlob) throw new Error('sin miniatura');
       const r = interpret(scan, state.cfg.threshold, groupsOf(L));
       const p7 = (v) => Number(v.toPrecision(7));
       const p3 = (v) => Math.round(v * 1000) / 1000;
       // Recortes de lo escrito a mano (nombre y registro) para transcribirlos mirando la imagen.
+      // Estos recortes solo se muestran para transcribir lo manuscrito (la lectura y la firma de la letra salen de la
+      // foto), pero se guardan como texto en el dispositivo (~5 MB de tope) y viajan a Drive: por eso van más chicos.
       const toUrl = (cr) => {
         const cc = document.createElement('canvas');
         cc.width = cr.width; cc.height = cr.height;
         cc.getContext('2d').putImageData(new ImageData(cr.data, cr.width, cr.height), 0, 0);
-        return cc.toDataURL('image/jpeg', 0.8);
+        const sm = document.createElement('canvas');
+        sm.width = Math.round(cr.width * CROP_SCALE); sm.height = Math.round(cr.height * CROP_SCALE);
+        const sctx = sm.getContext('2d');
+        sctx.imageSmoothingQuality = 'high';
+        sctx.drawImage(cc, 0, 0, sm.width, sm.height);
+        const url = sm.toDataURL('image/jpeg', CROP_QUALITY);
+        cc.width = cc.height = sm.width = sm.height = 0;
+        return url;
       };
       const crop = (rect) => toUrl(cropRegion(img, scan.H, rect, 10));
       // El nombre se recorta enderezado sobre su línea impresa; si no se ve la línea, queda la ventana fija.
-      const cropName = (rect) => {
-        const nc = L.version >= 2 && L.header ? nameCrop(img, scan.H, L.header.nameLineY, 10) : null;
-        return nc ? toUrl(nc) : crop(rect);
-      };
+      // Se calcula una sola vez: lo usan el recorte que se muestra y la firma de la letra.
+      const nameC = L.version >= 2 && L.header ? nameCrop(img, scan.H, L.header.nameLineY, 10) : null;
+      const cropName = (rect) => (nameC ? toUrl(nameC) : crop(rect));
       const rects = displayRects(L);
       const sheet = {
         id, fileName: file.name, fileHash, failed: false, version: scan.version, nombre: '', registro: '', modalidad: r.modalidad,
@@ -363,7 +379,7 @@
         crops: { name: cropName(rects.name), reg: crop(rects.reg) },
         regAuto: suggestRegistro(L, img, scan.H),
         // Firma de la letra: sirve para avisar si se fotografió dos veces el mismo papel.
-        sig: makeSig(L, img, scan.H),
+        sig: makeSig(L, img, scan.H, nameC),
         // Datos para revisar más tarde (también desde otro dispositivo): homografía ya
         // escalada a la miniatura y puntajes de cada burbuja.
         scan: {
@@ -394,14 +410,17 @@
         });
         if (ans === 'discard') return 'discarded';
       }
-      memory.set(id, { thumb: t, full });
-      t.toBlob((b) => { if (b) Photos.put(id, b); }, 'image/jpeg', 0.8); // copia local hasta que suba a Drive
+      memory.set(id, { thumbBlob, full });
+      Photos.put(id, thumbBlob); // copia local hasta que suba a Drive (es la misma que se sube)
       state.sheets.push(sheet);
       return 'added';
     } catch (err) {
       return failSheet('No se pudo abrir la imagen.');
     }
   }
+
+  // Tamaño de los recortes guardados (nombre y registro): fracción de los 10 px/mm con que se recortan y calidad JPEG.
+  const CROP_SCALE = 0.7, CROP_QUALITY = 0.7; // medido con 80 hojas sintéticas: de 56 KB a 16 KB por hoja
 
   // Columnas de preguntas de la hoja: cada una tiene su propio nivel de fondo al interpretar.
   const groupsOf = (L) => L.ans.cols.map((c) => [c.qStart, c.qEnd]);
@@ -411,11 +430,11 @@
     return sheet.scan ? interpret(sheet.scan, state.cfg.threshold, groupsOf(buildLayout(state.cfg, sheet.version || 1))) : null;
   }
 
-  function drawOverlay(canvas, sheet, mem) {
+  function drawOverlay(canvas, sheet, bmp) {
     const L = buildLayout(state.cfg, sheet.version || 1);
-    canvas.width = mem.thumb.width; canvas.height = mem.thumb.height;
+    canvas.width = bmp.width; canvas.height = bmp.height;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(mem.thumb, 0, 0);
+    ctx.drawImage(bmp, 0, 0);
     const H = sheet.scan.H;
     const grid = sheet.scan.grid;
     const blockOf = (q) => L.ans.cols.findIndex((c) => q >= c.qStart && q < c.qEnd);
@@ -505,6 +524,201 @@
     window.scrollTo(0, y);
   }
 
+  // Arma el contenido de la tarjeta de una hoja. `ctx`: lo que se calcula una vez para todas las hojas.
+  function fillCard(card, sheet, idx, ctx) {
+    const { L, an, missingIds, hardIds } = ctx;
+    card.className = 'card' + (sheet.failed ? ' failed' : '') + (missingIds.has(sheet.id) || hardIds.has(sheet.id) ? ' missing' : '');
+    card.dataset.sheet = sheet.id;
+    const head = document.createElement('div');
+    head.className = 'card-head';
+    const pick = document.createElement('label');
+    pick.className = 'sel'; pick.title = 'Seleccionar esta hoja';
+    const pickBox = document.createElement('input');
+    pickBox.type = 'checkbox'; pickBox.checked = selection.has(sheet.id);
+    pickBox.addEventListener('change', () => { selection.toggle(sheet.id, pickBox.checked); renderBulkBar(); });
+    pick.appendChild(pickBox);
+    head.appendChild(pick);
+    const title = document.createElement('span');
+    title.innerHTML = `<b>Hoja ${idx + 1}</b> <span class="muted">${sheet.failed ? '' : 'formato V' + (sheet.version || 1) + ' · '}${escapeHtml(sheet.fileName || '')}</span>`;
+    head.appendChild(title);
+    const del = document.createElement('button');
+    del.className = 'danger small'; del.textContent = 'Quitar';
+    del.addEventListener('click', () => {
+      removeSheet(sheet.id); save(); renderCards();
+    });
+    const rv = Review.ensure(sheet);
+    const flagBtn = document.createElement('button');
+    flagBtn.type = 'button';
+    flagBtn.className = 'small flagbtn' + (rv.flag ? ' on' : '');
+    flagBtn.textContent = rv.flag ? '🚩 A revisar' : '⚑ Marcar a revisar';
+    flagBtn.title = 'Marcá esta hoja para que se analice cómo la leyó la app';
+    flagBtn.addEventListener('click', () => { rv.flag = !rv.flag; touch(sheet); renderCard(sheet.id); });
+    head.appendChild(flagBtn);
+    head.appendChild(del);
+    card.appendChild(head);
+    if (rv.flag) {
+      const note = document.createElement('textarea');
+      note.className = 'f-note'; note.rows = 2; note.maxLength = 500;
+      note.placeholder = 'Qué pasó (opcional): por ejemplo "la 12 no la leyó" o "rechazó la foto"';
+      note.value = rv.note || '';
+      note.addEventListener('change', () => { rv.note = note.value.trim(); touch(sheet); });
+      card.appendChild(note);
+    }
+    if (sheet.failed) {
+      const p = document.createElement('p');
+      p.className = 'error'; p.textContent = sheet.error;
+      card.appendChild(p);
+      if (memory.get(sheet.id) && memory.get(sheet.id).full) {
+        const send = document.createElement('button');
+        send.type = 'button'; send.className = 'small';
+        send.textContent = rv.sendImage ? '✔ La foto se enviará a análisis' : 'Enviar esta foto a análisis';
+        send.disabled = !!rv.sendImage;
+        send.title = 'Sube la foto a tu Drive (carpeta a-revisar) sin tapar nada';
+        send.addEventListener('click', () => {
+          if (!confirm('Esta foto no se pudo leer, así que no se pueden tapar el nombre ni el registro. Se va a subir a tu Drive (carpeta a-revisar) tal cual. ¿Seguir?')) return;
+          rv.flag = true; rv.sendImage = true; touch(sheet); renderCard(sheet.id);
+        });
+        card.appendChild(send);
+      }
+      return;
+    }
+    const r = flagsFor(sheet);
+    const score = scoreOf(sheet);
+    const fields = document.createElement('div');
+    fields.className = 'grid fields';
+    const hasCrops = sheet.crops && sheet.crops.reg;
+    fields.innerHTML = `
+      ${hasCrops ? `<div class="crops wide"><img alt="Nombre escrito" src="${safeImageUrl(sheet.crops.name)}"><img alt="Registro escrito" src="${safeImageUrl(sheet.crops.reg)}"></div>` : ''}
+      ${regSuggestHtml(sheet)}
+      <label>Nombre y apellido <input type="text" class="f-name ${missingIds.has(sheet.id) ? 'warn' : ''}" placeholder="nombre o registro: hace falta uno" value="${escapeHtml(sheet.nombre || '')}"></label>
+      <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
+      <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
+        L.modalidades.map((m, i) => `<option value="${i}" ${sheet.modalidad === i ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></label>
+      <label class="wide">Comentario <input type="text" class="f-comment" maxlength="300" list="comment-ideas" placeholder="para vos (opcional): por ejemplo, corregida a mano" value="${escapeHtml(sheet.comentario || '')}"></label>
+      <div class="score">Puntaje <b>${fmt(score.total)}</b> / ${fmt(score.max)}</div>`;
+    card.appendChild(fields);
+    const afterIdChange = async () => {
+      const res = await resolveConflicts(sheet);
+      renderCards(); // el nombre o el registro pueden cambiar los avisos de otras hojas
+      if (res === 'edit') focusSheet(sheet.id);
+    };
+    fields.querySelector('.f-name').addEventListener('change', (e) => { sheet.nombre = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
+    fields.querySelector('.f-reg').addEventListener('change', (e) => { sheet.registro = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
+    const useReg = fields.querySelector('.reg-use');
+    if (useReg) useReg.addEventListener('click', () => {
+      const sure = regSure(sheet.regAuto);
+      sheet.registro = sheet.regAuto.text; // un hueco entre dígitos queda como «?» para que se vea que falta
+      clearAck(sheet); touch(sheet);
+      afterIdChange().then(() => { if (!sure) focusSheet(sheet.id); }); // con dudas: deja el cursor en el campo para revisar
+    });
+    fields.querySelector('.f-comment').addEventListener('change', (e) => { sheet.comentario = e.target.value.trim(); touch(sheet); });
+    fields.querySelector('.f-mod').addEventListener('change', (e) => {
+      sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); touch(sheet);
+    });
+
+    const rows = document.createElement('div');
+    rows.className = 'answers';
+    for (let q = 0; q < L.numQuestions; q++) {
+      const row = document.createElement('div');
+      const f = r && r.flags[q];
+      const edited = !!sheet.autoAnswers && Review.editedQuestions({ answers: [sheet.answers[q]], autoAnswers: [sheet.autoAnswers[q] || []] }).length > 0;
+      const flaggedQ = !!(rv.q && rv.q[q]);
+      row.className = 'ans-row' + (f && f.dubious ? ' dubious' : '') + (sheet.answers[q].length === 0 ? ' blank' : '') + (flaggedQ ? ' flagged' : '');
+      row.innerHTML = `<span class="qnum">${q + 1}</span>`;
+      for (let o = 0; o < L.numOptions; o++) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip' + (sheet.answers[q].includes(o) ? ' on' : '');
+        chip.textContent = LETTERS[o];
+        chip.addEventListener('click', () => {
+          const a = sheet.answers[q];
+          sheet.answers[q] = a.includes(o) ? a.filter((x) => x !== o) : [...a, o].sort();
+          touch(sheet); renderCard(sheet.id);
+        });
+        row.appendChild(chip);
+      }
+      const pq = score.perQuestion[q];
+      const pt = document.createElement('span');
+      pt.className = 'qpts'; pt.textContent = `${fmt(pq.earned)}/${fmt(pq.max)}`;
+      row.appendChild(pt);
+      if (edited) {
+        const ed = document.createElement('span');
+        ed.className = 'edited'; ed.textContent = '✎'; ed.title = 'Corregida a mano (la app había leído otra cosa)';
+        row.appendChild(ed);
+      }
+      const fl = document.createElement('button');
+      fl.type = 'button'; fl.className = 'qflag' + (flaggedQ ? ' on' : '');
+      fl.textContent = '🚩'; fl.title = flaggedQ ? 'Quitar la bandera de esta pregunta' : 'Marcar esta pregunta a revisar (la app no la leyó bien)';
+      fl.addEventListener('click', () => { rv.q[q] = !flaggedQ; if (rv.q[q]) rv.flag = true; touch(sheet); renderCard(sheet.id); });
+      row.appendChild(fl);
+      rows.appendChild(row);
+    }
+    card.appendChild(rows);
+
+    if (sheet.scan && (memory.get(sheet.id) || sheet.photoId)) {
+      const det = document.createElement('details');
+      det.innerHTML = '<summary>Ver foto con lo detectado</summary>';
+      const canvas = document.createElement('canvas');
+      canvas.className = 'photo';
+      const msg = document.createElement('p');
+      msg.className = 'muted';
+      det.appendChild(msg);
+      det.appendChild(canvas);
+      det.addEventListener('toggle', async () => {
+        if (!det.open) { canvas.width = 0; canvas.height = 0; return; } // al cerrar se libera la imagen decodificada
+        try {
+          let mem = memory.get(sheet.id);
+          if (!mem || !mem.thumbBlob) {
+            msg.textContent = 'Descargando la foto desde Drive…';
+            mem = await App.fetchPhoto(sheet);
+          }
+          msg.textContent = '';
+          const bmp = await createImageBitmap(mem.thumbBlob); // se decodifica recién ahora
+          try { if (det.open) drawOverlay(canvas, sheet, bmp); } finally { if (bmp.close) bmp.close(); }
+        } catch (e) { msg.textContent = 'No se pudo traer la foto: ' + e.message; }
+      });
+      card.appendChild(det);
+    }
+    const warn = [];
+    if (r && r.modalidadProblem) warn.push(r.modalidadWeak ? 'modalidad marcada con X o tilde: confirmá que sea la correcta' : r.modalidad === null ? 'modalidad sin marcar bien (¿tilde o cruz?): elegila vos' : 'revisá la modalidad');
+    const nr = sheet.answers.filter((a) => a.length === 0).length;
+    if (nr) warn.push(`${nr} pregunta(s) sin marcar`);
+    const nd = r ? r.flags.filter((f) => f.dubious).length : 0;
+    if (nd) warn.push(`${nd} pregunta(s) con marcas dudosas`);
+    if (missingIds.has(sheet.id)) {
+      const w = document.createElement('p');
+      w.className = 'warn-text'; w.textContent = '⛔ Falta el nombre o el registro: cargá al menos uno para poder exportar.';
+      card.insertBefore(w, rows);
+    }
+    for (const c of Identity.softFor(sheet, state.sheets, an)) {
+      const w = document.createElement('p');
+      w.className = 'muted'; w.textContent = `ℹ Mismo nombre que la Hoja ${sheetNumber(c.other)}, con otro registro (${c.other.registro}). Puede ser un homónimo.`;
+      card.insertBefore(w, rows);
+    }
+    if (warn.length) {
+      const w = document.createElement('p');
+      w.className = 'warn-text'; w.textContent = '⚠ ' + warn.join(' · ');
+      card.insertBefore(w, rows);
+    }
+  }
+
+  // Redibuja solo la tarjeta de una hoja (tocar una burbuja, marcar a revisar). Con 80 hojas, redibujar todas
+  // en cada toque tardaba cientos de milisegundos en una PC. Si cambia lo que afecta a otras hojas (nombre,
+  // registro, quitar una hoja) se usa renderCards().
+  function renderCard(id) {
+    const box = $('cards');
+    const old = box && [...box.children].find((el) => el.dataset && el.dataset.sheet === id);
+    const idx = state.sheets.findIndex((x) => x.id === id);
+    if (!old || idx < 0) { renderCards(); return; }
+    const an = Identity.analyze(state.sheets);
+    const ctx = { L: layout(), an, missingIds: new Set(an.missing.map((x) => x.id)), hardIds: new Set(an.hard.flatMap((c) => [c.a.id, c.b.id])) };
+    const card = document.createElement('div');
+    fillCard(card, state.sheets[idx], idx, ctx);
+    const y = window.scrollY;
+    old.replaceWith(card);
+    window.scrollTo(0, y);
+  }
+
   function renderCardsNow() {
     renderBulkBar();
     const box = $('cards');
@@ -519,184 +733,14 @@
       rs.hidden = !ra.cells;
       if (ra.cells) rs.textContent = `Lectura automática del registro: acertó ${ra.hit} de ${ra.cells} casilleros (${Math.round(100 * ra.hit / ra.cells)} %) en las ${ra.sheets} hoja(s) que ya cargaste.`;
     }
+    const ctx = { L, an, missingIds, hardIds };
     state.sheets.forEach((sheet, idx) => {
       const card = document.createElement('div');
-      card.className = 'card' + (sheet.failed ? ' failed' : '') + (missingIds.has(sheet.id) || hardIds.has(sheet.id) ? ' missing' : '');
-      card.dataset.sheet = sheet.id;
       box.appendChild(card);
-      const head = document.createElement('div');
-      head.className = 'card-head';
-      const pick = document.createElement('label');
-      pick.className = 'sel'; pick.title = 'Seleccionar esta hoja';
-      const pickBox = document.createElement('input');
-      pickBox.type = 'checkbox'; pickBox.checked = selection.has(sheet.id);
-      pickBox.addEventListener('change', () => { selection.toggle(sheet.id, pickBox.checked); renderBulkBar(); });
-      pick.appendChild(pickBox);
-      head.appendChild(pick);
-      const title = document.createElement('span');
-      title.innerHTML = `<b>Hoja ${idx + 1}</b> <span class="muted">${sheet.failed ? '' : 'formato V' + (sheet.version || 1) + ' · '}${escapeHtml(sheet.fileName || '')}</span>`;
-      head.appendChild(title);
-      const del = document.createElement('button');
-      del.className = 'danger small'; del.textContent = 'Quitar';
-      del.addEventListener('click', () => {
-        removeSheet(sheet.id); save(); renderCards();
-      });
-      const rv = Review.ensure(sheet);
-      const flagBtn = document.createElement('button');
-      flagBtn.type = 'button';
-      flagBtn.className = 'small flagbtn' + (rv.flag ? ' on' : '');
-      flagBtn.textContent = rv.flag ? '🚩 A revisar' : '⚑ Marcar a revisar';
-      flagBtn.title = 'Marcá esta hoja para que se analice cómo la leyó la app';
-      flagBtn.addEventListener('click', () => { rv.flag = !rv.flag; touch(sheet); renderCards(); });
-      head.appendChild(flagBtn);
-      head.appendChild(del);
-      card.appendChild(head);
-      if (rv.flag) {
-        const note = document.createElement('textarea');
-        note.className = 'f-note'; note.rows = 2; note.maxLength = 500;
-        note.placeholder = 'Qué pasó (opcional): por ejemplo "la 12 no la leyó" o "rechazó la foto"';
-        note.value = rv.note || '';
-        note.addEventListener('change', () => { rv.note = note.value.trim(); touch(sheet); });
-        card.appendChild(note);
-      }
-      if (sheet.failed) {
-        const p = document.createElement('p');
-        p.className = 'error'; p.textContent = sheet.error;
-        card.appendChild(p);
-        if (memory.get(sheet.id) && memory.get(sheet.id).full) {
-          const send = document.createElement('button');
-          send.type = 'button'; send.className = 'small';
-          send.textContent = rv.sendImage ? '✔ La foto se enviará a análisis' : 'Enviar esta foto a análisis';
-          send.disabled = !!rv.sendImage;
-          send.title = 'Sube la foto a tu Drive (carpeta a-revisar) sin tapar nada';
-          send.addEventListener('click', () => {
-            if (!confirm('Esta foto no se pudo leer, así que no se pueden tapar el nombre ni el registro. Se va a subir a tu Drive (carpeta a-revisar) tal cual. ¿Seguir?')) return;
-            rv.flag = true; rv.sendImage = true; touch(sheet); renderCards();
-          });
-          card.appendChild(send);
-        }
-        return;
-      }
-      const r = flagsFor(sheet);
-      const score = scoreOf(sheet);
-      const fields = document.createElement('div');
-      fields.className = 'grid fields';
-      const hasCrops = sheet.crops && sheet.crops.reg;
-      fields.innerHTML = `
-        ${hasCrops ? `<div class="crops wide"><img alt="Nombre escrito" src="${safeImageUrl(sheet.crops.name)}"><img alt="Registro escrito" src="${safeImageUrl(sheet.crops.reg)}"></div>` : ''}
-        ${regSuggestHtml(sheet)}
-        <label>Nombre y apellido <input type="text" class="f-name ${missingIds.has(sheet.id) ? 'warn' : ''}" placeholder="nombre o registro: hace falta uno" value="${escapeHtml(sheet.nombre || '')}"></label>
-        <label>N° de registro <input type="text" class="f-reg ${missingIds.has(sheet.id) ? 'warn' : ''}" inputmode="numeric" placeholder="escribilo mirando la imagen" value="${escapeHtml(sheet.registro)}"></label>
-        <label>Modalidad <select class="f-mod ${r && r.modalidadProblem ? 'warn' : ''}"><option value="">— sin dato —</option>${
-          L.modalidades.map((m, i) => `<option value="${i}" ${sheet.modalidad === i ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></label>
-        <label class="wide">Comentario <input type="text" class="f-comment" maxlength="300" list="comment-ideas" placeholder="para vos (opcional): por ejemplo, corregida a mano" value="${escapeHtml(sheet.comentario || '')}"></label>
-        <div class="score">Puntaje <b>${fmt(score.total)}</b> / ${fmt(score.max)}</div>`;
-      card.appendChild(fields);
-      const afterIdChange = async () => {
-        const res = await resolveConflicts(sheet);
-        renderCards();
-        if (res === 'edit') focusSheet(sheet.id);
-      };
-      fields.querySelector('.f-name').addEventListener('change', (e) => { sheet.nombre = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
-      fields.querySelector('.f-reg').addEventListener('change', (e) => { sheet.registro = e.target.value.trim(); clearAck(sheet); touch(sheet); afterIdChange(); });
-      const useReg = fields.querySelector('.reg-use');
-      if (useReg) useReg.addEventListener('click', () => {
-        const sure = regSure(sheet.regAuto);
-        sheet.registro = sheet.regAuto.text; // un hueco entre dígitos queda como «?» para que se vea que falta
-        clearAck(sheet); touch(sheet);
-        afterIdChange().then(() => { if (!sure) focusSheet(sheet.id); }); // con dudas: deja el cursor en el campo para revisar
-      });
-      fields.querySelector('.f-comment').addEventListener('change', (e) => { sheet.comentario = e.target.value.trim(); touch(sheet); });
-      fields.querySelector('.f-mod').addEventListener('change', (e) => {
-        sheet.modalidad = e.target.value === '' ? null : Number(e.target.value); touch(sheet);
-      });
-
-      const rows = document.createElement('div');
-      rows.className = 'answers';
-      for (let q = 0; q < L.numQuestions; q++) {
-        const row = document.createElement('div');
-        const f = r && r.flags[q];
-        const edited = !!sheet.autoAnswers && Review.editedQuestions({ answers: [sheet.answers[q]], autoAnswers: [sheet.autoAnswers[q] || []] }).length > 0;
-        const flaggedQ = !!(rv.q && rv.q[q]);
-        row.className = 'ans-row' + (f && f.dubious ? ' dubious' : '') + (sheet.answers[q].length === 0 ? ' blank' : '') + (flaggedQ ? ' flagged' : '');
-        row.innerHTML = `<span class="qnum">${q + 1}</span>`;
-        for (let o = 0; o < L.numOptions; o++) {
-          const chip = document.createElement('button');
-          chip.type = 'button';
-          chip.className = 'chip' + (sheet.answers[q].includes(o) ? ' on' : '');
-          chip.textContent = LETTERS[o];
-          chip.addEventListener('click', () => {
-            const a = sheet.answers[q];
-            sheet.answers[q] = a.includes(o) ? a.filter((x) => x !== o) : [...a, o].sort();
-            touch(sheet); renderCards();
-          });
-          row.appendChild(chip);
-        }
-        const pq = score.perQuestion[q];
-        const pt = document.createElement('span');
-        pt.className = 'qpts'; pt.textContent = `${fmt(pq.earned)}/${fmt(pq.max)}`;
-        row.appendChild(pt);
-        if (edited) {
-          const ed = document.createElement('span');
-          ed.className = 'edited'; ed.textContent = '✎'; ed.title = 'Corregida a mano (la app había leído otra cosa)';
-          row.appendChild(ed);
-        }
-        const fl = document.createElement('button');
-        fl.type = 'button'; fl.className = 'qflag' + (flaggedQ ? ' on' : '');
-        fl.textContent = '🚩'; fl.title = flaggedQ ? 'Quitar la bandera de esta pregunta' : 'Marcar esta pregunta a revisar (la app no la leyó bien)';
-        fl.addEventListener('click', () => { rv.q[q] = !flaggedQ; if (rv.q[q]) rv.flag = true; touch(sheet); renderCards(); });
-        row.appendChild(fl);
-        rows.appendChild(row);
-      }
-      card.appendChild(rows);
-
-      if (sheet.scan && (memory.get(sheet.id) || sheet.photoId)) {
-        const det = document.createElement('details');
-        det.innerHTML = '<summary>Ver foto con lo detectado</summary>';
-        const canvas = document.createElement('canvas');
-        canvas.className = 'photo';
-        const msg = document.createElement('p');
-        msg.className = 'muted';
-        det.appendChild(msg);
-        det.appendChild(canvas);
-        det.addEventListener('toggle', async () => {
-          if (!det.open) return;
-          try {
-            let mem = memory.get(sheet.id);
-            if (!mem) {
-              msg.textContent = 'Descargando la foto desde Drive…';
-              mem = await App.fetchPhoto(sheet);
-            }
-            msg.textContent = '';
-            drawOverlay(canvas, sheet, mem);
-          } catch (e) { msg.textContent = 'No se pudo traer la foto: ' + e.message; }
-        });
-        card.appendChild(det);
-      }
-      const warn = [];
-      if (r && r.modalidadProblem) warn.push(r.modalidadWeak ? 'modalidad marcada con X o tilde: confirmá que sea la correcta' : r.modalidad === null ? 'modalidad sin marcar bien (¿tilde o cruz?): elegila vos' : 'revisá la modalidad');
-      const nr = sheet.answers.filter((a) => a.length === 0).length;
-      if (nr) warn.push(`${nr} pregunta(s) sin marcar`);
-      const nd = r ? r.flags.filter((f) => f.dubious).length : 0;
-      if (nd) warn.push(`${nd} pregunta(s) con marcas dudosas`);
-      if (missingIds.has(sheet.id)) {
-        const w = document.createElement('p');
-        w.className = 'warn-text'; w.textContent = '⛔ Falta el nombre o el registro: cargá al menos uno para poder exportar.';
-        card.insertBefore(w, rows);
-      }
-      for (const c of Identity.softFor(sheet, state.sheets, an)) {
-        const w = document.createElement('p');
-        w.className = 'muted'; w.textContent = `ℹ Mismo nombre que la Hoja ${sheetNumber(c.other)}, con otro registro (${c.other.registro}). Puede ser un homónimo.`;
-        card.insertBefore(w, rows);
-      }
-      if (warn.length) {
-        const w = document.createElement('p');
-        w.className = 'warn-text'; w.textContent = '⚠ ' + warn.join(' · ');
-        card.insertBefore(w, rows);
-      }
+      fillCard(card, sheet, idx, ctx);
     });
     if (!state.sheets.length) box.innerHTML = '<p class="muted">Todavía no cargaste ninguna hoja.</p>';
   }
 
-  Object.assign(App, { processFiles, renderCards, renderBanner, renderReviewPanel, isBlocked, exportBlockers, loadBitmap, syncCases });
+  Object.assign(App, { processFiles, renderCards, renderCard, renderBanner, renderReviewPanel, isBlocked, exportBlockers, loadBitmap, syncCases });
 })();

@@ -810,6 +810,22 @@ test('letra: dos hojas distintas no se confunden', () => {
   for (let a = 1; a <= 8; a++) for (let b = a + 1; b <= 8; b++) max = Math.max(max, SIM.compare(fakeSig(a), fakeSig(b)).score);
   assert.ok(max < 0.4, 'el parecido máximo entre hojas distintas fue ' + max);
 });
+test('letra: el descarte a mitad de resolución no cambia el veredicto (METSI-30)', () => {
+  const sigs = [];
+  for (let a = 1; a <= 8; a++) {
+    sigs.push(fakeSig(a));
+    sigs.push(fakeSig(a, { dx: (a % 3) - 1, dy: 1 - (a % 2) })); // la misma hoja corrida y con ruido
+    sigs.push(fakeSig(a, { dx: 3, dy: -1 })); // corrimiento grande (en el nombre son 6 px)
+  }
+  let pairs = 0, same = 0;
+  for (let i = 0; i < sigs.length; i++) for (let j = i + 1; j < sigs.length; j++) {
+    const fast = SIM.compare(sigs[i], sigs[j]), exact = SIM.compare(sigs[i], sigs[j], { exact: true });
+    pairs++;
+    for (const thr of [SIM.SIMILAR_THRESHOLD, 0.75]) assert.equal(fast.score >= thr, exact.score >= thr, `veredicto distinto en el par ${i}-${j} con umbral ${thr}`);
+    if (exact.score >= SIM.SIMILAR_THRESHOLD) { same++; assert.equal(fast.score, exact.score, 'si se parecen, el valor tiene que ser el exacto'); }
+  }
+  assert.ok(same >= 8, 'tiene que haber pares de la misma hoja para que la prueba valga (' + same + ' de ' + pairs + ')');
+});
 test('letra: sin tinta no se puede comparar (null)', () => {
   const empty = SIM.makeSignature({ n: 7, w: 22, h: 26, bits: new Uint8Array(7 * 22 * 26) }, null);
   assert.equal(SIM.compare(empty, fakeSig(1)).score, null);
@@ -901,6 +917,84 @@ atest('drive: sin credenciales devuelve 401 con status', async () => {
   const mock = createMockDrive();
   const d = createDrive({ fetch: (u, o) => mock.fetch(u, { ...o, headers: {} }), getToken: async () => 'tok' });
   await assert.rejects(() => d.ensureRootFolder(), (e) => e.status === 401);
+});
+
+// ---------- Drive: menos pedidos (METSI-33) ----------
+const { mapLimit } = require('../js/batch.js');
+const lists = (mock) => mock.log.filter((l) => /^GET \/drive\/v3\/files\?q=/.test(l)).length;
+const downloads = (mock) => mock.log.filter((l) => /alt=media/.test(l)).length;
+async function driveWithFolder() {
+  const mock = createMockDrive();
+  const d = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' });
+  const root = await d.ensureRootFolder();
+  const folder = await d.createExamFolder(root, 'e1', 'Examen');
+  return { mock, d, folder };
+}
+atest('drive: una vez conocida la carpeta, sincronizar de nuevo no busca ni baja nada de más', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.prime(folder);
+  const first = await d.upsertFileInfo(folder, 'datos.json', 'application/json', '{"a":1}', {});
+  assert.ok(first.md5Checksum, 'Drive informa la huella de lo que quedó');
+  mock.log.length = 0;
+  // segunda sincronización sin cambios de otro equipo: se mira la huella, no se baja el archivo
+  const got = await d.readJsonIfChanged(folder, 'datos.json', first.md5Checksum);
+  assert.equal(got.changed, false);
+  const second = await d.upsertFileInfo(folder, 'datos.json', 'application/json', '{"a":2}', {});
+  await d.upsertFileInfo(folder, 'resultados.csv', 'text/csv', 'x', {});
+  assert.equal(lists(mock), 0, 'ninguna búsqueda por nombre: ' + mock.log.join(' | '));
+  assert.equal(downloads(mock), 0, 'no se bajó datos.json');
+  assert.notEqual(second.md5Checksum, first.md5Checksum);
+});
+atest('drive: si otro equipo cambió datos.json, sí se baja', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  const mine = await d.upsertFileInfo(folder, 'datos.json', 'application/json', '{"de":"yo"}', {});
+  const other = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' }); // otro dispositivo
+  await other.upsertFileInfo(folder, 'datos.json', 'application/json', '{"de":"otro"}', {});
+  const got = await d.readJsonIfChanged(folder, 'datos.json', mine.md5Checksum);
+  assert.equal(got.changed, true);
+  assert.deepEqual(got.data, { de: 'otro' });
+});
+atest('drive: subir muchas fotos nuevas no hace una búsqueda por cada una', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.prime(folder);
+  mock.log.length = 0;
+  for (let i = 0; i < 12; i++) await d.upsertFile(folder, `hoja-${i}.jpg`, 'image/jpeg', new Blob([Buffer.from([i])]), {});
+  assert.equal(lists(mock), 0);
+  assert.equal([...mock.files.values()].filter((f) => /^hoja-/.test(f.name)).length, 12);
+});
+atest('drive: el prime reconoce lo que ya había y no lo duplica', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.upsertFile(folder, 'hoja-1.jpg', 'image/jpeg', new Blob([Buffer.from([1])]), {});
+  const again = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' }); // sesión nueva: no recuerda nada
+  await again.prime(folder);
+  await again.upsertFile(folder, 'hoja-1.jpg', 'image/jpeg', new Blob([Buffer.from([2])]), {});
+  assert.equal([...mock.files.values()].filter((f) => f.name === 'hoja-1.jpg').length, 1);
+});
+atest('drive: si borraron el archivo por fuera, se crea de nuevo; y forget vuelve a buscar', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.prime(folder);
+  const a = await d.upsertFile(folder, 'datos.json', 'application/json', '{}', {});
+  mock.files.delete(a); // alguien lo borró en Drive
+  const b = await d.upsertFile(folder, 'datos.json', 'application/json', '{"n":1}', {});
+  assert.notEqual(b, a);
+  assert.deepEqual(await d.readJson(folder, 'datos.json'), { n: 1 });
+  d.forget(folder);
+  mock.log.length = 0;
+  await d.upsertFile(folder, 'datos.json', 'application/json', '{"n":2}', {});
+  assert.equal(lists(mock), 1, 'después de forget vuelve a buscar el archivo');
+  d.forgetAll();
+  await d.prime(folder);
+  mock.log.length = 0;
+  await d.upsertFile(folder, 'datos.json', 'application/json', '{"n":3}', {});
+  assert.equal(lists(mock), 0, 'prime después de forgetAll vuelve a recordar sin buscar por nombre');
+});
+atest('subidas en paralelo: nunca más de 3 a la vez, y un error frena las que faltan', async () => {
+  let running = 0, peak = 0, started = 0;
+  await mapLimit(Array.from({ length: 10 }, (_, i) => i), 3, async () => { started++; running++; peak = Math.max(peak, running); await new Promise((r) => setTimeout(r, 5)); running--; });
+  assert.equal(started, 10); assert.equal(peak, 3);
+  started = 0;
+  await assert.rejects(() => mapLimit(Array.from({ length: 20 }, (_, i) => i), 3, async (i) => { started++; await new Promise((r) => setTimeout(r, 2)); if (i === 4) throw new Error('corte'); }), /corte/);
+  assert.ok(started < 20, 'después del error no se siguen empezando subidas (' + started + ')');
 });
 
 // ---------- calibración con casos reales (tools/calibrar.js) ----------
@@ -1298,6 +1392,66 @@ test('casos a revisar: no incluyen el registro leído ni el cargado', () => {
   const out = JSON.stringify(REV.buildCases([s], { letters: 'ABCD', exam: {} }));
   assert.equal(out.includes('9876543'), false);
   assert.equal(out.includes('regAuto'), false);
+});
+
+// ---------- tanda de fotos: guardado tras cada una (METSI-28) y gris compartido (METSI-29) ----------
+const { runBatch } = require('../js/batch.js');
+atest('tanda: se guarda después de cada foto, así un corte a mitad no pierde lo ya leído', async () => {
+  const sheets = [], saved = [];
+  const save = () => saved.push(sheets.length); // lo que quedaría guardado en ese momento
+  const tally = await runBatch(['a', 'b', 'c', 'd'], async (item, i) => {
+    if (i === 3) throw new Error('la pestaña se cerró'); // corte en la cuarta foto
+    sheets.push(item); return 'added';
+  }, save);
+  assert.deepEqual(saved, [1, 2, 3, 3], 'tras cada foto el guardado ya incluye las hojas anteriores');
+  assert.equal(tally.added, 3);
+  assert.equal(tally.failed, 1, 'un error en una foto no frena a las demás');
+});
+atest('tanda: cuenta cada resultado y avisa el progreso', async () => {
+  const prog = [];
+  const res = ['added', 'skipped', 'discarded', 'added'];
+  const tally = await runBatch(res, async (r) => r, () => {}, (i, n) => prog.push([i, n]));
+  assert.deepEqual(tally, { added: 2, skipped: 1, discarded: 1, failed: 0 });
+  assert.deepEqual(prog, [[0, 4], [1, 4], [2, 4], [3, 4]]);
+});
+test('lectura: reutilizar el gris da exactamente los mismos recortes y la misma lectura', () => {
+  const exam = makeExam({ numQuestions: 20, numOptions: 5, regDigits: 7, modalidades: ['A', 'B'] }, 31);
+  const a = renderPhoto(exam.L, exam.marks, { seed: 31 });
+  const b = { width: a.width, height: a.height, data: Uint8ClampedArray.from(a.data) }; // copia: no comparte el gris guardado
+  const sa = scanImage(a, exam.layoutFor), sb = scanImage(b, exam.layoutFor);
+  assert.deepEqual(sa.scores, sb.scores);
+  const rect = { x: 14, y: 18, w: 124, h: 30 };
+  for (let k = 0; k < 3; k++) { // la segunda y tercera vez ya usan el gris guardado
+    const ca = cropRegion(a, sa.H, rect, 10), cb = cropRegion(b, sb.H, rect, 10);
+    assert.deepEqual(ca.data, cb.data);
+  }
+  const na = require('../js/scanner.js').nameCrop(a, sa.H, exam.L.header.nameLineY, 10);
+  const nb = require('../js/scanner.js').nameCrop(b, sb.H, exam.L.header.nameLineY, 10);
+  assert.deepEqual(na && na.data, nb && nb.data);
+});
+
+// ---------- guardado diferido (METSI-32) ----------
+test('guardado diferido: varios pedidos seguidos se agrupan en un solo guardado', () => {
+  const { createDeferred } = require('../js/storage.js');
+  const queue = []; let n = 0;
+  const fake = { setTimeout: (f) => { queue.push(f); return queue.length; }, clearTimeout: (h) => { queue[h - 1] = null; } };
+  const d = createDeferred(() => { n++; }, 400, fake);
+  d.schedule(); d.schedule(); d.schedule();
+  assert.equal(queue.length, 1, 'un solo temporizador');
+  assert.equal(d.pending(), true); assert.equal(n, 0, 'todavía no guardó');
+  queue[0](); // pasan los 0,4 s
+  assert.equal(n, 1); assert.equal(d.pending(), false);
+  d.schedule(); assert.equal(queue.length, 2, 'después de guardar se puede volver a pedir');
+});
+test('guardado diferido: flush guarda ya (al cerrar la página) y cancel descarta', () => {
+  const { createDeferred } = require('../js/storage.js');
+  const queue = []; let n = 0;
+  const fake = { setTimeout: (f) => { queue.push(f); return queue.length; }, clearTimeout: (h) => { queue[h - 1] = null; } };
+  const d = createDeferred(() => { n++; }, 400, fake);
+  d.flush(); assert.equal(n, 0, 'sin nada pendiente no guarda');
+  d.schedule(); d.flush(); assert.equal(n, 1, 'con algo pendiente guarda ya');
+  assert.equal(queue[0], null, 'y el temporizador se canceló: no guarda dos veces');
+  d.schedule(); d.cancel(); assert.equal(d.pending(), false); assert.equal(queue[1], null);
 });
 
 (async () => {
