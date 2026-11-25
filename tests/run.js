@@ -810,6 +810,22 @@ test('letra: dos hojas distintas no se confunden', () => {
   for (let a = 1; a <= 8; a++) for (let b = a + 1; b <= 8; b++) max = Math.max(max, SIM.compare(fakeSig(a), fakeSig(b)).score);
   assert.ok(max < 0.4, 'el parecido máximo entre hojas distintas fue ' + max);
 });
+test('letra: el descarte a mitad de resolución no cambia el veredicto (METSI-30)', () => {
+  const sigs = [];
+  for (let a = 1; a <= 8; a++) {
+    sigs.push(fakeSig(a));
+    sigs.push(fakeSig(a, { dx: (a % 3) - 1, dy: 1 - (a % 2) })); // la misma hoja corrida y con ruido
+    sigs.push(fakeSig(a, { dx: 3, dy: -1 })); // corrimiento grande (en el nombre son 6 px)
+  }
+  let pairs = 0, same = 0;
+  for (let i = 0; i < sigs.length; i++) for (let j = i + 1; j < sigs.length; j++) {
+    const fast = SIM.compare(sigs[i], sigs[j]), exact = SIM.compare(sigs[i], sigs[j], { exact: true });
+    pairs++;
+    for (const thr of [SIM.SIMILAR_THRESHOLD, 0.75]) assert.equal(fast.score >= thr, exact.score >= thr, `veredicto distinto en el par ${i}-${j} con umbral ${thr}`);
+    if (exact.score >= SIM.SIMILAR_THRESHOLD) { same++; assert.equal(fast.score, exact.score, 'si se parecen, el valor tiene que ser el exacto'); }
+  }
+  assert.ok(same >= 8, 'tiene que haber pares de la misma hoja para que la prueba valga (' + same + ' de ' + pairs + ')');
+});
 test('letra: sin tinta no se puede comparar (null)', () => {
   const empty = SIM.makeSignature({ n: 7, w: 22, h: 26, bits: new Uint8Array(7 * 22 * 26) }, null);
   assert.equal(SIM.compare(empty, fakeSig(1)).score, null);
