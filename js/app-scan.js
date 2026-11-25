@@ -348,11 +348,20 @@
       const p7 = (v) => Number(v.toPrecision(7));
       const p3 = (v) => Math.round(v * 1000) / 1000;
       // Recortes de lo escrito a mano (nombre y registro) para transcribirlos mirando la imagen.
+      // Estos recortes solo se muestran para transcribir lo manuscrito (la lectura y la firma de la letra salen de la
+      // foto), pero se guardan como texto en el dispositivo (~5 MB de tope) y viajan a Drive: por eso van más chicos.
       const toUrl = (cr) => {
         const cc = document.createElement('canvas');
         cc.width = cr.width; cc.height = cr.height;
         cc.getContext('2d').putImageData(new ImageData(cr.data, cr.width, cr.height), 0, 0);
-        return cc.toDataURL('image/jpeg', 0.8);
+        const sm = document.createElement('canvas');
+        sm.width = Math.round(cr.width * CROP_SCALE); sm.height = Math.round(cr.height * CROP_SCALE);
+        const sctx = sm.getContext('2d');
+        sctx.imageSmoothingQuality = 'high';
+        sctx.drawImage(cc, 0, 0, sm.width, sm.height);
+        const url = sm.toDataURL('image/jpeg', CROP_QUALITY);
+        cc.width = cc.height = sm.width = sm.height = 0;
+        return url;
       };
       const crop = (rect) => toUrl(cropRegion(img, scan.H, rect, 10));
       // El nombre se recorta enderezado sobre su línea impresa; si no se ve la línea, queda la ventana fija.
@@ -408,6 +417,9 @@
       return failSheet('No se pudo abrir la imagen.');
     }
   }
+
+  // Tamaño de los recortes guardados (nombre y registro): fracción de los 10 px/mm con que se recortan y calidad JPEG.
+  const CROP_SCALE = 0.7, CROP_QUALITY = 0.7; // medido con 80 hojas sintéticas: de 56 KB a 16 KB por hoja
 
   // Columnas de preguntas de la hoja: cada una tiene su propio nivel de fondo al interpretar.
   const groupsOf = (L) => L.ans.cols.map((c) => [c.qStart, c.qEnd]);
