@@ -69,14 +69,21 @@
     setItem: (text) => localStorage.setItem(STORAGE_KEY, text),
     onChange: (ok) => { const el = $('storage-warn'); if (el) el.hidden = ok; },
   });
+  // Guarda ya. Cancela el guardado diferido que hubiera pendiente (este lo incluye).
   function save() {
+    deferredSave.cancel();
     // Si cambió la configuración o la clave, se marca como modificada (para la sincronización).
     const h = JSON.stringify([state.cfg, state.key]);
     if (h !== state.cfgHash) { state.cfgHash = h; state.cfgUpdatedAt = Date.now(); }
     saver.write(JSON.stringify(state)); // si falla (almacenamiento lleno), muestra un aviso
     if (App.updateSyncBar) App.updateSyncBar();
   }
-  const touch = (sheet) => { sheet.updatedAt = Date.now(); save(); };
+  // Un toque en una burbuja o un campo no reescribe todo el estado (varios MB con 80 hojas) cada vez: se agrupa
+  // en un guardado a los 0,4 s, y se completa apenas la página se oculta o se cierra.
+  const deferredSave = MetsiStorage.createDeferred(() => save(), 400);
+  const touch = (sheet) => { sheet.updatedAt = Date.now(); deferredSave.schedule(); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') deferredSave.flush(); });
+  window.addEventListener('pagehide', () => deferredSave.flush());
   function removeSheet(id) {
     state.sheets = state.sheets.filter((x) => x.id !== id);
     state.deleted[id] = Date.now();

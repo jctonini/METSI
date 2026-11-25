@@ -35,11 +35,9 @@
       if (!sh) { Photos.remove(id); continue; } // sin hoja asociada
       if (sh.photoId || memory.get(id)) { Photos.remove(id); continue; } // ya está en Drive o en memoria
       try {
-        const bmp = await createImageBitmap(blob);
-        const c = document.createElement('canvas');
-        c.width = bmp.width; c.height = bmp.height;
-        c.getContext('2d').drawImage(bmp, 0, 0);
-        memory.set(id, { thumb: c });
+        const bmp = await createImageBitmap(blob); // solo para comprobar que se puede leer; no se deja decodificada
+        if (bmp.close) bmp.close();
+        memory.set(id, { thumbBlob: blob });
         restored++;
       } catch (e) { /* foto ilegible: se ignora */ }
     }

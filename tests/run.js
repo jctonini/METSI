@@ -1352,6 +1352,30 @@ test('lectura: reutilizar el gris da exactamente los mismos recortes y la misma 
   assert.deepEqual(na && na.data, nb && nb.data);
 });
 
+// ---------- guardado diferido (METSI-32) ----------
+test('guardado diferido: varios pedidos seguidos se agrupan en un solo guardado', () => {
+  const { createDeferred } = require('../js/storage.js');
+  const queue = []; let n = 0;
+  const fake = { setTimeout: (f) => { queue.push(f); return queue.length; }, clearTimeout: (h) => { queue[h - 1] = null; } };
+  const d = createDeferred(() => { n++; }, 400, fake);
+  d.schedule(); d.schedule(); d.schedule();
+  assert.equal(queue.length, 1, 'un solo temporizador');
+  assert.equal(d.pending(), true); assert.equal(n, 0, 'todavía no guardó');
+  queue[0](); // pasan los 0,4 s
+  assert.equal(n, 1); assert.equal(d.pending(), false);
+  d.schedule(); assert.equal(queue.length, 2, 'después de guardar se puede volver a pedir');
+});
+test('guardado diferido: flush guarda ya (al cerrar la página) y cancel descarta', () => {
+  const { createDeferred } = require('../js/storage.js');
+  const queue = []; let n = 0;
+  const fake = { setTimeout: (f) => { queue.push(f); return queue.length; }, clearTimeout: (h) => { queue[h - 1] = null; } };
+  const d = createDeferred(() => { n++; }, 400, fake);
+  d.flush(); assert.equal(n, 0, 'sin nada pendiente no guarda');
+  d.schedule(); d.flush(); assert.equal(n, 1, 'con algo pendiente guarda ya');
+  assert.equal(queue[0], null, 'y el temporizador se canceló: no guarda dos veces');
+  d.schedule(); d.cancel(); assert.equal(d.pending(), false); assert.equal(queue[1], null);
+});
+
 (async () => {
   for (const [name, fn] of asyncTests) {
     try { await fn(); passed++; console.log('  ok  ' + name); }

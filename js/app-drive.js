@@ -149,8 +149,8 @@
       const uploaded = [];
       for (const sh of state.sheets) {
         const mem = memory.get(sh.id);
-        if (sh.failed || sh.photoId || !mem || !mem.thumb) continue;
-        const blob = await new Promise((r) => mem.thumb.toBlob(r, 'image/jpeg', 0.8));
+        if (sh.failed || sh.photoId || !mem || !mem.thumbBlob) continue;
+        const blob = mem.thumbBlob;
         sh.photoId = await drive.upsertFile(folderId, `hoja-${sh.id}.jpg`, 'image/jpeg', blob, { examId: state.examId, sheetId: sh.id });
         uploaded.push(sh.id);
       }
@@ -182,11 +182,7 @@
   // Fotos descargadas de Drive para revisar una hoja en otro dispositivo.
   async function fetchPhoto(sheet) {
     const blob = await drive.downloadBlob(sheet.photoId);
-    const bmp = await createImageBitmap(blob);
-    const t = document.createElement('canvas');
-    t.width = bmp.width; t.height = bmp.height;
-    t.getContext('2d').drawImage(bmp, 0, 0);
-    const mem = { thumb: t };
+    const mem = { thumbBlob: blob }; // se guarda comprimida; se decodifica solo al mostrarla
     memory.set(sheet.id, mem);
     return mem;
   }
