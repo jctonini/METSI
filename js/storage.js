@@ -18,5 +18,19 @@
       isOk: () => ok,
     };
   }
-  return { createSaver };
+  // Agrupa varios pedidos de guardado en uno solo: `schedule()` hace que `fn` corra una vez dentro de `ms`
+  // (las llamadas siguientes mientras espera no suman). `flush()` la corre ya si hay una pendiente (para
+  // cuando se cierra o se oculta la página) y `cancel()` descarta la pendiente. `timers` es para probarlo.
+  function createDeferred(fn, ms, timers) {
+    const t = timers || { setTimeout: (f, d) => setTimeout(f, d), clearTimeout: (h) => clearTimeout(h) };
+    let handle = null;
+    const run = () => { handle = null; fn(); };
+    return {
+      schedule() { if (handle === null) handle = t.setTimeout(run, ms); },
+      cancel() { if (handle !== null) { t.clearTimeout(handle); handle = null; } },
+      flush() { if (handle !== null) { t.clearTimeout(handle); run(); } },
+      pending: () => handle !== null,
+    };
+  }
+  return { createSaver, createDeferred };
 });

@@ -161,20 +161,54 @@
     return best;
   }
 
+  // Los mapas desenfocados de cada firma se calculan una sola vez (antes se decodificaban y desenfocaban en cada par).
+  const mapsCache = new WeakMap();
   const maps = (part, n) => {
-    const len = part.w * part.h;
-    const bits = unpack(part.bits, len * n);
-    return Array.from({ length: n }, (_, k) => blur(bits.subarray(k * len, (k + 1) * len), part.w, part.h));
+    let m = mapsCache.get(part);
+    if (!m) {
+      const len = part.w * part.h;
+      const bits = unpack(part.bits, len * n);
+      const full = Array.from({ length: n }, (_, k) => blur(bits.subarray(k * len, (k + 1) * len), part.w, part.h));
+      m = { full, coarse: null };
+      mapsCache.set(part, m);
+    }
+    return m;
   };
 
+  // Versión a mitad de resolución (promedio de 2x2) para descartar rápido los pares claramente distintos.
+  function halve(map, w, h) {
+    const cw = w >> 1, ch = h >> 1, out = new Float32Array(cw * ch);
+    for (let y = 0; y < ch; y++) {
+      for (let x = 0; x < cw; x++) {
+        out[y * cw + x] = (map[2 * y * w + 2 * x] + map[2 * y * w + 2 * x + 1] + map[(2 * y + 1) * w + 2 * x] + map[(2 * y + 1) * w + 2 * x + 1]) / 4;
+      }
+    }
+    return out;
+  }
+  const coarseMaps = (part, n) => {
+    const m = maps(part, n);
+    if (!m.coarse) m.coarse = m.full.map((f) => halve(f, part.w, part.h));
+    return m.coarse;
+  };
+
+  // Si a mitad de resolución el parecido del nombre es menor que esto, no hace falta la búsqueda completa:
+  // el umbral de «misma hoja» es 0,55 (v1) o 0,75 (v2) y una misma hoja da >= 0,9 también a mitad de resolución.
+  const COARSE_REJECT = 0.4;
+
   // Devuelve { reg, name, score } con valores entre -1 y 1 (null si no hay tinta suficiente para comparar).
-  function compare(a, b) {
+  // Con `opts.exact` siempre hace la búsqueda completa (sirve para comprobar que el atajo no cambia el veredicto).
+  function compare(a, b, opts) {
     let reg = null, name = null;
     if (a && b && a.reg && b.reg && a.reg.n === b.reg.n && a.reg.w === b.reg.w && a.reg.h === b.reg.h && a.reg.ink >= MIN_INK_REG && b.reg.ink >= MIN_INK_REG) {
-      reg = bestCorrelation(maps(a.reg, a.reg.n), maps(b.reg, b.reg.n), a.reg.w, a.reg.h, 3, 3);
+      reg = bestCorrelation(maps(a.reg, a.reg.n).full, maps(b.reg, b.reg.n).full, a.reg.w, a.reg.h, 3, 3);
     }
     if (a && b && a.name && b.name && a.name.w === b.name.w && a.name.h === b.name.h && a.name.ink >= MIN_INK_NAME && b.name.ink >= MIN_INK_NAME) {
-      name = bestCorrelation(maps(a.name, 1), maps(b.name, 1), a.name.w, a.name.h, 6, 3);
+      const { w, h } = a.name;
+      const coarse = !(opts && opts.exact) && w >= 8 && h >= 8
+        ? bestCorrelation(coarseMaps(a.name, 1), coarseMaps(b.name, 1), w >> 1, h >> 1, 3, 2) : null;
+      name = coarse !== null && coarse < COARSE_REJECT
+        ? coarse
+        : bestCorrelation(maps(a.name, 1).full, maps(b.name, 1).full, w, h, 6, 3);
     }
     const vals = [reg, name].filter((v) => v !== null);
     return { reg, name, score: vals.length ? Math.max(...vals) : null };

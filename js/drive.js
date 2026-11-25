@@ -73,9 +73,14 @@
 
     async function createFile(meta, body, mime) {
       const m = multipart(meta, body, mime);
-      const res = await call(`${UPLOAD}?uploadType=multipart&fields=id`, { method: 'POST', headers: { 'Content-Type': m.type }, body: m.body });
-      return (await res.json()).id;
+      const res = await call(`${UPLOAD}?uploadType=multipart&fields=id,md5Checksum`, { method: 'POST', headers: { 'Content-Type': m.type }, body: m.body });
+      return res.json(); // { id, md5Checksum }
     }
+
+    // Identificadores ya conocidos de los archivos de cada carpeta (solo mientras la página está abierta): evita
+    // buscar el mismo archivo en cada sincronización. `primed`: carpetas cuyo contenido ya se listó completo.
+    const known = new Map(), primed = new Set();
+    const key = (folderId, name) => folderId + '/' + name;
 
     async function createFolder(name, parent, appProperties) {
       const meta = { name, mimeType: FOLDER, appProperties };
@@ -116,20 +121,91 @@
           .sort((a, b) => String(b.modifiedTime).localeCompare(String(a.modifiedTime)));
       },
 
-      // Crea o reemplaza el archivo `name` dentro de la carpeta.
-      async upsertFile(folderId, name, mime, content, appProperties) {
-        const found = await list(`'${safeId(folderId)}' in parents and name='${q(name)}' and trashed=false`);
-        if (found.length) {
-          await call(`${UPLOAD}/${found[0].id}?uploadType=media&fields=id`, { method: 'PATCH', headers: { 'Content-Type': mime }, body: content });
-          return found[0].id;
+      // Lista una vez todo lo que hay en la carpeta y recuerda los identificadores: después, subir muchas fotos
+      // nuevas no necesita una búsqueda por cada una.
+      async prime(folderId) {
+        if (primed.has(folderId)) return;
+        const files = await list(`'${safeId(folderId)}' in parents and trashed=false`, 'id,name,mimeType');
+        for (const f of files) if (f.mimeType !== FOLDER && !known.has(key(folderId, f.name))) known.set(key(folderId, f.name), f.id);
+        primed.add(folderId);
+      },
+
+      // Olvida lo recordado de una carpeta (después de un error, o si alguien cambió la carpeta por fuera).
+      forget(folderId) {
+        primed.delete(folderId);
+        for (const k of [...known.keys()]) if (k.startsWith(folderId + '/')) known.delete(k);
+      },
+
+      // Olvida todo lo recordado (todas las carpetas).
+      forgetAll() { known.clear(); primed.clear(); },
+
+      // Crea o reemplaza el archivo `name` dentro de la carpeta. Devuelve { id, md5Checksum } de lo que quedó en Drive.
+      async upsertFileInfo(folderId, name, mime, content, appProperties) {
+        const k = key(folderId, name);
+        let id = known.get(k);
+        if (!id && !primed.has(folderId)) {
+          const found = await list(`'${safeId(folderId)}' in parents and name='${q(name)}' and trashed=false`);
+          id = found.length ? found[0].id : null;
         }
-        return createFile({ name, parents: [folderId], appProperties }, content, mime);
+        if (id) {
+          try {
+            const res = await call(`${UPLOAD}/${safeId(id)}?uploadType=media&fields=id,md5Checksum`, { method: 'PATCH', headers: { 'Content-Type': mime }, body: content });
+            known.set(k, id);
+            return res.json();
+          } catch (e) {
+            if (e.status !== 404) throw e; // el archivo ya no existe (lo borraron): se crea de nuevo
+            known.delete(k);
+          }
+        }
+        const created = await createFile({ name, parents: [folderId], appProperties }, content, mime);
+        known.set(k, created.id);
+        return created;
+      },
+
+      async upsertFile(folderId, name, mime, content, appProperties) {
+        return (await this.upsertFileInfo(folderId, name, mime, content, appProperties)).id;
+      },
+
+      // Identificador de un archivo de la carpeta (o null si no está), usando lo recordado si se puede.
+      async fileId(folderId, name) {
+        const k = key(folderId, name);
+        if (known.has(k)) return known.get(k);
+        if (primed.has(folderId)) return null;
+        const found = await list(`'${safeId(folderId)}' in parents and name='${q(name)}' and trashed=false`);
+        if (!found.length) return null;
+        known.set(k, found[0].id);
+        return found[0].id;
+      },
+
+      // Huella (md5) del archivo en Drive, sin bajarlo; null si no existe.
+      async fileMd5(folderId, name) {
+        const id = await this.fileId(folderId, name);
+        if (!id) return null;
+        try {
+          return (await (await call(`${API}/${safeId(id)}?fields=md5Checksum`)).json()).md5Checksum || null;
+        } catch (e) {
+          if (e.status === 404) { known.delete(key(folderId, name)); return null; }
+          throw e;
+        }
       },
 
       async readJson(folderId, name) {
-        const found = await list(`'${safeId(folderId)}' in parents and name='${q(name)}' and trashed=false`);
-        if (!found.length) return null;
-        return (await call(`${API}/${found[0].id}?alt=media`)).json();
+        const id = await this.fileId(folderId, name);
+        if (!id) return null;
+        try {
+          return await (await call(`${API}/${safeId(id)}?alt=media`)).json();
+        } catch (e) {
+          if (e.status === 404) { known.delete(key(folderId, name)); return null; }
+          throw e;
+        }
+      },
+
+      // Como readJson, pero si la huella actual es igual a `knownMd5` (lo último que esta app escribió o leyó)
+      // no baja nada: { changed: false, md5 }. Si no, { changed: true, data, md5 } (data null si el archivo no existe).
+      async readJsonIfChanged(folderId, name, knownMd5) {
+        const md5 = await this.fileMd5(folderId, name);
+        if (md5 && knownMd5 && md5 === knownMd5) return { changed: false, md5 };
+        return { changed: true, data: md5 ? await this.readJson(folderId, name) : null, md5 };
       },
 
       async downloadBlob(fileId) {
