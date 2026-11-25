@@ -264,6 +264,7 @@
     const wanted = state.sheets.filter((s) => Review.needsReview(s));
     if (!wanted.length) return;
     const sub = await App.drive.ensureSubfolder(folderId, 'a-revisar');
+    await App.drive.prime(sub); // una consulta con lo que ya hay, en vez de una por archivo
     for (const sh of wanted) {
       const mem = memory.get(sh.id);
       const rv = Review.ensure(sh);

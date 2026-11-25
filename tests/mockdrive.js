@@ -1,4 +1,6 @@
 // Drive simulado en memoria: implementa solo los pedidos que usa js/drive.js.
+const md5 = (buf) => require('node:crypto').createHash('md5').update(buf).digest('hex');
+
 function createMockDrive() {
   const files = new Map();
   let counter = 0;
@@ -64,19 +66,24 @@ function createMockDrive() {
       const { meta, content } = parseMultipart(await bodyBuffer(opts.body), headers['content-type']);
       const f = { id: 'f' + ++counter, mimeType: 'application/octet-stream', ...meta, content, modifiedTime: new Date().toISOString() };
       files.set(f.id, f);
-      return respond({ id: f.id });
+      return respond({ id: f.id, md5Checksum: md5(f.content) });
     }
     if (u.pathname.startsWith('/upload/drive/v3/files/') && method === 'PATCH') {
       const f = files.get(id);
       if (!f) return respond({ error: 'no existe' }, 404);
       f.content = await bodyBuffer(opts.body);
       f.modifiedTime = new Date().toISOString();
-      return respond({ id });
+      return respond({ id, md5Checksum: md5(f.content) });
     }
     if (u.pathname.startsWith('/drive/v3/files/') && method === 'GET' && u.searchParams.get('alt') === 'media') {
       const f = files.get(id);
       if (!f) return respond({ error: 'no existe' }, 404);
       return new Response(f.content, { status: 200, headers: { 'Content-Type': f.mimeType } });
+    }
+    if (u.pathname.startsWith('/drive/v3/files/') && method === 'GET') { // metadatos (fields=md5Checksum)
+      const f = files.get(id);
+      if (!f) return respond({ error: 'no existe' }, 404);
+      return respond({ id, md5Checksum: md5(f.content) });
     }
     if (u.pathname.startsWith('/drive/v3/files/') && method === 'PATCH') {
       const f = files.get(id);

@@ -919,6 +919,84 @@ atest('drive: sin credenciales devuelve 401 con status', async () => {
   await assert.rejects(() => d.ensureRootFolder(), (e) => e.status === 401);
 });
 
+// ---------- Drive: menos pedidos (METSI-33) ----------
+const { mapLimit } = require('../js/batch.js');
+const lists = (mock) => mock.log.filter((l) => /^GET \/drive\/v3\/files\?q=/.test(l)).length;
+const downloads = (mock) => mock.log.filter((l) => /alt=media/.test(l)).length;
+async function driveWithFolder() {
+  const mock = createMockDrive();
+  const d = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' });
+  const root = await d.ensureRootFolder();
+  const folder = await d.createExamFolder(root, 'e1', 'Examen');
+  return { mock, d, folder };
+}
+atest('drive: una vez conocida la carpeta, sincronizar de nuevo no busca ni baja nada de más', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.prime(folder);
+  const first = await d.upsertFileInfo(folder, 'datos.json', 'application/json', '{"a":1}', {});
+  assert.ok(first.md5Checksum, 'Drive informa la huella de lo que quedó');
+  mock.log.length = 0;
+  // segunda sincronización sin cambios de otro equipo: se mira la huella, no se baja el archivo
+  const got = await d.readJsonIfChanged(folder, 'datos.json', first.md5Checksum);
+  assert.equal(got.changed, false);
+  const second = await d.upsertFileInfo(folder, 'datos.json', 'application/json', '{"a":2}', {});
+  await d.upsertFileInfo(folder, 'resultados.csv', 'text/csv', 'x', {});
+  assert.equal(lists(mock), 0, 'ninguna búsqueda por nombre: ' + mock.log.join(' | '));
+  assert.equal(downloads(mock), 0, 'no se bajó datos.json');
+  assert.notEqual(second.md5Checksum, first.md5Checksum);
+});
+atest('drive: si otro equipo cambió datos.json, sí se baja', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  const mine = await d.upsertFileInfo(folder, 'datos.json', 'application/json', '{"de":"yo"}', {});
+  const other = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' }); // otro dispositivo
+  await other.upsertFileInfo(folder, 'datos.json', 'application/json', '{"de":"otro"}', {});
+  const got = await d.readJsonIfChanged(folder, 'datos.json', mine.md5Checksum);
+  assert.equal(got.changed, true);
+  assert.deepEqual(got.data, { de: 'otro' });
+});
+atest('drive: subir muchas fotos nuevas no hace una búsqueda por cada una', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.prime(folder);
+  mock.log.length = 0;
+  for (let i = 0; i < 12; i++) await d.upsertFile(folder, `hoja-${i}.jpg`, 'image/jpeg', new Blob([Buffer.from([i])]), {});
+  assert.equal(lists(mock), 0);
+  assert.equal([...mock.files.values()].filter((f) => /^hoja-/.test(f.name)).length, 12);
+});
+atest('drive: el prime reconoce lo que ya había y no lo duplica', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.upsertFile(folder, 'hoja-1.jpg', 'image/jpeg', new Blob([Buffer.from([1])]), {});
+  const again = createDrive({ fetch: mock.fetch, getToken: async () => 'tok' }); // sesión nueva: no recuerda nada
+  await again.prime(folder);
+  await again.upsertFile(folder, 'hoja-1.jpg', 'image/jpeg', new Blob([Buffer.from([2])]), {});
+  assert.equal([...mock.files.values()].filter((f) => f.name === 'hoja-1.jpg').length, 1);
+});
+atest('drive: si borraron el archivo por fuera, se crea de nuevo; y forget vuelve a buscar', async () => {
+  const { mock, d, folder } = await driveWithFolder();
+  await d.prime(folder);
+  const a = await d.upsertFile(folder, 'datos.json', 'application/json', '{}', {});
+  mock.files.delete(a); // alguien lo borró en Drive
+  const b = await d.upsertFile(folder, 'datos.json', 'application/json', '{"n":1}', {});
+  assert.notEqual(b, a);
+  assert.deepEqual(await d.readJson(folder, 'datos.json'), { n: 1 });
+  d.forget(folder);
+  mock.log.length = 0;
+  await d.upsertFile(folder, 'datos.json', 'application/json', '{"n":2}', {});
+  assert.equal(lists(mock), 1, 'después de forget vuelve a buscar el archivo');
+  d.forgetAll();
+  await d.prime(folder);
+  mock.log.length = 0;
+  await d.upsertFile(folder, 'datos.json', 'application/json', '{"n":3}', {});
+  assert.equal(lists(mock), 0, 'prime después de forgetAll vuelve a recordar sin buscar por nombre');
+});
+atest('subidas en paralelo: nunca más de 3 a la vez, y un error frena las que faltan', async () => {
+  let running = 0, peak = 0, started = 0;
+  await mapLimit(Array.from({ length: 10 }, (_, i) => i), 3, async () => { started++; running++; peak = Math.max(peak, running); await new Promise((r) => setTimeout(r, 5)); running--; });
+  assert.equal(started, 10); assert.equal(peak, 3);
+  started = 0;
+  await assert.rejects(() => mapLimit(Array.from({ length: 20 }, (_, i) => i), 3, async (i) => { started++; await new Promise((r) => setTimeout(r, 2)); if (i === 4) throw new Error('corte'); }), /corte/);
+  assert.ok(started < 20, 'después del error no se siguen empezando subidas (' + started + ')');
+});
+
 // ---------- calibración con casos reales (tools/calibrar.js) ----------
 const Calibrar = require('../tools/calibrar.js');
 const { LETTERS: ABC } = require('../js/layout.js');

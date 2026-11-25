@@ -51,6 +51,8 @@
     onRetry: (err, n) => { if (syncing) setStatus(`Sin conexión con Drive: reintentando (${n})…`, 'warn-text'); },
   });
   let rootFolderId = null;
+  let examFolder = null; // { examId, id }: carpeta del examen ya encontrada en esta sesión
+  const datosMd5 = new Map(); // carpeta -> huella (md5) de datos.json tal como lo dejó o lo leyó esta app
   const ensureRoot = async () => rootFolderId || (rootFolderId = await drive.ensureRootFolder());
   const autoFolderName = () => `${state.cfg.title || 'Examen'} · ${new Date(state.examCreatedAt).toISOString().slice(0, 10)}`;
   // Si el docente le puso un nombre propio a la carpeta, se respeta: la sincronización no lo pisa con el automático.
@@ -132,12 +134,18 @@
     setStatus('Sincronizando con Drive…', 'muted');
     try {
       const root = await ensureRoot();
-      let folderId = await drive.findExamFolder(root, state.examId);
+      // La carpeta del examen se busca una vez por sesión; después se reutiliza.
+      let folderId = examFolder && examFolder.examId === state.examId ? examFolder.id : await drive.findExamFolder(root, state.examId);
       if (!folderId) folderId = await drive.createExamFolder(root, state.examId, folderName());
       else if (state.driveFolderName && state.driveFolderName !== folderName()) await drive.renameFolder(folderId, folderName());
+      examFolder = { examId: state.examId, id: folderId };
+      await drive.prime(folderId); // una sola consulta con lo que ya hay (en vez de una por archivo)
 
       state.driveFolderId = folderId; // para el botón «Abrir carpeta del examen en Drive»
-      const remote = await drive.readJson(folderId, 'datos.json');
+      // Si datos.json no cambió desde lo último que esta app escribió o leyó, no se baja (con 80 hojas son varios MB).
+      const got = await drive.readJsonIfChanged(folderId, 'datos.json', datosMd5.get(folderId));
+      const remote = got.changed ? got.data : null;
+      if (got.md5) datosMd5.set(folderId, got.md5);
       if (remote && remote.examId === state.examId) {
         const clean = MetsiSanitize.cleanRemote(remote);
         if (!clean) throw new Error('El archivo datos.json de Drive no tiene el formato esperado: no se sincronizó para no pisarlo.');
@@ -146,19 +154,19 @@
         if (state.cfgUpdatedAt !== before) { App.fillConfig(); App.renderKey(); }
       }
 
+      // Las fotos nuevas suben de a 3 a la vez.
       const uploaded = [];
-      for (const sh of state.sheets) {
-        const mem = memory.get(sh.id);
-        if (sh.failed || sh.photoId || !mem || !mem.thumbBlob) continue;
-        const blob = mem.thumbBlob;
-        sh.photoId = await drive.upsertFile(folderId, `hoja-${sh.id}.jpg`, 'image/jpeg', blob, { examId: state.examId, sheetId: sh.id });
+      const pending = state.sheets.filter((sh) => !(sh.failed || sh.photoId) && memory.get(sh.id) && memory.get(sh.id).thumbBlob);
+      await MetsiBatch.mapLimit(pending, 3, async (sh) => {
+        sh.photoId = await drive.upsertFile(folderId, `hoja-${sh.id}.jpg`, 'image/jpeg', memory.get(sh.id).thumbBlob, { examId: state.examId, sheetId: sh.id });
         uploaded.push(sh.id);
-      }
+      });
 
       await App.syncCases(folderId);
       state.lastSync = Date.now();
       state.driveFolderName = folderName();
-      await drive.upsertFile(folderId, 'datos.json', 'application/json', JSON.stringify(dataPayload()), { examId: state.examId });
+      const written = await drive.upsertFileInfo(folderId, 'datos.json', 'application/json', JSON.stringify(dataPayload()), { examId: state.examId });
+      if (written.md5Checksum) datosMd5.set(folderId, written.md5Checksum);
       await drive.upsertFile(folderId, 'resultados.csv', 'text/csv', toDelimited(App.exportRows(','), ','), { examId: state.examId });
       syncing = false;
       clearRetry();
@@ -169,6 +177,9 @@
     } catch (e) {
       syncing = false;
       syncError = e.message || String(e);
+      // Después de un error se vuelve a mirar la carpeta desde cero (por si quedó algo a medias o cambió por fuera).
+      drive.forgetAll();
+      datosMd5.clear(); examFolder = null;
       if (e.status === 401) auth.invalidate();
       // Los cambios siguen en este dispositivo (localStorage); se vuelve a intentar con espera creciente.
       if (auth.status() !== 'needs-login') scheduleRetry();

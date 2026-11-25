@@ -19,5 +19,18 @@
     }
     return tally;
   }
-  return { runBatch };
+  // Corre `fn(item, i)` sobre todos los elementos con hasta `limit` en simultáneo (por ejemplo, subir fotos a Drive
+  // de a 3). Si una falla, no se empiezan más, se espera a las que ya van y se lanza el primer error.
+  async function mapLimit(items, limit, fn) {
+    let next = 0, failed = false, firstError = null;
+    const worker = async () => {
+      while (!failed && next < items.length) {
+        const i = next++;
+        try { await fn(items[i], i); } catch (e) { if (!failed) { failed = true; firstError = e; } }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, worker));
+    if (failed) throw firstError;
+  }
+  return { runBatch, mapLimit };
 });
