@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-25T20:19:07Z'
-updated_date: '2026-11-25T21:21:28Z'
+updated_date: '2026-11-25T22:27:36Z'
 labels:
   - rendimiento
 dependencies: []
@@ -37,6 +37,8 @@ Cada sincronización baja y vuelve a subir datos.json entero (incluye los recort
 
 <!-- SECTION:NOTES:BEGIN -->
 Hecho: js/drive.js recuerda los IDs de archivos por carpeta (prime: una consulta por carpeta y sesión; forget/forgetAll tras un error), upsertFileInfo devuelve md5Checksum, fileMd5 y readJsonIfChanged evitan bajar datos.json si no cambió; si un ID recordado da 404 se crea de nuevo. js/batch.js: mapLimit (fotos de a 3). js/app-drive.js: carpeta del examen recordada en la sesión; syncCases hace prime de a-revisar. Medido en Chrome con un Drive simulado (tests/mockdrive.js, 60 ms de latencia por pedido) contra la misma rama sin esta tarea, 20 hojas: 1.ª sincronización 49 -> 27 pedidos (25 -> 3 búsquedas) y 3,7 s -> 1,3 s; 2.ª sincronización (1 cambio) 13 -> 8 pedidos y de bajar 0,38 MB a 0. Verificado: un cambio hecho desde otro equipo en datos.json sí se recibe; las 20 fotos y datos.json quedan en Drive. 144 pruebas pasan (6 nuevas). NO probado contra Google Drive real ni con la red del celular: el inicio de sesión de Google se simuló.
+
+Verificado por el docente el 25/11/2026 con su cuenta real de Google Drive: la sincronización funciona.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
