@@ -36,20 +36,19 @@ El orden de los N.º no es cronológico (el login se extrajo antes que las demá
 
 ## 3. Pendientes
 
-**Del autor (datos o decisiones que solo vos tenés):**
-1. Nombre y apellido para la portada (ver nombres de archivo en el borrador). No está en el repositorio a propósito.
-2. **18 de noviembre:** medir el tiempo y comparar los puntajes y la nota final con la herramienta (plan y plantilla en `valor-y-costo.md` §7).
-3. Confirmar el valor real de «marcó las cuatro opciones con dos correctas» (0,5 declarado; la regla da 0,67) y la clave real de la pregunta 8.
-4. Qué nota corresponde a los porcentajes intermedios y a los menores de 60 %.
-5. Si el uso de IA se cobró o está incluido en una suscripción; horas de armado; fecha de consulta de Backlog.md.
-6. Verificar la Ley 25.326 contra el texto oficial; autorización formal de la cátedra; si el plan Hobby de Vercel admite una cátedra; si ya borrás los datos al cerrar las notas.
-7. La respuesta del profesor de la diplomatura sobre GitHub Pages sin login, y si PEDIR es una sigla oral.
-8. Probar el Anexo F con una persona ajena y mostrarle el diseño a alguien ajeno al tema (consigna §8).
-9. Video o cinco capturas con datos inventados (Anexo E). Buscar el nombre y el registro del autor en todo el repositorio antes de armar el `.zip`.
+**Resueltos el 2026-11-28** (decisiones del autor, ya volcadas en el borrador): tiempo (estimación a mano de 4 a 5 min por examen y hasta 2,1 min con la herramienta, sin medición controlada); turnos por año (8, unas 640 hojas); horas de armado (7 a 8); costo (suscripción Pro de USD 20 por mes, tope atribuible USD 40); valor 0,67 y ejemplo de la pregunta 8; escala de notas fuera del informe; consulta con la cátedra verbal; conservación de datos como compromiso; fotos de diagnóstico: riesgo abierto, no se borra nada; GitHub Pages abierto a propósito; prueba con un tercero: no realizada (la hará el profesor); sigla PEDIR descartada; nombre de los archivos `PerezTonini_JulioCesar_TF_Informe.pdf` y `_TF_Solucion.zip`.
 
-**Del asistente (cuando estén los datos anteriores):** escribir en limpio las secciones 8, 9 y 10 con la medición del 18/11, y actualizar el recuento de pruebas y de pedidos del registro.
+**Del autor (lo que sigue abierto):**
+1. **Clave del usuario de prueba:** va solo en el PDF final, no en el repositorio. Revisar que el usuario tenga rol docente, que el proyecto de Supabase no esté pausado y que la cuenta no tenga datos reales.
+2. **Anexo E:** cinco capturas comentadas con datos inventados (o un video de hasta 3 minutos).
+3. **Sección 9, «Lo que aprendí»:** en tus palabras.
+4. **Ley 25.326:** verificar el texto oficial (desde la sesión no se pudo abrir el sitio) y qué obligaciones aplican.
+5. **Opcional:** fecha de consulta de Backlog.md y si el plan Hobby de Vercel admite una cátedra.
+6. Buscar el nombre y el registro del autor en todo el repositorio antes de armar el `.zip`.
+
+**Del asistente:** pasar a PDF con el formato pedido (Calibri 11, interlineado 1,5), dejar las marcas de la lista de verificación y armar el `.zip` sin `node_modules` ni claves.
 
 **Opcionales:**
 - Tráfico por API y por credencial en la consola de Google Cloud (Anexo G).
-- Mejoras que quedaron anotadas: aplicar la escala de equivalencias dentro de la app; comparar el CSV con el listado de inscriptos; calibrar con hojas reales (tarea METSI-1, abierta).
+- Mejoras que quedaron anotadas: comparar el CSV con el listado de inscriptos; calibrar con hojas reales (tarea METSI-1, abierta).
 - En la pantalla Examen, la etiqueta del campo dice «Descuento por cada opción incorrecta marcada»; con la regla vigente el descuento es por cada marca **de más** sobre la cantidad de correctas (el texto de ayuda lo explica bien). Es un cambio de código que no se hizo.
