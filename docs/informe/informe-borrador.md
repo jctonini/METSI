@@ -11,7 +11,7 @@
 - Diplomatura en IA Aplicada a Entornos Digitales de Gestión · FCEUBA · Comisión de los martes 2026 · Camino A (funcional) · Entrega: 11 de diciembre de 2026
 - Autor: Perez Tonini, Julio Cesar (trabajo individual)
 - Solución: `https://metsi-correcciones.vercel.app` (con usuario y contraseña) y una copia sin login en `https://jctonini.github.io/METSI/`. Código: `https://github.com/jctonini/METSI`
-- **[COMPLETAR acceso para la corrección]:** decidí si creás un usuario de prueba para el equipo docente (con datos inventados) o si indicás la copia sin login. **Nunca pegues una contraseña real en el informe.**
+- Acceso para la corrección: usuario de prueba `usuario@mail.com` (rol docente, solo con datos inventados) en la dirección de Vercel. **[COMPLETAR la clave solo en el PDF final: este archivo está en un repositorio público y no debe llevarla.]**
 - **[COMPLETAR enlace al video de hasta 3 minutos o a las cinco capturas comentadas]**
 
 ---
